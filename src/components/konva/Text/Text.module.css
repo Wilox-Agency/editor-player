@@ -1,0 +1,10 @@
+.textArea {
+  background-color: unset;
+  line-height: 1;
+  position: absolute;
+  padding: unset;
+  margin: unset;
+  resize: none;
+  outline: unset;
+  overflow: hidden;
+}

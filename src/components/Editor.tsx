@@ -1,17 +1,44 @@
-import { useContext, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import Konva from 'konva';
 import { Layer, Stage, Transformer, Rect } from 'react-konva';
 
+import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useTransformer } from '@/hooks/useTransformer';
 import { useSelectionRect } from '@/hooks/useSelectionRect';
 import { useImageCropTransformer } from '@/hooks/useImageCropTransformer';
+import { CanvasComponentByType } from '@/utils/CanvasComponentByType';
 import { KonvaContext } from '@/contexts/KonvaContext';
+import type { CanvasElement } from '@/utils/types';
 
-import { Text } from '@/components/konva/Text';
-import { Image, Video } from '@/components/konva/Image';
 import { ImageCropRect } from '@/components/konva/ImageCropRect';
 
+const initialElements: CanvasElement[] = [
+  {
+    elementId: '1',
+    type: 'image',
+    imageUrl: 'https://via.placeholder.com/300x500',
+    draggable: true,
+  },
+  {
+    elementId: '2',
+    type: 'video',
+    videoUrl: '/pexels-han-kaya-13675462 (360p).mp4',
+    draggable: true,
+  },
+  {
+    elementId: '3',
+    type: 'text',
+    text: 'Some text',
+    fill: 'white',
+    fontSize: 32,
+    align: 'center',
+    draggable: true,
+  },
+];
+
 export function Editor() {
+  const { canvasTree, loadCanvasTree } = useCanvasTreeStore();
+
   const { stageRef, layerRef, transformerRef, selectionRectRef } =
     useContext(KonvaContext);
   const cropTransformerRef = useRef<Konva.Transformer>(null);
@@ -30,6 +57,10 @@ export function Editor() {
       cropTransformerRef,
       cropRectRef,
     });
+
+  useEffect(() => {
+    loadCanvasTree(initialElements);
+  }, [loadCanvasTree]);
 
   return (
     <main>
@@ -51,15 +82,13 @@ export function Editor() {
         ref={stageRef}
       >
         <Layer ref={layerRef}>
-          <Image imageUrl="https://via.placeholder.com/300x500" draggable />
-          <Video videoUrl="/pexels-han-kaya-13675462 (360p).mp4" draggable />
-          <Text
-            text="Some text"
-            fill="white"
-            fontSize={32}
-            align="center"
-            draggable
-          />
+          {canvasTree.map((element) => {
+            const { elementId, type, ...props } = element;
+            const Component = CanvasComponentByType[type];
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return <Component key={elementId} {...(props as any)} />;
+          })}
         </Layer>
         <Layer name="controllers">
           {/* Image crop rect */}

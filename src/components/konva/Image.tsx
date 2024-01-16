@@ -41,8 +41,8 @@ export const PrimitiveImage = forwardRef<Konva.Image, PrimitiveImageProps>(
         // Saving the uncropped image rect for the new size
         saveAttrs({
           uncroppedImageRect: {
-            xWithinImage: uncroppedImageRect.xWithinImage * image.scaleX(),
-            yWithinImage: uncroppedImageRect.yWithinImage * image.scaleY(),
+            cropXWithScale: uncroppedImageRect.cropXWithScale * image.scaleX(),
+            cropYWithScale: uncroppedImageRect.cropYWithScale * image.scaleY(),
             width: uncroppedImageRect.width * image.scaleX(),
             height: uncroppedImageRect.height * image.scaleY(),
           },

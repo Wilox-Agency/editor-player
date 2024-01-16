@@ -41,8 +41,8 @@ export function useImageCropTransformer({
     if (!uncroppedImageRect) {
       const currentImageRect = image.getClientRect();
       uncroppedImageRect = {
-        xWithinImage: 0,
-        yWithinImage: 0,
+        cropXWithScale: 0,
+        cropYWithScale: 0,
         width: currentImageRect.width,
         height: currentImageRect.height,
       };
@@ -96,8 +96,8 @@ export function useImageCropTransformer({
 
     image.setAttrs({
       // Resetting to the uncropped image position, size and crop
-      x: image.x() - uncroppedImageRect.xWithinImage,
-      y: image.y() - uncroppedImageRect.yWithinImage,
+      x: image.x() - uncroppedImageRect.cropXWithScale,
+      y: image.y() - uncroppedImageRect.cropYWithScale,
       width: uncroppedImageRect.width,
       height: uncroppedImageRect.height,
       crop: undefined,
@@ -209,8 +209,10 @@ export function useImageCropTransformer({
     const xMultiplier = originalImageSize.width / imageBeingCropped.width();
     const yMultiplier = originalImageSize.height / imageBeingCropped.height();
 
-    const xWithinImage = cropRect.x() - imageBeingCropped.x();
-    const yWithinImage = cropRect.y() - imageBeingCropped.y();
+    // The X distance between the uncropped image and the cropped image
+    const cropXWithScale = cropRect.x() - imageBeingCropped.x();
+    // The Y distance between the uncropped image and the cropped image
+    const cropYWithScale = cropRect.y() - imageBeingCropped.y();
 
     // Updating the cropped image
     imageBeingCropped.setAttrs({
@@ -220,8 +222,8 @@ export function useImageCropTransformer({
       width: cropRect.width(),
       height: cropRect.height(),
       crop: {
-        x: xWithinImage * xMultiplier,
-        y: yWithinImage * yMultiplier,
+        x: cropXWithScale * xMultiplier,
+        y: cropYWithScale * yMultiplier,
         width: cropRect.width() * xMultiplier,
         height: cropRect.height() * yMultiplier,
       },
@@ -234,8 +236,8 @@ export function useImageCropTransformer({
       // Saving the new position of the uncropped image rect
       uncroppedImageRect: {
         ...uncroppedImageRect,
-        xWithinImage,
-        yWithinImage,
+        cropXWithScale,
+        cropYWithScale,
       },
       // Saving the new position, size and crop
       x: imageBeingCropped.x(),

@@ -34,8 +34,20 @@ export type KonvaComponentProps<T> = T extends KonvaNodeComponent<
   : never;
 
 export type UncroppedImageRect = {
-  xWithinImage: number;
-  yWithinImage: number;
+  /**
+   * The distance (in the **horizontal** axis) between the uncropped image `x`
+   * and the cropped image `x`. Note that the `x` of the `crop` attribute (from
+   * `Konva.Image`) represents the same thing BUT as if the image was in its
+   * original size.
+   */
+  cropXWithScale: number;
+  /**
+   * The distance (in the **vertical** axis) between the uncropped image `y` and
+   * the cropped image `y`. Note that the `y` of the `crop` attribute (from
+   * `Konva.Image`) represents the same thing BUT as if the image was in its
+   * original size.
+   */
+  cropYWithScale: number;
   width: number;
   height: number;
 };

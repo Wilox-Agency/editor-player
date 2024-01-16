@@ -6,35 +6,40 @@ import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useTransformer } from '@/hooks/useTransformer';
 import { useSelectionRect } from '@/hooks/useSelectionRect';
 import { useImageCropTransformer } from '@/hooks/useImageCropTransformer';
-import { CanvasComponentByType } from '@/utils/CanvasComponentByType';
 import { KonvaContext } from '@/contexts/KonvaContext';
+import { CanvasComponentByType } from '@/utils/CanvasComponentByType';
 import type { CanvasElement } from '@/utils/types';
 
 import { ImageCropRect } from '@/components/konva/ImageCropRect';
 
-const initialElements: CanvasElement[] = [
-  {
-    elementId: '1',
-    type: 'image',
-    imageUrl: 'https://via.placeholder.com/300x500',
-    draggable: true,
-  },
-  {
-    elementId: '2',
-    type: 'video',
-    videoUrl: '/pexels-han-kaya-13675462 (360p).mp4',
-    draggable: true,
-  },
-  {
-    elementId: '3',
-    type: 'text',
-    text: 'Some text',
-    fill: 'white',
-    fontSize: 32,
-    align: 'center',
-    draggable: true,
-  },
-];
+const initialElementsFromStorage = localStorage.getItem(
+  '@sophia-slide-editor:canvas-tree'
+);
+const initialElements: CanvasElement[] = initialElementsFromStorage
+  ? JSON.parse(initialElementsFromStorage)
+  : [
+      {
+        id: crypto.randomUUID(),
+        type: 'image',
+        imageUrl: 'https://via.placeholder.com/300x500',
+        draggable: true,
+      },
+      {
+        id: crypto.randomUUID(),
+        type: 'video',
+        videoUrl: '/pexels-han-kaya-13675462 (360p).mp4',
+        draggable: true,
+      },
+      {
+        id: crypto.randomUUID(),
+        type: 'text',
+        text: 'Some text',
+        fill: 'white',
+        fontSize: 32,
+        align: 'center',
+        draggable: true,
+      },
+    ];
 
 export function Editor() {
   const { canvasTree, loadCanvasTree } = useCanvasTreeStore();
@@ -83,11 +88,11 @@ export function Editor() {
       >
         <Layer ref={layerRef}>
           {canvasTree.map((element) => {
-            const { elementId, type, ...props } = element;
+            const { type, ...props } = element;
             const Component = CanvasComponentByType[type];
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return <Component key={elementId} {...(props as any)} />;
+            return <Component key={props.id} {...(props as any)} />;
           })}
         </Layer>
         <Layer name="controllers">
@@ -115,6 +120,16 @@ export function Editor() {
           />
         </Layer>
       </Stage>
+
+      <button
+        style={{ position: 'absolute', top: '1rem', right: '1rem' }}
+        onClick={() => {
+          const string = JSON.stringify(canvasTree);
+          localStorage.setItem('@sophia-slide-editor:canvas-tree', string);
+        }}
+      >
+        Save
+      </button>
     </main>
   );
 }

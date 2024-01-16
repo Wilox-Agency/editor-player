@@ -3,29 +3,50 @@ import Konva from 'konva';
 import { Image as KonvaImage } from 'react-konva';
 import useImage from 'use-image';
 
-import { CustomKonvaAttributes } from '@/utils/CustomKonvaAttributes';
-import type { KonvaComponentProps, UncroppedImageRect } from '@/utils/types';
 import { useVideo } from '@/hooks/useVideo';
 import { KonvaContext } from '@/contexts/KonvaContext';
+import type {
+  CanvasElementOfType,
+  RemoveIndex,
+  UncroppedImageRect,
+} from '@/utils/types';
+import { mergeRefs } from '@/utils/mergeRefs';
 
-type PrimitiveImageProps = KonvaComponentProps<typeof KonvaImage>;
+type PrimitiveImageProps = Pick<
+  RemoveIndex<Konva.ImageConfig>,
+  'id' | 'image' | 'x' | 'y' | 'width' | 'height' | 'crop'
+> & {
+  uncroppedImageRect?: UncroppedImageRect;
+  saveAttrs: CanvasElementOfType<'image'>['saveAttrs'];
+  remove: () => void;
+};
 
 export const PrimitiveImage = forwardRef<Konva.Image, PrimitiveImageProps>(
-  ({ onTransformEnd, ...props }, forwardedRef) => {
+  (
+    {
+      id,
+      image: imageElement,
+      uncroppedImageRect,
+      saveAttrs,
+      ...initialAttributes
+    },
+    forwardedRef
+  ) => {
+    const imageRef = useRef<Konva.Image>(null);
+
     function handleImageTransformEnd(event: Konva.KonvaEventObject<Event>) {
       const image = event.target as Konva.Image;
 
-      const uncroppedImageRect = image.getAttr(
-        CustomKonvaAttributes.uncroppedImageRect
-      ) as UncroppedImageRect | undefined;
       if (uncroppedImageRect) {
-        // Updating the uncropped image rect for the new size
-        image.setAttr(CustomKonvaAttributes.uncroppedImageRect, {
-          xWithinImage: uncroppedImageRect.xWithinImage * image.scaleX(),
-          yWithinImage: uncroppedImageRect.yWithinImage * image.scaleY(),
-          width: uncroppedImageRect.width * image.scaleX(),
-          height: uncroppedImageRect.height * image.scaleY(),
-        } satisfies UncroppedImageRect);
+        // Saving the uncropped image rect for the new size
+        saveAttrs({
+          uncroppedImageRect: {
+            xWithinImage: uncroppedImageRect.xWithinImage * image.scaleX(),
+            yWithinImage: uncroppedImageRect.yWithinImage * image.scaleY(),
+            width: uncroppedImageRect.width * image.scaleX(),
+            height: uncroppedImageRect.height * image.scaleY(),
+          },
+        });
       }
 
       // Updating the size according to the scale, while also resetting the scale
@@ -35,15 +56,35 @@ export const PrimitiveImage = forwardRef<Konva.Image, PrimitiveImageProps>(
         scaleX: 1,
         scaleY: 1,
       } satisfies Partial<Konva.ImageConfig>);
-
-      onTransformEnd?.(event);
+      // Saving the new position and size
+      saveAttrs({
+        x: image.x(),
+        y: image.y(),
+        width: image.width(),
+        height: image.height(),
+      });
     }
+
+    function handleImageDragEnd(event: Konva.KonvaEventObject<DragEvent>) {
+      // Saving the new position
+      saveAttrs({ x: event.target.x(), y: event.target.y() });
+    }
+
+    // Setting the initial attributes only on the first render
+    useEffect(() => {
+      imageRef.current?.setAttrs(
+        initialAttributes satisfies Partial<Konva.ImageConfig>
+      );
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
       <KonvaImage
-        {...props}
+        id={id}
+        image={imageElement}
         onTransformEnd={handleImageTransformEnd}
-        ref={forwardedRef}
+        onDragEnd={handleImageDragEnd}
+        ref={mergeRefs(imageRef, forwardedRef)}
       />
     );
   }

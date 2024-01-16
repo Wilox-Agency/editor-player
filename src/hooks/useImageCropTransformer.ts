@@ -1,9 +1,10 @@
 import { type RefObject, useCallback, useEffect, useState } from 'react';
 import Konva from 'konva';
 
+import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { getCanvasImageIntrinsicSize } from '@/utils/getCanvasImageIntrinsicSize';
 import { CustomKonvaAttributes } from '@/utils/CustomKonvaAttributes';
-import type { UncroppedImageRect } from '@/utils/types';
+import type { CanvasElementOfType } from '@/utils/types';
 
 export function useImageCropTransformer({
   transformerRef,
@@ -30,9 +31,12 @@ export function useImageCropTransformer({
     const cropRect = cropRectRef.current;
     if (!cropTransformer || !cropRect) return;
 
-    let uncroppedImageRect = image.getAttr(
-      CustomKonvaAttributes.uncroppedImageRect
-    ) as UncroppedImageRect | undefined;
+    const imageState = useCanvasTreeStore
+      .getState()
+      .canvasTree.find(
+        (element) => element.id === image.id()
+      ) as CanvasElementOfType<'image'>;
+    let uncroppedImageRect = imageState.uncroppedImageRect;
     // Saving the uncropped image size if not saved already
     if (!uncroppedImageRect) {
       const currentImageRect = image.getClientRect();
@@ -42,10 +46,7 @@ export function useImageCropTransformer({
         width: currentImageRect.width,
         height: currentImageRect.height,
       };
-      image.setAttr(
-        CustomKonvaAttributes.uncroppedImageRect,
-        uncroppedImageRect
-      );
+      imageState.saveAttrs({ uncroppedImageRect });
     }
     // Clearing the current selection
     transformerRef.current?.nodes([]);
@@ -190,13 +191,21 @@ export function useImageCropTransformer({
     const cropRect = cropRectRef.current;
     if (!cropTransformer || !cropRect || !imageBeingCropped) return;
 
-    const uncroppedImageRect = imageBeingCropped.getAttr(
-      CustomKonvaAttributes.uncroppedImageRect
-    ) as UncroppedImageRect | undefined;
+    const imageState = useCanvasTreeStore
+      .getState()
+      .canvasTree.find(
+        (element) => element.id === imageBeingCropped.id()
+      ) as CanvasElementOfType<'image'>;
+    const uncroppedImageRect = imageState.uncroppedImageRect;
     const imageSource = imageBeingCropped.image();
     if (!uncroppedImageRect || !imageSource) return;
 
     const originalImageSize = getCanvasImageIntrinsicSize(imageSource);
+    /* When using the `crop` attribute in Konva.js, the crop position and size
+    needs to be relative to the original image size, so these multipliers are
+    used to convert position and size of the crop rect in the image's current
+    size to the position and size it would have if the image was in its original
+    size */
     const xMultiplier = originalImageSize.width / imageBeingCropped.width();
     const yMultiplier = originalImageSize.height / imageBeingCropped.height();
 
@@ -205,12 +214,6 @@ export function useImageCropTransformer({
 
     // Updating the cropped image
     imageBeingCropped.setAttrs({
-      // Updating the position difference of the uncropped image rect
-      [CustomKonvaAttributes.uncroppedImageRect]: {
-        ...uncroppedImageRect,
-        xWithinImage,
-        yWithinImage,
-      } satisfies UncroppedImageRect,
       // Setting the new position, size and crop
       x: cropRect.x(),
       y: cropRect.y(),
@@ -226,6 +229,21 @@ export function useImageCropTransformer({
       [CustomKonvaAttributes.unselectable]: undefined,
       draggable: true,
     } satisfies Partial<Konva.ImageConfig>);
+
+    imageState.saveAttrs({
+      // Saving the new position of the uncropped image rect
+      uncroppedImageRect: {
+        ...uncroppedImageRect,
+        xWithinImage,
+        yWithinImage,
+      },
+      // Saving the new position, size and crop
+      x: imageBeingCropped.x(),
+      y: imageBeingCropped.y(),
+      width: imageBeingCropped.width(),
+      height: imageBeingCropped.height(),
+      crop: imageBeingCropped.crop(),
+    });
 
     cropTransformer.nodes([]);
     cropRect.visible(false);

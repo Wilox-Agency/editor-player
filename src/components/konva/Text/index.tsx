@@ -16,33 +16,30 @@ import styles from './Text.module.css';
 import { TEXT_MIN_FONT_SIZE } from '@/hooks/useTransformer';
 import { KonvaContext } from '@/contexts/KonvaContext';
 import { mergeRefs } from '@/utils/mergeRefs';
-import type { KonvaComponentProps } from '@/utils/types';
+import type { CanvasElementOfType, RemoveIndex } from '@/utils/types';
 
-export type TextProps = KonvaComponentProps<typeof KonvaText>;
+export type TextProps = Pick<
+  RemoveIndex<Konva.TextConfig>,
+  'id' | 'text' | 'x' | 'y' | 'width' | 'fontSize' | 'rotation'
+> & {
+  saveAttrs: CanvasElementOfType<'text'>['saveAttrs'];
+  remove: () => void;
+};
 
 export const Text = forwardRef<Konva.Text, TextProps>(
-  (
-    { onDblClick, onDblTap, onTransform, onTransformEnd, ...props },
-    forwardedRef
-  ) => {
+  ({ id, saveAttrs, ...initialAttributes }, forwardedRef) => {
     const { stageRef, transformerRef } = useContext(KonvaContext);
     const textRef = useRef<Konva.Text>(null);
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
+    const didJustCloseTextAreaWithEnterRef = useRef(false);
 
     const [textAreaValue, setTextAreaValue] = useState('');
     const [textAreaStyles, setTextAreaStyles] = useState<CSSProperties>();
 
     const isTextAreaVisible = textAreaStyles !== undefined;
 
-    function handleDoubleClick(event: Konva.KonvaEventObject<MouseEvent>) {
+    function handleDoubleClick() {
       openTextArea();
-
-      // Running the external event listener for the current event
-      if (event.evt instanceof MouseEvent) {
-        onDblClick?.(event);
-      } else {
-        onDblTap?.(event);
-      }
     }
 
     function handleTransform(event: Konva.KonvaEventObject<Event>) {
@@ -60,8 +57,6 @@ export const Text = forwardRef<Konva.Text, TextProps>(
           scaleY: 1,
         } satisfies Konva.TextConfig);
       }
-
-      onTransform?.(event);
     }
 
     function handleTransformEnd(event: Konva.KonvaEventObject<Event>) {
@@ -78,9 +73,15 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         fontSize: newFontSize,
         scaleX: 1,
         scaleY: 1,
+      });
+      // Saving the new position, width, rotation and font size
+      saveAttrs({
+        x: text.x(),
+        y: text.y(),
+        width: text.width(),
+        rotation: text.rotation(),
+        fontSize: text.fontSize(),
       } satisfies Konva.TextConfig);
-
-      onTransformEnd?.(event);
     }
 
     function handleTextAreaChange(
@@ -112,7 +113,16 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         event.key === 'Escape'
       ) {
         closeTextArea();
+
+        if (event.key === 'Enter') {
+          didJustCloseTextAreaWithEnterRef.current = true;
+        }
       }
+    }
+
+    function handleDragEnd(event: Konva.KonvaEventObject<DragEvent>) {
+      // Saving the new position
+      saveAttrs({ x: event.target.x(), y: event.target.y() });
     }
 
     const openTextArea = useCallback(() => {
@@ -137,10 +147,9 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         transform: `rotate(${text.rotation()}deg)`,
       };
 
-      // TODO: Check english
-      /* Setting a negative translate Y to position the text inside the textarea
-      closer to the text in the text node. Note that this is not perfect and
-      varies a lot depending on the font size and on the browser */
+      /* Setting a negative Y translation to position the text of the text area
+      closer to the text of the text node. Note that this is not perfect and
+      varies a lot depending on font size and browser */
       const userAgent = navigator.userAgent.toLowerCase();
       const isSafari =
         userAgent.includes('safari') && !userAgent.includes('chrome');
@@ -169,6 +178,14 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       text.visible(true);
       // Hiding the textarea
       setTextAreaStyles(undefined);
+      // Saving the new text
+      saveAttrs({ text: text.text() });
+    }, [saveAttrs]);
+
+    // Setting the initial attributes only on the first render
+    useEffect(() => {
+      textRef.current?.setAttrs(initialAttributes satisfies Konva.TextConfig);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
@@ -181,6 +198,14 @@ export const Text = forwardRef<Konva.Text, TextProps>(
 
         const transformer = transformerRef.current;
         if (!transformer) return;
+
+        /* The window's keydown listener runs after the textarea's keydown
+        listener, so when the user presses Enter, the textarea closes (by its
+        event listener) and then opens again (by the window's event listener) */
+        if (didJustCloseTextAreaWithEnterRef.current) {
+          didJustCloseTextAreaWithEnterRef.current = false;
+          return;
+        }
 
         const isCurrentTextSelected =
           transformer.nodes().length === 1 &&
@@ -226,12 +251,13 @@ export const Text = forwardRef<Konva.Text, TextProps>(
     return (
       <>
         <KonvaText
-          {...props}
+          id={id}
           onDblClick={handleDoubleClick}
           onDblTap={handleDoubleClick}
           onTransform={handleTransform}
           onTransformEnd={handleTransformEnd}
-          ref={mergeRefs(forwardedRef, textRef)}
+          onDragEnd={handleDragEnd}
+          ref={mergeRefs(textRef, forwardedRef)}
         />
         {isTextAreaVisible && (
           <Html>

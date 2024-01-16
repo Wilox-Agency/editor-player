@@ -1,16 +1,10 @@
 import { create, type StoreApi } from 'zustand';
 
-import type { CanvasElement, DistributiveOmit } from '@/utils/types';
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AddActions<TElement> = TElement extends any
-  ? TElement & {
-      set: (attributes: Partial<Omit<TElement, 'elementId' | 'type'>>) => void;
-      remove: () => void;
-    }
-  : never;
-
-type CanvasElementWithActions = AddActions<CanvasElement>;
+import type {
+  CanvasElement,
+  CanvasElementWithActions,
+  DistributiveOmit,
+} from '@/utils/types';
 
 type CanvasTreeState = {
   canvasTree: CanvasElementWithActions[];
@@ -25,12 +19,12 @@ function addActionsToElement<TElement extends CanvasElement>(
 ) {
   return {
     ...initialAttributes,
-    set: (
+    saveAttrs: (
       attributes: Partial<DistributiveOmit<TElement, 'elementId' | 'type'>>
     ) => {
       set((state) => ({
         canvasTree: state.canvasTree.map((element) => {
-          if (element.elementId !== initialAttributes.elementId) {
+          if (element.id !== initialAttributes.id) {
             return element;
           }
 
@@ -41,7 +35,7 @@ function addActionsToElement<TElement extends CanvasElement>(
     remove: () => {
       set((state) => ({
         canvasTree: state.canvasTree.filter((element) => {
-          return element.elementId !== initialAttributes.elementId;
+          return element.id !== initialAttributes.id;
         }),
       }));
     },
@@ -75,7 +69,7 @@ export const useCanvasTreeStore = create<CanvasTreeState>((set) => ({
     set((state) => {
       return {
         canvasTree: state.canvasTree.filter((element) => {
-          return element.elementId !== elementId;
+          return element.id !== elementId;
         }),
       };
     });

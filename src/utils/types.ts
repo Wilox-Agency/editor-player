@@ -40,10 +40,28 @@ export type UncroppedImageRect = {
   height: number;
 };
 
-export type CanvasElement = (
-  | (ImageProps & { type: 'image' })
-  | (VideoProps & { type: 'video' })
-  | (TextProps & { type: 'text' })
-) & {
-  elementId: string;
-};
+export type CanvasElement = DistributiveOmit<
+  (
+    | (ImageProps & { type: 'image' })
+    | (VideoProps & { type: 'video' })
+    | (TextProps & { type: 'text' })
+  ) & { id: string },
+  'saveAttrs' | 'remove'
+>;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AddActions<TElement> = TElement extends any
+  ? TElement & {
+      saveAttrs: (
+        attributes: Partial<Omit<TElement, 'elementId' | 'type'>>
+      ) => void;
+      remove: () => void;
+    }
+  : never;
+
+export type CanvasElementWithActions = AddActions<CanvasElement>;
+
+export type CanvasElementOfType<TType extends CanvasElement['type']> = Extract<
+  CanvasElementWithActions,
+  { type: TType }
+>;

@@ -15,6 +15,9 @@ export function useVideo(
 
   useEffect(() => {
     videoElement.src = src;
+    /* Mute the video because its audio is not wanted, which also allows
+    autoplay */
+    videoElement.muted = true;
     // Empty animation just to update the layer
     const animation = new Konva.Animation(() => {}, layerRef.current);
 

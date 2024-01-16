@@ -23,9 +23,20 @@ export function useVideo(
 
     function handleLoad() {
       setStatus('loaded');
-      videoRef.current?.width(videoElement.videoWidth);
-      videoRef.current?.height(videoElement.videoHeight);
       animation.start();
+
+      const video = videoRef.current;
+      if (!video) return;
+
+      /* Unlike when using `Konva.Image` with an image, when loading a video,
+      the node doesn't set the video size automatically, so both the video width
+      and height stay at 0 (except when loading a saved canvas tree and the
+      dimesions of the video are saved) */
+      const areVideoDimensionsSet = video.width() !== 0 && video.height() !== 0;
+      if (!areVideoDimensionsSet) {
+        video.width(videoElement.videoWidth);
+        video.height(videoElement.videoHeight);
+      }
     }
 
     function handleError() {

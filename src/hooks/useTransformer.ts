@@ -1,6 +1,7 @@
 import { type RefObject, useEffect } from 'react';
 import Konva from 'konva';
 
+import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { CustomKonvaAttributes } from '@/utils/CustomKonvaAttributes';
 
 export const TEXT_MIN_FONT_SIZE = 12;
@@ -75,6 +76,8 @@ export function useTransformer({
   stageRef: RefObject<Konva.Stage>;
   transformerRef: RefObject<Konva.Transformer>;
 }) {
+  const removeElements = useCanvasTreeStore((state) => state.removeElements);
+
   function handleSelectNode(
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) {
@@ -127,17 +130,25 @@ export function useTransformer({
       if (!transformer) return;
 
       const selectionExists = transformer.nodes().length > 0;
-      // Clear selection when pressing escape with with a selection active
+      // Clear selection when pressing Escape with a selection active
       if (event.key === 'Escape' && selectionExists) {
         // Prevent leaving fullscreen
         event.preventDefault();
         transformer.nodes([]);
       }
+
+      // Remove selected nodes when pressing Delete with a selection active
+      if (event.key === 'Delete' && selectionExists) {
+        const nodeIds = transformer.nodes().map((node) => node.id());
+        // Clear selection before removing the nodes
+        transformer.nodes([]);
+        removeElements(...nodeIds);
+      }
     }
 
     window.addEventListener('keydown', handleWindowKeyDown);
     return () => window.removeEventListener('keydown', handleWindowKeyDown);
-  }, [transformerRef]);
+  }, [removeElements, transformerRef]);
 
   return {
     /**

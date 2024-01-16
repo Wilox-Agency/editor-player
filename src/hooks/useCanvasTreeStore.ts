@@ -10,7 +10,7 @@ type CanvasTreeState = {
   canvasTree: CanvasElementWithActions[];
   loadCanvasTree: (elements: CanvasElement[]) => void;
   addElement: (element: DistributiveOmit<CanvasElement, 'elementId'>) => void;
-  removeElement: (elementId: string) => void;
+  removeElements: (...elementIds: string[]) => void;
 };
 
 function addActionsToElement<TElement extends CanvasElement>(
@@ -65,11 +65,11 @@ export const useCanvasTreeStore = create<CanvasTreeState>((set) => ({
       };
     });
   },
-  removeElement: (elementId) => {
+  removeElements: (...idsOfElementsToRemove) => {
     set((state) => {
       return {
         canvasTree: state.canvasTree.filter((element) => {
-          return element.id !== elementId;
+          return !idsOfElementsToRemove.includes(element.id);
         }),
       };
     });

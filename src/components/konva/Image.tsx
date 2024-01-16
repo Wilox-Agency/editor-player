@@ -112,8 +112,14 @@ export function Video({ videoUrl, autoPlay, ...props }: VideoProps) {
   const [video, videoStatus] = useVideo(videoUrl, { layerRef, videoRef });
 
   useEffect(() => {
-    if (autoPlay && videoStatus === 'loaded') {
+    if (videoStatus === 'loaded') {
+      /* In Chromium browsers the video is not shown when it's not played, so
+      instead of only playing when `autoPlay` is true, always play the video,
+      but pause if `autoPlay` is false */
       video.play();
+      if (!autoPlay) {
+        video.pause();
+      }
     }
   }, [autoPlay, video, videoStatus]);
 

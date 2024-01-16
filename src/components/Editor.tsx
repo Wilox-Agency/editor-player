@@ -16,7 +16,7 @@ const initialElementsFromStorage = localStorage.getItem(
   '@sophia-slide-editor:canvas-tree'
 );
 const initialElements: CanvasElement[] = initialElementsFromStorage
-  ? JSON.parse(initialElementsFromStorage)
+  ? (JSON.parse(initialElementsFromStorage) as CanvasElement[])
   : [
       {
         id: crypto.randomUUID(),

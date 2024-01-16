@@ -20,7 +20,16 @@ import type { CanvasElementOfType, RemoveIndex } from '@/utils/types';
 
 export type TextProps = Pick<
   RemoveIndex<Konva.TextConfig>,
-  'id' | 'text' | 'x' | 'y' | 'width' | 'fontSize' | 'rotation'
+  | 'id'
+  | 'text'
+  | 'x'
+  | 'y'
+  | 'width'
+  | 'fill'
+  | 'fontSize'
+  | 'align'
+  | 'rotation'
+  | 'draggable'
 > & {
   saveAttrs: CanvasElementOfType<'text'>['saveAttrs'];
   remove: () => void;

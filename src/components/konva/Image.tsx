@@ -14,7 +14,7 @@ import { mergeRefs } from '@/utils/mergeRefs';
 
 type PrimitiveImageProps = Pick<
   RemoveIndex<Konva.ImageConfig>,
-  'id' | 'image' | 'x' | 'y' | 'width' | 'height' | 'crop'
+  'id' | 'image' | 'x' | 'y' | 'width' | 'height' | 'crop' | 'draggable'
 > & {
   uncroppedImageRect?: UncroppedImageRect;
   saveAttrs: CanvasElementOfType<'image'>['saveAttrs'];

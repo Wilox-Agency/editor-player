@@ -187,8 +187,8 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       text.visible(true);
       // Hiding the textarea
       setTextAreaStyles(undefined);
-      // Saving the new text
-      saveAttrs({ text: text.text() });
+      // Saving the new text and width
+      saveAttrs({ text: text.text(), width: text.width() });
     }, [saveAttrs]);
 
     // Setting the initial attributes only on the first render

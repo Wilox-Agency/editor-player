@@ -41,7 +41,7 @@ export function KonvaContextMenu({
     startCroppingImage(selection.node);
   }
 
-  function handleChangeLayer(
+  function handleChangeElementZIndex(
     movement: 'moveUp' | 'moveDown' | 'moveToTop' | 'moveToBottom'
   ) {
     if (!selection) return;
@@ -50,7 +50,60 @@ export function KonvaContextMenu({
     in the future */
     if (Array.isArray(selection)) return;
 
+    // Moving the node
     selection.node[movement]();
+    // Saving the new order
+    useCanvasTreeStore.setState((state) => {
+      const canvasTreeShallowCopy = [...state.canvasTree];
+      const elementIndex = canvasTreeShallowCopy.findIndex((element) => {
+        return element.id === selection.node.id();
+      });
+
+      if (elementIndex === -1) {
+        throw new Error(
+          'Could not find moved element in the canvas tree state'
+        );
+      }
+
+      const lastElementIndex = canvasTreeShallowCopy.length - 1;
+      if (movement === 'moveUp' && elementIndex < lastElementIndex) {
+        // Swapping the element with the next one
+        [
+          canvasTreeShallowCopy[elementIndex],
+          canvasTreeShallowCopy[elementIndex - 1],
+        ] = [
+          canvasTreeShallowCopy[elementIndex - 1]!,
+          canvasTreeShallowCopy[elementIndex]!,
+        ];
+      }
+
+      if (movement === 'moveDown' && elementIndex > 0) {
+        // Swapping the element with the previous one
+        [
+          canvasTreeShallowCopy[elementIndex - 1],
+          canvasTreeShallowCopy[elementIndex],
+        ] = [
+          canvasTreeShallowCopy[elementIndex]!,
+          canvasTreeShallowCopy[elementIndex - 1]!,
+        ];
+      }
+
+      if (movement === 'moveToTop' && elementIndex < lastElementIndex) {
+        // Removing the element from its original position
+        const [removedElement] = canvasTreeShallowCopy.splice(elementIndex, 1);
+        // Adding it to the end of the array
+        canvasTreeShallowCopy.push(removedElement!);
+      }
+
+      if (movement === 'moveToBottom' && elementIndex > 0) {
+        // Removing the element from its original position
+        const [removedElement] = canvasTreeShallowCopy.splice(elementIndex, 1);
+        // Adding it to the start of the array
+        canvasTreeShallowCopy.unshift(removedElement!);
+      }
+
+      return { canvasTree: canvasTreeShallowCopy };
+    });
   }
 
   function handleRemoveElement() {
@@ -107,7 +160,7 @@ export function KonvaContextMenu({
                   >
                     <ContextMenu.Item
                       className={styles.contextMenuItem}
-                      onClick={() => handleChangeLayer('moveUp')}
+                      onClick={() => handleChangeElementZIndex('moveUp')}
                       disabled={
                         selection.node.zIndex() ===
                         layerRef.current.children.length - 1
@@ -117,14 +170,14 @@ export function KonvaContextMenu({
                     </ContextMenu.Item>
                     <ContextMenu.Item
                       className={styles.contextMenuItem}
-                      onClick={() => handleChangeLayer('moveDown')}
+                      onClick={() => handleChangeElementZIndex('moveDown')}
                       disabled={selection.node.zIndex() === 0}
                     >
                       <ChevronDown size={14} /> Move down
                     </ContextMenu.Item>
                     <ContextMenu.Item
                       className={styles.contextMenuItem}
-                      onClick={() => handleChangeLayer('moveToTop')}
+                      onClick={() => handleChangeElementZIndex('moveToTop')}
                       disabled={
                         selection.node.zIndex() ===
                         layerRef.current.children.length - 1
@@ -134,7 +187,7 @@ export function KonvaContextMenu({
                     </ContextMenu.Item>
                     <ContextMenu.Item
                       className={styles.contextMenuItem}
-                      onClick={() => handleChangeLayer('moveToBottom')}
+                      onClick={() => handleChangeElementZIndex('moveToBottom')}
                       disabled={selection.node.zIndex() === 0}
                     >
                       <ChevronsDown size={14} /> Move to bottom

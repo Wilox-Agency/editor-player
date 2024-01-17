@@ -62,8 +62,10 @@ export type CanvasElement = DistributiveOmit<
   'saveAttrs' | 'remove'
 >;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AddActions<TElement> = TElement extends any
+export type CanvasElementWithActions<
+  TElement extends CanvasElement = CanvasElement
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+> = TElement extends any
   ? TElement & {
       saveAttrs: (
         attributes: Partial<Omit<TElement, 'elementId' | 'type'>>
@@ -71,8 +73,6 @@ type AddActions<TElement> = TElement extends any
       remove: () => void;
     }
   : never;
-
-export type CanvasElementWithActions = AddActions<CanvasElement>;
 
 export type CanvasElementOfType<TType extends CanvasElement['type']> = Extract<
   CanvasElementWithActions,

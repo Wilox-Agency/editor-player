@@ -1,0 +1,32 @@
+.contextMenu {
+  background-color: #3f3f46;
+  font-size: 0.875rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 50px -12px rgb(24 24 27 / 0.9);
+}
+
+.contextMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  user-select: none;
+  /* cursor: pointer; */
+}
+.contextMenuItem[data-state='open'] {
+  background-color: #52525b;
+}
+.contextMenuItem[data-highlighted] {
+  background-color: #a855f7;
+  outline: 2px solid transparent;
+}
+.contextMenuItem[data-disabled] {
+  color: #71717a;
+}
+
+.contextMenuIconRightContainer {
+  margin-left: auto;
+  padding-left: 2rem;
+}

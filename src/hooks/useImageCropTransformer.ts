@@ -23,8 +23,26 @@ export function useImageCropTransformer({
     // Do nothing when not double clicking an image
     if (!(event.target instanceof Konva.Image)) return;
 
-    // Do nothing when image is unselectable
-    const image = event.target;
+    startCroppingImage(event.target);
+  }
+
+  function handleFinishCroppingImage(
+    event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
+  ) {
+    const cropTransformer = cropTransformerRef.current;
+    const cropRect = cropRectRef.current;
+    if (!cropTransformer || !cropRect || !imageBeingCropped) return;
+
+    if (
+      event.target !== imageBeingCropped &&
+      event.target.parent !== cropTransformer &&
+      event.target !== cropRect
+    ) {
+      finishCroppingImage();
+    }
+  }
+
+  function startCroppingImage(image: Konva.Image) {
     if (image.getAttr(CustomKonvaAttributes.unselectable) === true) return;
 
     const cropTransformer = cropTransformerRef.current;
@@ -170,22 +188,6 @@ export function useImageCropTransformer({
     cropTransformer.nodes([cropRect]);
   }
 
-  function handleFinishCroppingImage(
-    event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
-  ) {
-    const cropTransformer = cropTransformerRef.current;
-    const cropRect = cropRectRef.current;
-    if (!cropTransformer || !cropRect || !imageBeingCropped) return;
-
-    if (
-      event.target !== imageBeingCropped &&
-      event.target.parent !== cropTransformer &&
-      event.target !== cropRect
-    ) {
-      finishCroppingImage();
-    }
-  }
-
   const finishCroppingImage = useCallback(() => {
     const cropTransformer = cropTransformerRef.current;
     const cropRect = cropRectRef.current;
@@ -277,6 +279,7 @@ export function useImageCropTransformer({
      * component from `react-konva`.
      */
     handleStartCroppingImage,
+    startCroppingImage,
     /**
      * The `onMouseDown`/`onTouchStart` event handler to be used in your `Stage`
      * component from `react-konva`.

@@ -1,3 +1,4 @@
+import type Konva from 'konva';
 import type { KonvaNodeComponent, KonvaNodeEvents } from 'react-konva';
 
 import type { ImageProps, VideoProps } from '@/components/konva/Image';
@@ -77,3 +78,20 @@ export type CanvasElementOfType<TType extends CanvasElement['type']> = Extract<
   CanvasElementWithActions,
   { type: TType }
 >;
+
+type KonvaNodeByElementType = {
+  video: Konva.Image;
+  image: Konva.Image;
+  text: Konva.Text;
+};
+
+export type KonvaNodeWithType<
+  T extends CanvasElement['type'] = CanvasElement['type']
+> =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends any
+    ? {
+        type: T;
+        node: KonvaNodeByElementType[T];
+      }
+    : never;

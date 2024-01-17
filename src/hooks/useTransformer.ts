@@ -2,6 +2,7 @@ import { type RefObject, useEffect } from 'react';
 import Konva from 'konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
+import { useContextMenuStore } from '@/hooks/useContextMenuStore';
 import { CustomKonvaAttributes } from '@/utils/CustomKonvaAttributes';
 
 export const TEXT_MIN_FONT_SIZE = 12;
@@ -142,6 +143,13 @@ export function useTransformer({
         const nodeIds = transformer.nodes().map((node) => node.id());
         // Clear selection before removing the nodes
         transformer.nodes([]);
+
+        const contextMenuSelection = useContextMenuStore.getState().selection;
+        // Closing the context menu (if open) before removing the nodes
+        if (contextMenuSelection) {
+          useContextMenuStore.setState({ selection: undefined });
+        }
+
         removeElements(...nodeIds);
       }
     }

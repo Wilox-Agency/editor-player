@@ -9,7 +9,7 @@ import type {
 type CanvasTreeState = {
   canvasTree: CanvasElementWithActions[];
   loadCanvasTree: (elements: CanvasElement[]) => void;
-  addElement: (element: DistributiveOmit<CanvasElement, 'elementId'>) => void;
+  addElement: (element: DistributiveOmit<CanvasElement, 'id'>) => void;
   removeElements: (...elementIds: string[]) => void;
 };
 
@@ -52,18 +52,12 @@ export const useCanvasTreeStore = create<CanvasTreeState>((set) => ({
     set({ canvasTree: elementsWithActions });
   },
   addElement: (elementWithoutId) => {
-    set((state) => {
-      const elementId = crypto.randomUUID();
+    const id = crypto.randomUUID() as string;
+    const newElement = addActionsToElement({ ...elementWithoutId, id }, set);
 
-      const newElement = addActionsToElement(
-        { ...elementWithoutId, elementId },
-        set
-      );
-
-      return {
-        canvasTree: [...state.canvasTree, newElement],
-      };
-    });
+    set((state) => ({
+      canvasTree: [...state.canvasTree, newElement],
+    }));
   },
   removeElements: (...idsOfElementsToRemove) => {
     set((state) => {

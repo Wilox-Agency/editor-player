@@ -16,6 +16,7 @@ import type { CanvasElement, KonvaNodeWithType } from '@/utils/types';
 
 import { KonvaContextMenu } from '@/components/KonvaContextMenu';
 import { ImageCropRect } from '@/components/konva/ImageCropRect';
+import { KonvaToolbar } from '@/components/KonvaToolbar';
 
 const initialElementsFromStorage = localStorage.getItem(
   '@sophia-slide-editor:canvas-tree'
@@ -168,15 +169,7 @@ export function Editor() {
         </Stage>
       </KonvaContextMenu>
 
-      <button
-        style={{ position: 'absolute', top: '1rem', right: '1rem' }}
-        onClick={() => {
-          const string = JSON.stringify(canvasTree);
-          localStorage.setItem('@sophia-slide-editor:canvas-tree', string);
-        }}
-      >
-        Save
-      </button>
+      <KonvaToolbar />
     </main>
   );
 }

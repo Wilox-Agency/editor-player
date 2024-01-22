@@ -1,0 +1,23 @@
+.tooltip {
+  --tooltip-color: var(--clr-primary);
+  background-color: var(--tooltip-color);
+  font-size: 0.875rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+.tooltip[data-side='left'] {
+  box-shadow: var(--shadow-lg-right);
+}
+.tooltip[data-side='right'] {
+  box-shadow: var(--shadow-lg-left);
+}
+.tooltip[data-side='top'] {
+  box-shadow: var(--shadow-lg-bottom);
+}
+.tooltip[data-side='bottom'] {
+  box-shadow: var(--shadow-lg-top);
+}
+
+.tooltipArrow {
+  fill: var(--tooltip-color);
+}

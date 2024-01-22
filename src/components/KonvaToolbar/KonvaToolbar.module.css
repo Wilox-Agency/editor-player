@@ -1,0 +1,62 @@
+.toolbar,
+.popover {
+  background-color: var(--clr-neutral-background);
+  font-size: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 50px -12px rgb(24 24 27 / 0.9);
+}
+
+.toolbar {
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.popover {
+  box-shadow: -10px 0 15px -3px rgb(24 24 27 / 0.5),
+    -4px 0 6px -4px rgb(24 24 27 / 0.5);
+}
+
+.toolbarButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  user-select: none;
+}
+.toolbarButton[data-icon-only] {
+  padding: 0.25rem;
+}
+.toolbarButton:is(:hover, :focus-visible) {
+  background-color: var(--clr-neutral-highlight);
+}
+.toolbarButton:focus-visible {
+  outline: 2px solid transparent;
+}
+.toolbarButton[data-state='open']:not(:hover, :focus-visible) {
+  background-color: var(--clr-neutral-subtle-highlight);
+}
+.toolbarButton[data-state='checked'] {
+  background-color: var(--clr-primary);
+}
+.toolbarButton[data-state='checked']:hover {
+  background-color: var(--clr-primary-highlight);
+}
+.toolbarButton[data-disabled] {
+  color: var(--clr-neutral-dimmed);
+}
+
+.toggleGroup {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.toolbarSeparator {
+  background-color: var(--clr-neutral-dimmed);
+  height: 1px;
+  margin-block: 0.5rem;
+}

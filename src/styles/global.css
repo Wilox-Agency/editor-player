@@ -1,4 +1,26 @@
 :root {
+  /* Colors */
+  --clr-neutral-dark: #27272a;
+  --clr-neutral-background: #3f3f46;
+  --clr-neutral-subtle-highlight: #52525b;
+  --clr-neutral-highlight: #71717a;
+  --clr-neutral-dimmed: #71717a;
+  --clr-primary: #a855f7;
+  --clr-primary-highlight: #c084fc;
+
+  /* Shadows */
+  --shadow-lg-right: 10px 0 15px -3px rgb(24 24 27 / 0.5),
+    4px 0 6px -4px rgb(24 24 27 / 0.5);
+  --shadow-lg-left: -10px 0 15px -3px rgb(24 24 27 / 0.5),
+    -4px 0 6px -4px rgb(24 24 27 / 0.5);
+  --shadow-lg-bottom: 0 10px 15px -3px rgb(24 24 27 / 0.5),
+    0 4px 6px -4px rgb(24 24 27 / 0.5);
+  --shadow-lg-top: 0 -10px 15px -3px rgb(24 24 27 / 0.5),
+    0 -4px 6px -4px rgb(24 24 27 / 0.5);
+
+  /* Transition */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -11,5 +33,30 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  
+}
+
+.focus-ring {
+  --_ring-color: transparent;
+
+  box-shadow: 0 0 0 5px var(--_ring-color);
+  outline: 1px solid transparent;
+  transition-property: box-shadow, outline;
+  transition-timing-function: var(--ease-in-out);
+  transition-duration: 150ms;
+}
+.focus-ring:focus-visible {
+  --_ring-color: rgb(168 85 247 / 0.25);
+  outline-color: var(--clr-primary);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }

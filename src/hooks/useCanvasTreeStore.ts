@@ -9,7 +9,13 @@ import type {
 type CanvasTreeState = {
   canvasTree: CanvasElementWithActions[];
   loadCanvasTree: (elements: CanvasElement[]) => void;
-  addElement: (element: DistributiveOmit<CanvasElement, 'id'>) => void;
+  /* TODO: Make return type correspond the type of the created element (i.e. the
+  type in the `element` parameter) */
+  addElement: (element: DistributiveOmit<CanvasElement, 'id'>) => CanvasElement;
+  updateElement: (
+    id: string,
+    attributes: Omit<CanvasElement, 'id' | 'type'>
+  ) => void;
   removeElements: (...elementIds: string[]) => void;
 };
 
@@ -57,6 +63,17 @@ export const useCanvasTreeStore = create<CanvasTreeState>((set) => ({
 
     set((state) => ({
       canvasTree: [...state.canvasTree, newElement],
+    }));
+
+    return newElement;
+  },
+  updateElement: (id, attributes) => {
+    set((state) => ({
+      canvasTree: state.canvasTree.map((element) => {
+        if (element.id !== id) return element;
+
+        return { ...element, ...attributes };
+      }),
     }));
   },
   removeElements: (...idsOfElementsToRemove) => {

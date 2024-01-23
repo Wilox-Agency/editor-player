@@ -2,8 +2,10 @@ import { type RefObject, useCallback, useEffect, useState } from 'react';
 import Konva from 'konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
-import { getCanvasImageIntrinsicSize } from '@/utils/getCanvasImageIntrinsicSize';
-import { CustomKonvaAttributes } from '@/utils/CustomKonvaAttributes';
+import {
+  CustomKonvaAttributes,
+  getCanvasImageIntrinsicSize,
+} from '@/utils/konva';
 import type { CanvasElementOfType } from '@/utils/types';
 
 export function useImageCropTransformer({

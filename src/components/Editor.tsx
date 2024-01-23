@@ -11,7 +11,7 @@ import {
 import { useSelectionRect } from '@/hooks/useSelectionRect';
 import { useImageCropTransformer } from '@/hooks/useImageCropTransformer';
 import { KonvaContext } from '@/contexts/KonvaContext';
-import { CanvasComponentByType } from '@/utils/CanvasComponentByType';
+import { CanvasComponentByType } from '@/utils/konva';
 import type { CanvasElement, KonvaNodeWithType } from '@/utils/types';
 
 import { KonvaContextMenu } from '@/components/KonvaContextMenu';

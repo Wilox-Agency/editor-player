@@ -3,7 +3,7 @@ import Konva from 'konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useContextMenuStore } from '@/hooks/useContextMenuStore';
-import { CustomKonvaAttributes } from '@/utils/CustomKonvaAttributes';
+import { CustomKonvaAttributes } from '@/utils/konva';
 
 export const TEXT_MIN_FONT_SIZE = 12;
 

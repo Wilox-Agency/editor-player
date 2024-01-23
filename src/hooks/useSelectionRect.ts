@@ -2,7 +2,7 @@ import { type RefObject, useEffect, useRef } from 'react';
 import Konva from 'konva';
 
 import { setTransformerAttributes } from '@/hooks/useTransformer';
-import { CustomKonvaAttributes } from '@/utils/CustomKonvaAttributes';
+import { CustomKonvaAttributes } from '@/utils/konva';
 
 const MouseButton = { left: 0, middle: 1, right: 2 } as const;
 

@@ -19,8 +19,10 @@ import styles from './KonvaToolbar.module.css';
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { setTransformerAttributes } from '@/hooks/useTransformer';
 import { KonvaContext } from '@/contexts/KonvaContext';
-import { waitUntilKonvaNodeSizeIsCalculated } from '@/utils/konva';
-import { CustomKonvaAttributes } from '@/utils/CustomKonvaAttributes';
+import {
+  CustomKonvaAttributes,
+  waitUntilKonvaNodeSizeIsCalculated,
+} from '@/utils/konva';
 import type { CanvasElement } from '@/utils/types';
 
 import { Tooltip, TooltipProvider } from '@/components/Tooltip';

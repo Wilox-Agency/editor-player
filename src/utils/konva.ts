@@ -1,4 +1,19 @@
+import type { ElementType } from 'react';
 import type Konva from 'konva';
+
+import { Image, Video } from '@/components/konva/Image';
+import { Text } from '@/components/konva/Text';
+import type { CanvasElement } from '@/utils/types';
+
+export const CanvasComponentByType = {
+  video: Video,
+  image: Image,
+  text: Text,
+} as const satisfies Record<CanvasElement['type'], ElementType>;
+
+export const CustomKonvaAttributes = {
+  unselectable: '_unselectable',
+} as const;
 
 /**
  * When creating a Konva node, the size at which it will appear on the screen
@@ -40,4 +55,36 @@ export function waitUntilKonvaNodeSizeIsCalculated(
       checkSize();
     });
   });
+}
+
+export function getCanvasImageIntrinsicSize(imageSource: CanvasImageSource): {
+  width: number;
+  height: number;
+} {
+  if (imageSource instanceof HTMLImageElement) {
+    return {
+      width: imageSource.naturalWidth,
+      height: imageSource.naturalHeight,
+    };
+  }
+
+  if (imageSource instanceof SVGImageElement) {
+    return {
+      width: imageSource.width.baseVal.value,
+      height: imageSource.height.baseVal.value,
+    };
+  }
+
+  if (imageSource instanceof HTMLVideoElement) {
+    return { width: imageSource.videoWidth, height: imageSource.videoHeight };
+  }
+
+  if (imageSource instanceof VideoFrame) {
+    return {
+      width: imageSource.displayWidth,
+      height: imageSource.displayHeight,
+    };
+  }
+
+  return { width: imageSource.width, height: imageSource.height };
 }

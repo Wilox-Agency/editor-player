@@ -17,7 +17,7 @@ import {
 import styles from './KonvaToolbar.module.css';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
-import { setTransformerAttributes } from '@/hooks/useTransformer';
+import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { KonvaContext } from '@/contexts/KonvaContext';
 import {
   CustomKonvaAttributes,
@@ -154,8 +154,7 @@ function AddElementButton() {
       });
 
       // Select the node
-      setTransformerAttributes(transformer, [node]);
-      transformer.nodes([node]);
+      useTransformerSelectionStore.getState().selectNodes(transformer, [node]);
 
       // Show the node
       node.visible(true);

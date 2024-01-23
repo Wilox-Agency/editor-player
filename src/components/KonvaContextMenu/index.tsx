@@ -15,7 +15,7 @@ import {
 import styles from './KonvaContextMenu.module.css';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
-import { useContextMenuStore } from '@/hooks/useContextMenuStore';
+import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { KonvaContext } from '@/contexts/KonvaContext';
 
 type ContextMenuProps = PropsWithChildren<{
@@ -28,7 +28,7 @@ export function KonvaContextMenu({
 }: ContextMenuProps) {
   const { layerRef, transformerRef } = useContext(KonvaContext);
   const removeElements = useCanvasTreeStore((state) => state.removeElements);
-  const { selection } = useContextMenuStore();
+  const { selection } = useTransformerSelectionStore();
 
   function handleStartCroppingImageThroughContextMenu() {
     if (
@@ -115,9 +115,12 @@ export function KonvaContextMenu({
       removeElements(selection.node.id());
     }
 
+    const transformer = transformerRef.current;
+    if (!transformer) return;
+
     /* Since all and only the nodes being removed are selected, to deselect
     them, simply clear the current selection */
-    transformerRef.current?.nodes([]);
+    useTransformerSelectionStore.getState().selectNodes(transformer, []);
   }
 
   const canBeCropped =
@@ -127,12 +130,7 @@ export function KonvaContextMenu({
   const canChangeLayer = selection !== undefined && !Array.isArray(selection);
 
   return (
-    <ContextMenu.Root
-      onOpenChange={(open) => {
-        // Clearing the context menu selection when it closes
-        if (!open) useContextMenuStore.setState({ selection: undefined });
-      }}
-    >
+    <ContextMenu.Root>
       <ContextMenu.Trigger>{children}</ContextMenu.Trigger>
       {selection !== undefined && (
         <ContextMenu.Portal>

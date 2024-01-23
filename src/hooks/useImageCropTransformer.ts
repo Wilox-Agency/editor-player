@@ -2,6 +2,7 @@ import { type RefObject, useCallback, useEffect, useState } from 'react';
 import Konva from 'konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
+import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import {
   CustomKonvaAttributes,
   getCanvasImageIntrinsicSize,
@@ -69,7 +70,11 @@ export function useImageCropTransformer({
       imageState.saveAttrs({ uncroppedImageRect });
     }
     // Clearing the current selection
-    transformerRef.current?.nodes([]);
+    if (transformerRef.current) {
+      useTransformerSelectionStore
+        .getState()
+        .selectNodes(transformerRef.current, []);
+    }
     // Setting the image as the one being cropped
     setImageBeingCropped(image);
     // Setting the crop rect position and size

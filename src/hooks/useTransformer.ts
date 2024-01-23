@@ -2,73 +2,10 @@ import { type RefObject, useEffect } from 'react';
 import Konva from 'konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
-import { useContextMenuStore } from '@/hooks/useContextMenuStore';
+import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { CustomKonvaAttributes } from '@/utils/konva';
 
 export const TEXT_MIN_FONT_SIZE = 12;
-
-export function setTransformerAttributes(
-  transformer: Konva.Transformer,
-  nodes: Konva.Node[]
-) {
-  const isText = nodes.length === 1 && nodes[0] instanceof Konva.Text;
-  if (isText) {
-    transformer.setAttrs({
-      enabledAnchors: [
-        'top-left',
-        'top-right',
-        'middle-left',
-        'middle-right',
-        'bottom-left',
-        'bottom-right',
-      ],
-      rotateEnabled: undefined,
-      boundBoxFunc: (oldBox, newBox) => {
-        const text = nodes[0] as Konva.Text;
-
-        const activeAnchor = transformer.getActiveAnchor();
-        // The middle anchors are only for resizing the width
-        const isResizingOnlyWidth =
-          activeAnchor && activeAnchor.startsWith('middle');
-        if (isResizingOnlyWidth) {
-          const currentMinWidth = Math.max(text.fontSize(), TEXT_MIN_FONT_SIZE);
-          if (Math.abs(newBox.width) < currentMinWidth) {
-            return { ...oldBox, width: currentMinWidth };
-          }
-        }
-
-        return newBox;
-      },
-    } satisfies Konva.TransformerConfig);
-    return;
-  }
-
-  const isImage = nodes.length === 1 && nodes[0] instanceof Konva.Image;
-  if (isImage) {
-    transformer.setAttrs({
-      enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
-      rotateEnabled: false,
-      boundBoxFunc: undefined,
-    } satisfies Konva.TransformerConfig);
-    return;
-  }
-
-  const isMultiSelect = nodes.length > 1;
-  if (isMultiSelect) {
-    transformer.setAttrs({
-      enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
-      rotateEnabled: false,
-      boundBoxFunc: undefined,
-    } satisfies Konva.TransformerConfig);
-    return;
-  }
-
-  transformer.setAttrs({
-    enabledAnchors: undefined,
-    rotateEnabled: undefined,
-    boundBoxFunc: undefined,
-  } satisfies Konva.TransformerConfig);
-}
 
 export function useTransformer({
   stageRef,
@@ -78,6 +15,9 @@ export function useTransformer({
   transformerRef: RefObject<Konva.Transformer>;
 }) {
   const removeElements = useCanvasTreeStore((state) => state.removeElements);
+  const selectNodes = useTransformerSelectionStore(
+    (state) => state.selectNodes
+  );
 
   function handleSelectNode(
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
@@ -87,7 +27,7 @@ export function useTransformer({
 
     // When clicking on an empty area, clear the selection
     if (event.target === stageRef.current) {
-      transformer.nodes([]);
+      selectNodes(transformer, []);
       return;
     }
 
@@ -102,25 +42,25 @@ export function useTransformer({
 
     const isMetaPress =
       event.evt.shiftKey || event.evt.ctrlKey || event.evt.metaKey;
-    const isTargetAlreadySelected =
-      transformer.nodes().indexOf(event.target) >= 0;
 
+    // When it's not meta press, select the clicked node
     if (!isMetaPress) {
-      setTransformerAttributes(transformer, [event.target]);
-      transformer.nodes([event.target]);
+      selectNodes(transformer, [event.target]);
       return;
     }
 
+    const isTargetAlreadySelected =
+      transformer.nodes().indexOf(event.target) >= 0;
+
+    // When it's meta press, add/remove the node from the current selection
     if (isTargetAlreadySelected) {
       const nodesWithoutTarget = transformer
         .nodes()
         .filter((node) => node !== event.target);
-      setTransformerAttributes(transformer, nodesWithoutTarget);
-      transformer.nodes(nodesWithoutTarget);
+      selectNodes(transformer, nodesWithoutTarget);
     } else {
       const nodesWithTarget = [...transformer.nodes(), event.target];
-      setTransformerAttributes(transformer, nodesWithTarget);
-      transformer.nodes(nodesWithTarget);
+      selectNodes(transformer, nodesWithTarget);
     }
   }
 
@@ -135,20 +75,14 @@ export function useTransformer({
       if (event.key === 'Escape' && selectionExists) {
         // Prevent leaving fullscreen
         event.preventDefault();
-        transformer.nodes([]);
+        selectNodes(transformer, []);
       }
 
       // Remove selected nodes when pressing Delete with a selection active
       if (event.key === 'Delete' && selectionExists) {
         const nodeIds = transformer.nodes().map((node) => node.id());
         // Clear selection before removing the nodes
-        transformer.nodes([]);
-
-        const contextMenuSelection = useContextMenuStore.getState().selection;
-        // Closing the context menu (if open) before removing the nodes
-        if (contextMenuSelection) {
-          useContextMenuStore.setState({ selection: undefined });
-        }
+        selectNodes(transformer, []);
 
         removeElements(...nodeIds);
       }
@@ -156,7 +90,7 @@ export function useTransformer({
 
     window.addEventListener('keydown', handleWindowKeyDown);
     return () => window.removeEventListener('keydown', handleWindowKeyDown);
-  }, [removeElements, transformerRef]);
+  }, [removeElements, selectNodes, transformerRef]);
 
   return {
     /**

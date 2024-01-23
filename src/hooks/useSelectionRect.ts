@@ -1,8 +1,7 @@
 import { type RefObject, useEffect, useRef } from 'react';
 import Konva from 'konva';
 
-import { setTransformerAttributes } from '@/hooks/useTransformer';
-import { CustomKonvaAttributes } from '@/utils/konva';
+import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 
 const MouseButton = { left: 0, middle: 1, right: 2 } as const;
 
@@ -90,17 +89,17 @@ export function useSelectionRect({
 
       selectionRect.visible(false);
       const selectionClientRect = selectionRect.getClientRect();
-      const selectedNodes = layer.getChildren((node) => {
-        const isSelectable = !node.getAttr(CustomKonvaAttributes.unselectable);
+      const nodesToSelect = layer.getChildren((node) => {
         const isIntersecting = Konva.Util.haveIntersection(
           selectionClientRect,
           node.getClientRect()
         );
-        return isSelectable && isIntersecting;
+        return isIntersecting;
       });
 
-      setTransformerAttributes(transformer, selectedNodes);
-      transformer.nodes(selectedNodes);
+      useTransformerSelectionStore
+        .getState()
+        .selectNodes(transformer, nodesToSelect);
     }
 
     // Setting mousemove listeners

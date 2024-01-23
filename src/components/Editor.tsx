@@ -3,16 +3,13 @@ import Konva from 'konva';
 import { Layer, Stage, Transformer, Rect } from 'react-konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
-import { useContextMenuStore } from '@/hooks/useContextMenuStore';
-import {
-  setTransformerAttributes,
-  useTransformer,
-} from '@/hooks/useTransformer';
+import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
+import { useTransformer } from '@/hooks/useTransformer';
 import { useSelectionRect } from '@/hooks/useSelectionRect';
 import { useImageCropTransformer } from '@/hooks/useImageCropTransformer';
 import { KonvaContext } from '@/contexts/KonvaContext';
 import { CanvasComponentByType } from '@/utils/konva';
-import type { CanvasElement, KonvaNodeWithType } from '@/utils/types';
+import type { CanvasElement } from '@/utils/types';
 
 import { KonvaContextMenu } from '@/components/KonvaContextMenu';
 import { ImageCropRect } from '@/components/konva/ImageCropRect';
@@ -73,39 +70,18 @@ export function Editor() {
   });
 
   function handleContextMenu(event: Konva.KonvaEventObject<PointerEvent>) {
-    const elementFromStore = canvasTree.find(
-      (element) => element.id === event.target.id()
-    );
-
-    if (!elementFromStore) {
-      useContextMenuStore.setState({ selection: undefined });
-      return;
-    }
-
     const transformer = transformerRef.current;
     if (!transformer) return;
 
     const isTargetSelected = transformer
       .nodes()
       .some((node) => node.id() === event.target.id());
-    const isTargetOnlyNodeSelected =
-      isTargetSelected && transformer.nodes().length === 1;
-    if (!isTargetSelected || isTargetOnlyNodeSelected) {
-      // Open the context menu
-      useContextMenuStore.setState({
-        selection: {
-          type: elementFromStore.type,
-          node: event.target,
-        } as KonvaNodeWithType,
-      });
-      // Select the clicked node
-      setTransformerAttributes(transformer, [event.target]);
-      transformer.nodes([event.target]);
-      return;
+    // When the target is not selected, select it
+    if (!isTargetSelected) {
+      useTransformerSelectionStore
+        .getState()
+        .selectNodes(transformer, [event.target]);
     }
-
-    // When clicking a selected node and there's multiple nodes selected
-    useContextMenuStore.setState({ selection: transformer.nodes() });
   }
 
   useEffect(() => {

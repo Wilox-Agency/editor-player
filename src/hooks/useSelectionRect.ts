@@ -8,12 +8,10 @@ const MouseButton = { left: 0, middle: 1, right: 2 } as const;
 export function useSelectionRect({
   stageRef,
   layerRef,
-  transformerRef,
   selectionRectRef,
 }: {
   stageRef: RefObject<Konva.Stage>;
   layerRef: RefObject<Konva.Layer>;
-  transformerRef: RefObject<Konva.Transformer>;
   selectionRectRef: RefObject<Konva.Rect>;
 }) {
   const coordinatesRef = useRef({
@@ -23,6 +21,10 @@ export function useSelectionRect({
     currentY: 0,
   });
   const isSelectingRef = useRef(false);
+
+  const selectNodes = useTransformerSelectionStore(
+    (state) => state.selectNodes
+  );
 
   function handleStartSelectionRect(
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
@@ -80,15 +82,16 @@ export function useSelectionRect({
       isSelectingRef.current = false;
 
       const layer = layerRef.current;
-      const transformer = transformerRef.current;
       const selectionRect = selectionRectRef.current;
-      if (!layer || !transformer || !selectionRect) return;
+      if (!layer || !selectionRect) return;
 
       // Do nothing when there's no selection active
       if (!selectionRect.visible()) return;
 
       selectionRect.visible(false);
       const selectionClientRect = selectionRect.getClientRect();
+      /* No need to filter out the nodes that are from the 'controllers' layer
+      because we're only getting the children from the correct layer */
       const nodesToSelect = layer.getChildren((node) => {
         const isIntersecting = Konva.Util.haveIntersection(
           selectionClientRect,
@@ -97,9 +100,7 @@ export function useSelectionRect({
         return isIntersecting;
       });
 
-      useTransformerSelectionStore
-        .getState()
-        .selectNodes(transformer, nodesToSelect);
+      selectNodes(nodesToSelect);
     }
 
     // Setting mousemove listeners
@@ -116,7 +117,7 @@ export function useSelectionRect({
       window.removeEventListener('mouseup', handleWindowMouseUp);
       window.removeEventListener('touchend', handleWindowMouseUp);
     };
-  }, [layerRef, selectionRectRef, stageRef, transformerRef]);
+  }, [layerRef, selectNodes, selectionRectRef, stageRef]);
 
   return {
     /**

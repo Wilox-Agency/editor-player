@@ -1,4 +1,4 @@
-import { type PropsWithChildren, useContext } from 'react';
+import type { PropsWithChildren } from 'react';
 import type Konva from 'konva';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import {
@@ -16,7 +16,7 @@ import styles from './KonvaContextMenu.module.css';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
-import { KonvaContext } from '@/contexts/KonvaContext';
+import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 
 type ContextMenuProps = PropsWithChildren<{
   startCroppingImage: (image: Konva.Image) => void;
@@ -26,9 +26,9 @@ export function KonvaContextMenu({
   children,
   startCroppingImage,
 }: ContextMenuProps) {
-  const { layerRef, transformerRef } = useContext(KonvaContext);
+  const { layerRef } = useKonvaRefsStore();
   const removeElements = useCanvasTreeStore((state) => state.removeElements);
-  const { selection } = useTransformerSelectionStore();
+  const { selection, selectNodes } = useTransformerSelectionStore();
 
   function handleStartCroppingImageThroughContextMenu() {
     if (
@@ -115,12 +115,9 @@ export function KonvaContextMenu({
       removeElements(selection.node.id());
     }
 
-    const transformer = transformerRef.current;
-    if (!transformer) return;
-
     /* Since all and only the nodes being removed are selected, to deselect
     them, simply clear the current selection */
-    useTransformerSelectionStore.getState().selectNodes(transformer, []);
+    selectNodes([]);
   }
 
   const canBeCropped =

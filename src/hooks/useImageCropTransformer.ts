@@ -10,15 +10,17 @@ import {
 import type { CanvasElementOfType } from '@/utils/types';
 
 export function useImageCropTransformer({
-  transformerRef,
   cropTransformerRef,
   cropRectRef,
 }: {
-  transformerRef: RefObject<Konva.Transformer>;
   cropTransformerRef: RefObject<Konva.Transformer>;
   cropRectRef: RefObject<Konva.Rect>;
 }) {
   const [imageBeingCropped, setImageBeingCropped] = useState<Konva.Image>();
+
+  const selectNodes = useTransformerSelectionStore(
+    (state) => state.selectNodes
+  );
 
   function handleStartCroppingImage(
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
@@ -70,11 +72,7 @@ export function useImageCropTransformer({
       imageState.saveAttrs({ uncroppedImageRect });
     }
     // Clearing the current selection
-    if (transformerRef.current) {
-      useTransformerSelectionStore
-        .getState()
-        .selectNodes(transformerRef.current, []);
-    }
+    selectNodes([]);
     // Setting the image as the one being cropped
     setImageBeingCropped(image);
     // Setting the crop rect position and size

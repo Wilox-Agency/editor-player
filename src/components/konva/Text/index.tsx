@@ -1,7 +1,6 @@
 import {
   type CSSProperties,
   forwardRef,
-  useContext,
   useEffect,
   useRef,
   useState,
@@ -13,8 +12,9 @@ import { Html } from 'react-konva-utils';
 
 import styles from './Text.module.css';
 
+import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
+import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { TEXT_MIN_FONT_SIZE } from '@/hooks/useTransformer';
-import { KonvaContext } from '@/contexts/KonvaContext';
 import { mergeRefs } from '@/utils/mergeRefs';
 import type { CanvasElementOfType, RemoveIndex } from '@/utils/types';
 
@@ -37,10 +37,14 @@ export type TextProps = Pick<
 
 export const Text = forwardRef<Konva.Text, TextProps>(
   ({ id, saveAttrs, ...initialAttributes }, forwardedRef) => {
-    const { stageRef, transformerRef } = useContext(KonvaContext);
+    const { stageRef, transformerRef } = useKonvaRefsStore();
     const textRef = useRef<Konva.Text>(null);
     const textAreaRef = useRef<HTMLTextAreaElement>(null);
     const didJustCloseTextAreaWithEnterRef = useRef(false);
+
+    const getSelectedNodes = useTransformerSelectionStore(
+      (state) => state.getSelectedNodes
+    );
 
     const [textAreaValue, setTextAreaValue] = useState('');
     const [textAreaStyles, setTextAreaStyles] = useState<CSSProperties>();
@@ -205,9 +209,6 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       function handleTextKeyDown(event: KeyboardEvent) {
         if (event.key !== 'Enter') return;
 
-        const transformer = transformerRef.current;
-        if (!transformer) return;
-
         /* The window's keydown listener runs after the textarea's keydown
         listener, so when the user presses Enter, the textarea closes (by its
         event listener) and then opens again (by the window's event listener) */
@@ -217,8 +218,8 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         }
 
         const isCurrentTextSelected =
-          transformer.nodes().length === 1 &&
-          transformer.nodes()[0] === textRef.current;
+          getSelectedNodes().length === 1 &&
+          getSelectedNodes()[0] === textRef.current;
         if (isCurrentTextSelected) {
           /* When opening the textarea with a keydown, (most of the time) the
           same event is also catched by the textarea. Preventing the default
@@ -230,7 +231,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
 
       window.addEventListener('keydown', handleTextKeyDown);
       return () => window.removeEventListener('keydown', handleTextKeyDown);
-    }, [isTextAreaVisible, openTextArea, transformerRef]);
+    }, [getSelectedNodes, isTextAreaVisible, openTextArea]);
 
     useEffect(() => {
       if (!isTextAreaVisible || !textAreaRef.current) return;

@@ -1,13 +1,13 @@
-import { useContext, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import Konva from 'konva';
 import { Layer, Stage, Transformer, Rect } from 'react-konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
+import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { useTransformer } from '@/hooks/useTransformer';
 import { useSelectionRect } from '@/hooks/useSelectionRect';
 import { useImageCropTransformer } from '@/hooks/useImageCropTransformer';
-import { KonvaContext } from '@/contexts/KonvaContext';
 import { CanvasComponentByType } from '@/utils/konva';
 import type { CanvasElement } from '@/utils/types';
 
@@ -46,17 +46,22 @@ const initialElements: CanvasElement[] = initialElementsFromStorage
 
 export function Editor() {
   const { canvasTree, loadCanvasTree } = useCanvasTreeStore();
+  const getSelectedNodes = useTransformerSelectionStore(
+    (state) => state.getSelectedNodes
+  );
+  const selectNodes = useTransformerSelectionStore(
+    (state) => state.selectNodes
+  );
 
   const { stageRef, layerRef, transformerRef, selectionRectRef } =
-    useContext(KonvaContext);
+    useKonvaRefsStore();
   const cropTransformerRef = useRef<Konva.Transformer>(null);
   const cropRectRef = useRef<Konva.Rect>(null);
 
-  const { handleSelectNode } = useTransformer({ stageRef, transformerRef });
+  const { handleSelectNode } = useTransformer({ stageRef });
   const { handleStartSelectionRect } = useSelectionRect({
     stageRef,
     layerRef,
-    transformerRef,
     selectionRectRef,
   });
   const {
@@ -64,23 +69,17 @@ export function Editor() {
     startCroppingImage,
     handleFinishCroppingImage,
   } = useImageCropTransformer({
-    transformerRef,
     cropTransformerRef,
     cropRectRef,
   });
 
   function handleContextMenu(event: Konva.KonvaEventObject<PointerEvent>) {
-    const transformer = transformerRef.current;
-    if (!transformer) return;
-
-    const isTargetSelected = transformer
-      .nodes()
-      .some((node) => node.id() === event.target.id());
+    const isTargetSelected = getSelectedNodes().some(
+      (node) => node.id() === event.target.id()
+    );
     // When the target is not selected, select it
     if (!isTargetSelected) {
-      useTransformerSelectionStore
-        .getState()
-        .selectNodes(transformer, [event.target]);
+      selectNodes([event.target]);
     }
   }
 

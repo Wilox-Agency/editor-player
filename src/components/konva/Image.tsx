@@ -1,16 +1,16 @@
-import { forwardRef, useContext, useEffect, useRef } from 'react';
+import { forwardRef, useEffect, useRef } from 'react';
 import Konva from 'konva';
 import { Image as KonvaImage } from 'react-konva';
 import useImage from 'use-image';
 
+import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { useVideo } from '@/hooks/useVideo';
-import { KonvaContext } from '@/contexts/KonvaContext';
+import { mergeRefs } from '@/utils/mergeRefs';
 import type {
   CanvasElementOfType,
   RemoveIndex,
   UncroppedImageRect,
 } from '@/utils/types';
-import { mergeRefs } from '@/utils/mergeRefs';
 
 type PrimitiveImageProps = Pick<
   RemoveIndex<Konva.ImageConfig>,
@@ -106,7 +106,7 @@ export type VideoProps = Omit<PrimitiveImageProps, 'image'> & {
 };
 
 export function Video({ videoUrl, autoPlay, ...props }: VideoProps) {
-  const { layerRef } = useContext(KonvaContext);
+  const { layerRef } = useKonvaRefsStore();
   const videoRef = useRef<Konva.Image>(null);
 
   const [video, videoStatus] = useVideo(videoUrl, { layerRef, videoRef });

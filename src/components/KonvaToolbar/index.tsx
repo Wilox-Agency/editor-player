@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import * as Toolbar from '@radix-ui/react-toolbar';
 import * as Popover from '@radix-ui/react-popover';
 import * as RadioGroup from '@radix-ui/react-radio-group';
@@ -18,7 +18,7 @@ import styles from './KonvaToolbar.module.css';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
-import { KonvaContext } from '@/contexts/KonvaContext';
+import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import {
   CustomKonvaAttributes,
   waitUntilKonvaNodeSizeIsCalculated,
@@ -72,9 +72,12 @@ export function KonvaToolbar() {
 }
 
 function AddElementButton() {
-  const { layerRef, transformerRef } = useContext(KonvaContext);
+  const { layerRef } = useKonvaRefsStore();
   const addElement = useCanvasTreeStore((state) => state.addElement);
   const updateElement = useCanvasTreeStore((state) => state.updateElement);
+  const selectNodes = useTransformerSelectionStore(
+    (state) => state.selectNodes
+  );
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [idOfNewlyCreatedElement, setIdOfNewlyCreatedElement] = useState<
@@ -106,8 +109,7 @@ function AddElementButton() {
       setIdOfNewlyCreatedElement(undefined);
 
       const layer = layerRef.current;
-      const transformer = transformerRef.current;
-      if (!layer || !transformer) return;
+      if (!layer) return;
 
       const node = layer.findOne(`#${idOfNewlyCreatedElement}`);
       if (!node) return;
@@ -154,13 +156,13 @@ function AddElementButton() {
       });
 
       // Select the node
-      useTransformerSelectionStore.getState().selectNodes(transformer, [node]);
+      selectNodes([node]);
 
       // Show the node
       node.visible(true);
       node.setAttr(CustomKonvaAttributes.unselectable, undefined);
     })();
-  }, [idOfNewlyCreatedElement, layerRef, transformerRef, updateElement]);
+  }, [idOfNewlyCreatedElement, layerRef, selectNodes, updateElement]);
 
   return (
     <Popover.Root open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>

@@ -2,6 +2,7 @@ import Konva from 'konva';
 import { create } from 'zustand';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
+import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { TEXT_MIN_FONT_SIZE } from '@/hooks/useTransformer';
 import { CustomKonvaAttributes } from '@/utils/konva';
 import type { KonvaNodeWithType } from '@/utils/types';
@@ -10,22 +11,46 @@ type TransformerSelection = KonvaNodeWithType | Konva.Node[] | undefined;
 
 type TransformerSelectionStore = {
   selection: TransformerSelection;
-  selectNodes: (transformer: Konva.Transformer, nodes: Konva.Node[]) => void;
+  getSelectedNodes: () => Konva.Node[];
+  selectNodes: (nodes: Konva.Node[]) => void;
 };
 
 export const useTransformerSelectionStore = create<TransformerSelectionStore>(
-  (set) => ({
+  (set, get) => ({
     selection: undefined,
-    selectNodes: (transformer, nodesToSelect) => {
-      const newSelection = nodeArrayToSelection(nodesToSelect);
-      const filteredSelection = filterSelection(newSelection);
+    getSelectedNodes: () => {
+      const selection = get().selection;
+      const selectedNodes =
+        selection === undefined
+          ? []
+          : !Array.isArray(selection)
+          ? [selection.node]
+          : selection;
 
-      setTransformerAttributes(transformer, nodesToSelect);
-      transformer.nodes(nodesToSelect);
-      set({ selection: filteredSelection });
+      return selectedNodes;
+    },
+    selectNodes: (nodesToSelect) => {
+      const transformer = getTransformer();
+      const filteredNodesToSelect = nodesToSelect.filter(getIsNodeSelectable);
+      const newSelection = nodeArrayToSelection(nodesToSelect);
+
+      setTransformerAttributes(transformer, filteredNodesToSelect);
+      transformer.nodes(filteredNodesToSelect);
+      set({ selection: newSelection });
     },
   })
 );
+
+function getTransformer() {
+  const transformer = useKonvaRefsStore.getState().transformerRef.current;
+  if (!transformer) {
+    throw new Error(
+      'Tried to use `transformerRef` before it was assigned a value'
+    );
+  }
+
+  return transformer;
+}
 
 function nodeArrayToSelection(nodes: Konva.Node[]): TransformerSelection {
   if (nodes.length === 0) return undefined;
@@ -44,40 +69,17 @@ function nodeArrayToSelection(nodes: Konva.Node[]): TransformerSelection {
   return nodes;
 }
 
-function filterSelection(
-  selection: TransformerSelection
-): TransformerSelection {
-  if (selection === undefined) return undefined;
-
-  if (!Array.isArray(selection)) {
-    const node = selection.node;
-    const isSelectable =
-      !node.getAttr(CustomKonvaAttributes.unselectable) && node.visible();
-    if (!isSelectable) return undefined;
-
-    return selection;
-  }
-
-  const filteredSelection = selection.filter((node) => {
-    const isSelectable =
-      !node.getAttr(CustomKonvaAttributes.unselectable) && node.visible();
-    return isSelectable;
-  });
-
-  if (filteredSelection.length === 0) return undefined;
-
-  if (filteredSelection.length === 1) {
-    const node = filteredSelection[0]!;
-    const elementFromStore = useCanvasTreeStore
-      .getState()
-      .canvasTree.find((element) => element.id === node.id());
-
-    if (!elementFromStore) return undefined;
-
-    return { type: elementFromStore.type, node } as KonvaNodeWithType;
-  }
-
-  return filteredSelection;
+function getIsNodeSelectable(node: Konva.Node) {
+  return (
+    // Cannot select the stage
+    !(node instanceof Konva.Stage) &&
+    // Cannot select nodes from the controllers layer
+    node.getLayer()?.name() !== 'controllers' &&
+    // Cannot select node with the 'unselectable' attribute
+    !node.getAttr(CustomKonvaAttributes.unselectable) &&
+    // Cannot select invisible nodes
+    node.visible()
+  );
 }
 
 function setTransformerAttributes(

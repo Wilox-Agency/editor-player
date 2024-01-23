@@ -9,12 +9,13 @@ export const TEXT_MIN_FONT_SIZE = 12;
 
 export function useTransformer({
   stageRef,
-  transformerRef,
 }: {
   stageRef: RefObject<Konva.Stage>;
-  transformerRef: RefObject<Konva.Transformer>;
 }) {
   const removeElements = useCanvasTreeStore((state) => state.removeElements);
+  const getSelectedNodes = useTransformerSelectionStore(
+    (state) => state.getSelectedNodes
+  );
   const selectNodes = useTransformerSelectionStore(
     (state) => state.selectNodes
   );
@@ -22,12 +23,9 @@ export function useTransformer({
   function handleSelectNode(
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) {
-    const transformer = transformerRef.current;
-    if (!transformer) return;
-
     // When clicking on an empty area, clear the selection
     if (event.target === stageRef.current) {
-      selectNodes(transformer, []);
+      selectNodes([]);
       return;
     }
 
@@ -45,44 +43,41 @@ export function useTransformer({
 
     // When it's not meta press, select the clicked node
     if (!isMetaPress) {
-      selectNodes(transformer, [event.target]);
+      selectNodes([event.target]);
       return;
     }
 
     const isTargetAlreadySelected =
-      transformer.nodes().indexOf(event.target) >= 0;
+      getSelectedNodes().indexOf(event.target) >= 0;
 
     // When it's meta press, add/remove the node from the current selection
     if (isTargetAlreadySelected) {
-      const nodesWithoutTarget = transformer
-        .nodes()
-        .filter((node) => node !== event.target);
-      selectNodes(transformer, nodesWithoutTarget);
+      const nodesWithoutTarget = getSelectedNodes().filter(
+        (node) => node !== event.target
+      );
+      selectNodes(nodesWithoutTarget);
     } else {
-      const nodesWithTarget = [...transformer.nodes(), event.target];
-      selectNodes(transformer, nodesWithTarget);
+      const nodesWithTarget = [...getSelectedNodes(), event.target];
+      selectNodes(nodesWithTarget);
     }
   }
 
   // Setup window event listeners for transformer
   useEffect(() => {
     function handleWindowKeyDown(event: KeyboardEvent) {
-      const transformer = transformerRef.current;
-      if (!transformer) return;
-
-      const selectionExists = transformer.nodes().length > 0;
+      const selectionExists = getSelectedNodes().length > 0;
       // Clear selection when pressing Escape with a selection active
       if (event.key === 'Escape' && selectionExists) {
         // Prevent leaving fullscreen
         event.preventDefault();
-        selectNodes(transformer, []);
+        selectNodes([]);
       }
 
       // Remove selected nodes when pressing Delete with a selection active
       if (event.key === 'Delete' && selectionExists) {
-        const nodeIds = transformer.nodes().map((node) => node.id());
+        const nodeIds = getSelectedNodes().map((node) => node.id());
         // Clear selection before removing the nodes
-        selectNodes(transformer, []);
+        selectNodes([]);
 
         removeElements(...nodeIds);
       }
@@ -90,7 +85,7 @@ export function useTransformer({
 
     window.addEventListener('keydown', handleWindowKeyDown);
     return () => window.removeEventListener('keydown', handleWindowKeyDown);
-  }, [removeElements, selectNodes, transformerRef]);
+  }, [getSelectedNodes, removeElements, selectNodes]);
 
   return {
     /**

@@ -7,7 +7,7 @@ import {
   CustomKonvaAttributes,
   getCanvasImageIntrinsicSize,
 } from '@/utils/konva';
-import type { CanvasElementOfType } from '@/utils/types';
+import type { CanvasElementOfTypeWithActions } from '@/utils/types';
 
 export function useImageCropTransformer({
   cropTransformerRef,
@@ -58,7 +58,7 @@ export function useImageCropTransformer({
       .getState()
       .canvasTree.find(
         (element) => element.id === image.id()
-      ) as CanvasElementOfType<'image'>;
+      ) as CanvasElementOfTypeWithActions<'image'>;
     let uncroppedImageRect = imageState.uncroppedImageRect;
     // Saving the uncropped image size if not saved already
     if (!uncroppedImageRect) {
@@ -202,7 +202,7 @@ export function useImageCropTransformer({
       .getState()
       .canvasTree.find(
         (element) => element.id === imageBeingCropped.id()
-      ) as CanvasElementOfType<'image'>;
+      ) as CanvasElementOfTypeWithActions<'image'>;
     const uncroppedImageRect = imageState.uncroppedImageRect;
     const imageSource = imageBeingCropped.image();
     if (!uncroppedImageRect || !imageSource) return;

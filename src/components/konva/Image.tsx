@@ -7,7 +7,7 @@ import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { useVideo } from '@/hooks/useVideo';
 import { mergeRefs } from '@/utils/mergeRefs';
 import type {
-  CanvasElementOfType,
+  CanvasElementOfTypeWithActions,
   RemoveIndex,
   UncroppedImageRect,
 } from '@/utils/types';
@@ -17,7 +17,7 @@ type PrimitiveImageProps = Pick<
   'id' | 'image' | 'x' | 'y' | 'width' | 'height' | 'crop' | 'draggable'
 > & {
   uncroppedImageRect?: UncroppedImageRect;
-  saveAttrs: CanvasElementOfType<'image'>['saveAttrs'];
+  saveAttrs: CanvasElementOfTypeWithActions<'image'>['saveAttrs'];
   remove: () => void;
 };
 

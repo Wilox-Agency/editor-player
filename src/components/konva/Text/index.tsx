@@ -16,7 +16,10 @@ import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionSto
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { TEXT_MIN_FONT_SIZE } from '@/hooks/useTransformer';
 import { mergeRefs } from '@/utils/mergeRefs';
-import type { CanvasElementOfType, RemoveIndex } from '@/utils/types';
+import type {
+  CanvasElementOfTypeWithActions,
+  RemoveIndex,
+} from '@/utils/types';
 
 export type TextProps = Pick<
   RemoveIndex<Konva.TextConfig>,
@@ -33,7 +36,7 @@ export type TextProps = Pick<
   | 'rotation'
   | 'draggable'
 > & {
-  saveAttrs: CanvasElementOfType<'text'>['saveAttrs'];
+  saveAttrs: CanvasElementOfTypeWithActions<'text'>['saveAttrs'];
   remove: () => void;
 };
 

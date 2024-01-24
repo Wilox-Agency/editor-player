@@ -75,9 +75,13 @@ export type CanvasElementWithActions<
   : never;
 
 export type CanvasElementOfType<TType extends CanvasElement['type']> = Extract<
-  CanvasElementWithActions,
+  CanvasElement,
   { type: TType }
 >;
+
+export type CanvasElementOfTypeWithActions<
+  TType extends CanvasElement['type']
+> = Extract<CanvasElementWithActions, { type: TType }>;
 
 type KonvaNodeByElementType = {
   video: Konva.Image;
@@ -93,5 +97,20 @@ export type KonvaNodeWithType<
     ? {
         type: T;
         node: KonvaNodeByElementType[T];
+      }
+    : never;
+
+export type KonvaNodeAndElement<
+  TType extends CanvasElement['type'] = CanvasElement['type'],
+  TElement extends CanvasElementWithActions = Extract<
+    CanvasElementWithActions,
+    { type: TType }
+  >
+> =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TType extends any
+    ? {
+        canvasElement: TElement;
+        node: KonvaNodeByElementType[TType];
       }
     : never;

@@ -28,7 +28,11 @@ import {
   CustomKonvaAttributes,
   waitUntilKonvaNodeSizeIsCalculated,
 } from '@/utils/konva';
-import type { CanvasElement, CanvasElementWithActions } from '@/utils/types';
+import type {
+  CanvasElement,
+  CanvasElementOfType,
+  KonvaNodeAndElement,
+} from '@/utils/types';
 
 import { Tooltip, TooltipProvider } from '@/components/Tooltip';
 import { AddAssetElementDialog } from './AddAssetElementDialog';
@@ -49,7 +53,7 @@ const defaultElementAttributes = {
   },
 } satisfies {
   [K in CanvasElement['type']]: Partial<
-    Omit<Extract<CanvasElement, { type: K }>, 'id' | 'type'>
+    Omit<CanvasElementOfType<K>, 'id' | 'type'>
   >;
 };
 
@@ -60,6 +64,15 @@ const tooltipOffset = 4;
 
 export function KonvaToolbar() {
   const { selection } = useTransformerSelectionStore();
+  const canvasElement = useCanvasTreeStore(
+    useShallow((state) => {
+      if (selection === undefined || Array.isArray(selection)) return undefined;
+
+      return state.canvasTree.find(
+        (element) => element.id === selection.node.id()
+      );
+    })
+  );
 
   return (
     <TooltipProvider>
@@ -69,15 +82,23 @@ export function KonvaToolbar() {
         <Toolbar.Separator className={styles.toolbarSeparator} />
 
         {/* TEXT */}
-        {!Array.isArray(selection) && selection?.type === 'text' && (
-          <>
-            <TextAlignmentButton node={selection.node} />
+        {!Array.isArray(selection) &&
+          selection?.type === 'text' &&
+          canvasElement?.type === 'text' && (
+            <>
+              <TextAlignmentButton
+                node={selection.node}
+                canvasElement={canvasElement}
+              />
 
-            <Toolbar.Separator className={styles.toolbarSeparator} />
+              <Toolbar.Separator className={styles.toolbarSeparator} />
 
-            <TextFormattingToggleGroup node={selection.node} />
-          </>
-        )}
+              <TextFormattingToggleGroup
+                node={selection.node}
+                canvasElement={canvasElement}
+              />
+            </>
+          )}
 
         {selection &&
           !Array.isArray(selection) &&
@@ -106,7 +127,7 @@ function AddElementButton() {
 
   function handleAddElement<T extends CanvasElement['type']>(
     type: T,
-    attrs?: Omit<Extract<CanvasElement, { type: T }>, 'id' | 'type'>
+    attrs?: Omit<CanvasElementOfType<T>, 'id' | 'type'>
   ) {
     // Add the element
     const { id } = addElement({
@@ -233,17 +254,10 @@ const textAlignmentsMap = {
   right: { label: 'Right aligned', Icon: AlignRight },
 } satisfies Record<string, { label: string; Icon: LucideIcon }>;
 
-function TextAlignmentButton({ node }: { node: Konva.Text }) {
-  const canvasElement = useCanvasTreeStore(
-    useShallow((state) => {
-      return state.canvasTree.find((element) => element.id === node.id()) as
-        | Extract<CanvasElementWithActions, { type: 'text' }>
-        | undefined;
-    })
-  );
-
-  if (!canvasElement) return null;
-
+function TextAlignmentButton({
+  node,
+  canvasElement,
+}: KonvaNodeAndElement<'text'>) {
   const textAlignmentLabel = 'Text alignment';
 
   const currentTextAlignment = (canvasElement.align ||
@@ -254,7 +268,7 @@ function TextAlignmentButton({ node }: { node: Konva.Text }) {
     // Set text alignment
     node.align(newTextAlignment);
     // Save the new text alignment
-    canvasElement!.saveAttrs({ align: newTextAlignment });
+    canvasElement.saveAttrs({ align: newTextAlignment });
   }
 
   return (
@@ -312,21 +326,14 @@ const textFormattingMap = {
   underline: { label: 'Underline', Icon: Underline },
 } satisfies Record<string, { label: string; Icon: LucideIcon }>;
 
-function TextFormattingToggleGroup({ node }: { node: Konva.Text }) {
-  const canvasElement = useCanvasTreeStore(
-    useShallow((state) => {
-      return state.canvasTree.find((element) => element.id === node.id()) as
-        | Extract<CanvasElementWithActions, { type: 'text' }>
-        | undefined;
-    })
-  );
-
+function TextFormattingToggleGroup({
+  node,
+  canvasElement,
+}: KonvaNodeAndElement<'text'>) {
   /* This is just the initial value of the text formatting, so it's using
   `useMemo` with an empty dependency array to just compute it once */
   const initialTextFormatting = useMemo(
     () => {
-      if (!canvasElement) return [];
-
       const textFormatting = [];
       // Get the saved font style
       if (canvasElement.fontStyle) {
@@ -346,8 +353,6 @@ function TextFormattingToggleGroup({ node }: { node: Konva.Text }) {
     []
   );
 
-  if (!canvasElement) return null;
-
   function handleChangeTextFormatting(value: string[]) {
     // Set font style
     const fontStyleArray: string[] = [];
@@ -360,7 +365,7 @@ function TextFormattingToggleGroup({ node }: { node: Konva.Text }) {
     node.textDecoration(textDecoration);
 
     // Save the new text formatting
-    canvasElement!.saveAttrs({
+    canvasElement.saveAttrs({
       fontStyle: node.fontStyle(),
       textDecoration: node.textDecoration(),
     });

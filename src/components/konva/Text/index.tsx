@@ -27,6 +27,8 @@ export type TextProps = Pick<
   | 'width'
   | 'fill'
   | 'fontSize'
+  | 'fontStyle'
+  | 'textDecoration'
   | 'align'
   | 'rotation'
   | 'draggable'

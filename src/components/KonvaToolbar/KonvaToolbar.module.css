@@ -1,5 +1,6 @@
 .toolbar,
 .popover {
+  --toolbar-gap: 0.25rem;
   background-color: var(--clr-neutral-background);
   font-size: 0.875rem;
   display: flex;
@@ -14,6 +15,9 @@
   left: 0.5rem;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--toolbar-gap);
 }
 .popover {
   box-shadow: -10px 0 15px -3px rgb(24 24 27 / 0.5),
@@ -37,13 +41,16 @@
 .toolbarButton:focus-visible {
   outline: 2px solid transparent;
 }
-.toolbarButton[data-state='open']:not(:hover, :focus-visible) {
+.toolbarButton[aria-expanded='true']:not(:hover, :focus-visible) {
   background-color: var(--clr-neutral-subtle-highlight);
 }
-.toolbarButton[data-state='checked'] {
+.toolbarButton:is([aria-checked='true'], [aria-pressed='true']) {
   background-color: var(--clr-primary);
 }
-.toolbarButton[data-state='checked']:hover {
+.toolbarButton:is([aria-checked='true'], [aria-pressed='true']):is(
+    :hover,
+    :focus-visible
+  ) {
   background-color: var(--clr-primary-highlight);
 }
 .toolbarButton[data-disabled] {
@@ -52,11 +59,14 @@
 
 .toggleGroup {
   display: flex;
-  gap: 0.25rem;
+  gap: var(--toolbar-gap);
+}
+.toggleGroup[data-orientation='vertical'] {
+  flex-direction: column;
 }
 
 .toolbarSeparator {
   background-color: var(--clr-neutral-dimmed);
   height: 1px;
-  margin-block: 0.5rem;
+  margin-block: calc(0.5rem - var(--toolbar-gap));
 }

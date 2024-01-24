@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type Konva from 'konva';
+import { useShallow } from 'zustand/react/shallow';
 import * as Toolbar from '@radix-ui/react-toolbar';
 import * as Popover from '@radix-ui/react-popover';
 import * as RadioGroup from '@radix-ui/react-radio-group';
@@ -6,11 +8,14 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
+  Bold,
   Image,
+  Italic,
+  type LucideIcon,
   PlusSquare,
   Save,
-  Text,
   Type,
+  Underline,
   Video,
 } from 'lucide-react';
 
@@ -23,7 +28,7 @@ import {
   CustomKonvaAttributes,
   waitUntilKonvaNodeSizeIsCalculated,
 } from '@/utils/konva';
-import type { CanvasElement } from '@/utils/types';
+import type { CanvasElement, CanvasElementWithActions } from '@/utils/types';
 
 import { Tooltip, TooltipProvider } from '@/components/Tooltip';
 import { AddAssetElementDialog } from './AddAssetElementDialog';
@@ -54,6 +59,8 @@ const popoverOffset = 12;
 const tooltipOffset = 4;
 
 export function KonvaToolbar() {
+  const { selection } = useTransformerSelectionStore();
+
   return (
     <TooltipProvider>
       <Toolbar.Root className={styles.toolbar} orientation="vertical">
@@ -61,9 +68,22 @@ export function KonvaToolbar() {
 
         <Toolbar.Separator className={styles.toolbarSeparator} />
 
-        <TextAlignmentButton />
+        {/* TEXT */}
+        {!Array.isArray(selection) && selection?.type === 'text' && (
+          <>
+            <TextAlignmentButton node={selection.node} />
 
-        <Toolbar.Separator className={styles.toolbarSeparator} />
+            <Toolbar.Separator className={styles.toolbarSeparator} />
+
+            <TextFormattingToggleGroup node={selection.node} />
+          </>
+        )}
+
+        {selection &&
+          !Array.isArray(selection) &&
+          selection?.type === 'text' && (
+            <Toolbar.Separator className={styles.toolbarSeparator} />
+          )}
 
         <SaveButton />
       </Toolbar.Root>
@@ -207,14 +227,46 @@ function AddElementButton() {
   );
 }
 
-function TextAlignmentButton() {
+const textAlignmentsMap = {
+  left: { label: 'Left aligned', Icon: AlignLeft },
+  center: { label: 'Center aligned', Icon: AlignCenter },
+  right: { label: 'Right aligned', Icon: AlignRight },
+} satisfies Record<string, { label: string; Icon: LucideIcon }>;
+
+function TextAlignmentButton({ node }: { node: Konva.Text }) {
+  const canvasElement = useCanvasTreeStore(
+    useShallow((state) => {
+      return state.canvasTree.find((element) => element.id === node.id()) as
+        | Extract<CanvasElementWithActions, { type: 'text' }>
+        | undefined;
+    })
+  );
+
+  if (!canvasElement) return null;
+
+  const textAlignmentLabel = 'Text alignment';
+
+  const currentTextAlignment = (canvasElement.align ||
+    defaultElementAttributes.text.align) as keyof typeof textAlignmentsMap;
+  const CurrentTextAlignmentIcon = textAlignmentsMap[currentTextAlignment].Icon;
+
+  function handleChangeTextAlignment(newTextAlignment: string) {
+    // Set text alignment
+    node.align(newTextAlignment);
+    // Save the new text alignment
+    canvasElement!.saveAttrs({ align: newTextAlignment });
+  }
+
   return (
     <Popover.Root>
-      <Tooltip content="Text alignment" side="right" sideOffset={tooltipOffset}>
+      <Tooltip
+        content={textAlignmentLabel}
+        side="right"
+        sideOffset={tooltipOffset}
+      >
         <Popover.Trigger asChild>
           <Toolbar.Button className={styles.toolbarButton} data-icon-only>
-            {/* TODO: Show icon equivalent to the selected text alignment */}
-            <Text size={mediumIconSize} />
+            <CurrentTextAlignmentIcon size={mediumIconSize} />
           </Toolbar.Button>
         </Popover.Trigger>
       </Tooltip>
@@ -228,39 +280,120 @@ function TextAlignmentButton() {
           <RadioGroup.Root
             className={styles.toggleGroup}
             orientation="horizontal"
-            defaultValue="center"
+            defaultValue={currentTextAlignment}
             loop={false}
+            aria-label={textAlignmentLabel}
+            onValueChange={handleChangeTextAlignment}
           >
-            <RadioGroup.Item
-              className={styles.toolbarButton}
-              value="left"
-              aria-label="Left aligned"
-              data-icon-only
-            >
-              <AlignLeft size={mediumIconSize} />
-            </RadioGroup.Item>
-            <RadioGroup.Item
-              className={styles.toolbarButton}
-              value="center"
-              aria-label="Center aligned"
-              data-icon-only
-              // TODO: Auto focus should be in the selected one
-              autoFocus
-            >
-              <AlignCenter size={mediumIconSize} />
-            </RadioGroup.Item>
-            <RadioGroup.Item
-              className={styles.toolbarButton}
-              value="right"
-              aria-label="Right aligned"
-              data-icon-only
-            >
-              <AlignRight size={mediumIconSize} />
-            </RadioGroup.Item>
+            {Object.entries(textAlignmentsMap).map(
+              ([alignment, { Icon, label }]) => (
+                <RadioGroup.Item
+                  key={alignment}
+                  className={styles.toolbarButton}
+                  value={alignment}
+                  aria-label={label}
+                  data-icon-only
+                  autoFocus={alignment === currentTextAlignment}
+                >
+                  <Icon size={mediumIconSize} />
+                </RadioGroup.Item>
+              )
+            )}
           </RadioGroup.Root>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
+  );
+}
+
+const textFormattingMap = {
+  bold: { label: 'Bold', Icon: Bold },
+  italic: { label: 'Italic', Icon: Italic },
+  underline: { label: 'Underline', Icon: Underline },
+} satisfies Record<string, { label: string; Icon: LucideIcon }>;
+
+function TextFormattingToggleGroup({ node }: { node: Konva.Text }) {
+  const canvasElement = useCanvasTreeStore(
+    useShallow((state) => {
+      return state.canvasTree.find((element) => element.id === node.id()) as
+        | Extract<CanvasElementWithActions, { type: 'text' }>
+        | undefined;
+    })
+  );
+
+  /* This is just the initial value of the text formatting, so it's using
+  `useMemo` with an empty dependency array to just compute it once */
+  const initialTextFormatting = useMemo(
+    () => {
+      if (!canvasElement) return [];
+
+      const textFormatting = [];
+      // Get the saved font style
+      if (canvasElement.fontStyle) {
+        // `fontStyle` is a string of space separated values (e.g. 'italic bold')
+        canvasElement.fontStyle
+          .split(' ')
+          .forEach((style) => textFormatting.push(style));
+      }
+      // Get the saved text decoration
+      if (canvasElement.textDecoration) {
+        textFormatting.push(canvasElement.textDecoration);
+      }
+
+      return textFormatting;
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  if (!canvasElement) return null;
+
+  function handleChangeTextFormatting(value: string[]) {
+    // Set font style
+    const fontStyleArray: string[] = [];
+    if (value.includes('italic')) fontStyleArray.push('italic');
+    if (value.includes('bold')) fontStyleArray.push('bold');
+    node.fontStyle(fontStyleArray.join(' '));
+
+    // Set text decoration
+    const textDecoration = value.includes('underline') ? 'underline' : '';
+    node.textDecoration(textDecoration);
+
+    // Save the new text formatting
+    canvasElement!.saveAttrs({
+      fontStyle: node.fontStyle(),
+      textDecoration: node.textDecoration(),
+    });
+  }
+
+  return (
+    <Toolbar.ToggleGroup
+      className={styles.toggleGroup}
+      type="multiple"
+      orientation="vertical"
+      defaultValue={initialTextFormatting}
+      aria-label="Text formatting"
+      onValueChange={handleChangeTextFormatting}
+    >
+      {Object.entries(textFormattingMap).map(
+        ([formatting, { label, Icon }]) => (
+          <Tooltip
+            key={formatting}
+            content={label}
+            side="right"
+            sideOffset={tooltipOffset}
+          >
+            <Toolbar.ToggleItem
+              className={styles.toolbarButton}
+              value={formatting}
+              data-icon-only
+            >
+              <Icon size={mediumIconSize} />
+            </Toolbar.ToggleItem>
+          </Tooltip>
+        )
+      )}
+    </Toolbar.ToggleGroup>
   );
 }
 

@@ -111,7 +111,7 @@ const AddAssetElementDialogContent = forwardRef<
   async function addAsset(url: string) {
     setIsSubmitting(true);
 
-    const isValid = validateAssetUrl(type, url);
+    const isValid = await validateAssetUrl(type, url);
     if (!isValid) {
       setFileUrlError(`Invalid ${type} URL`);
       setIsSubmitting(false);

@@ -1,6 +1,6 @@
 .contextMenu {
   background-color: var(--clr-neutral-background);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   padding: 0.5rem;
   border-radius: 0.5rem;
   box-shadow: 0 0 50px -12px rgb(24 24 27 / 0.9);

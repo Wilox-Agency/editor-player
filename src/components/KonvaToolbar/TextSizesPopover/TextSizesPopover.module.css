@@ -1,6 +1,6 @@
 .popover {
   background-color: var(--clr-neutral-background);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   display: flex;
   flex-direction: column;
   gap: 1rem;

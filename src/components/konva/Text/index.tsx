@@ -263,7 +263,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       );
 
       // Close the textarea when clicking outisde
-      function handleMouseDownOutside(event: MouseEvent) {
+      function handleMouseDownOutside(event: MouseEvent | TouchEvent) {
         const isMouseDownOutside = !(event.target as HTMLElement).contains(
           textAreaRef.current
         );
@@ -271,8 +271,10 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       }
 
       window.addEventListener('mousedown', handleMouseDownOutside);
+      window.addEventListener('touchstart', handleMouseDownOutside);
       return () => {
         window.removeEventListener('mousedown', handleMouseDownOutside);
+        window.removeEventListener('touchstart', handleMouseDownOutside);
       };
     }, [closeTextArea, isTextAreaVisible]);
 

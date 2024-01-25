@@ -5,7 +5,7 @@ import styles from './Tooltip.module.css';
 
 type TooltipProps = Pick<
   TooltipPrimitive.TooltipContentProps,
-  'asChild' | 'side' | 'sideOffset' | 'align' | 'alignOffset'
+  'side' | 'sideOffset' | 'align' | 'alignOffset'
 > &
   PropsWithChildren<{
     content: ReactNode;

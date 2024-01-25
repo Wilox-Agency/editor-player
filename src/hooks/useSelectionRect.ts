@@ -2,8 +2,7 @@ import { type RefObject, useEffect, useRef } from 'react';
 import Konva from 'konva';
 
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
-
-const MouseButton = { left: 0, middle: 1, right: 2 } as const;
+import { MouseButton } from '@/utils/input';
 
 export function useSelectionRect({
   stageRef,
@@ -29,17 +28,20 @@ export function useSelectionRect({
   function handleStartSelectionRect(
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) {
+    // Only accept clicks from the left mouse button
+    if (
+      event.evt instanceof MouseEvent &&
+      event.evt.button !== MouseButton.left
+    ) {
+      return;
+    }
+
     const stage = stageRef.current;
     const selectionRect = selectionRectRef.current;
     if (!stage || !selectionRect) return;
 
     // Do nothing when mousedown not on stage
     if (event.target !== stage) return;
-
-    // Do nothing when not left clicking
-    const isMouseLeftClick =
-      event.evt instanceof MouseEvent && event.evt.button === MouseButton.left;
-    if (!isMouseLeftClick) return;
 
     const pointerPosition = stage.getPointerPosition()!;
     coordinatesRef.current = {

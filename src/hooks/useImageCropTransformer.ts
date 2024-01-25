@@ -7,6 +7,7 @@ import {
   CustomKonvaAttributes,
   getCanvasImageIntrinsicSize,
 } from '@/utils/konva';
+import { MouseButton } from '@/utils/input';
 import type { CanvasElementOfTypeWithActions } from '@/utils/types';
 
 export function useImageCropTransformer({
@@ -25,6 +26,14 @@ export function useImageCropTransformer({
   function handleStartCroppingImage(
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) {
+    // Only accept clicks from the left mouse button
+    if (
+      event.evt instanceof MouseEvent &&
+      event.evt.button !== MouseButton.left
+    ) {
+      return;
+    }
+
     // Do nothing when not double clicking an image
     if (!(event.target instanceof Konva.Image)) return;
 

@@ -4,6 +4,7 @@ import Konva from 'konva';
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { CustomKonvaAttributes } from '@/utils/konva';
+import { MouseButton } from '@/utils/input';
 
 export function useTransformer({
   stageRef,
@@ -21,6 +22,14 @@ export function useTransformer({
   function handleSelectNode(
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
   ) {
+    // Only accept clicks from the left mouse button
+    if (
+      event.evt instanceof MouseEvent &&
+      event.evt.button !== MouseButton.left
+    ) {
+      return;
+    }
+
     // When clicking on an empty area, clear the selection
     if (event.target === stageRef.current) {
       selectNodes([]);

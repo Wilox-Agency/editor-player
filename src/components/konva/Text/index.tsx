@@ -15,6 +15,7 @@ import styles from './Text.module.css';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { TextSizes } from '@/utils/validation';
+import { MouseButton } from '@/utils/input';
 import { mergeRefs } from '@/utils/mergeRefs';
 import type {
   CanvasElementOfTypeWithActions,
@@ -58,7 +59,17 @@ export const Text = forwardRef<Konva.Text, TextProps>(
 
     const isTextAreaVisible = textAreaStyles !== undefined;
 
-    function handleDoubleClick() {
+    function handleDoubleClick(
+      event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
+    ) {
+      // Only accept clicks from the left mouse button
+      if (
+        event.evt instanceof MouseEvent &&
+        event.evt.button !== MouseButton.left
+      ) {
+        return;
+      }
+
       openTextArea();
     }
 

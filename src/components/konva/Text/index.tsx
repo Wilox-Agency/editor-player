@@ -30,6 +30,8 @@ export type TextProps = Pick<
   | 'width'
   | 'fill'
   | 'fontSize'
+  | 'lineHeight'
+  | 'letterSpacing'
   | 'fontStyle'
   | 'textDecoration'
   | 'align'

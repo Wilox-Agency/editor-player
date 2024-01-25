@@ -1,3 +1,7 @@
+import { type } from 'arktype';
+
+import { TEXT_MIN_FONT_SIZE } from '@/hooks/useTransformer';
+
 export function validateUrl(string: string) {
   try {
     new URL(string);
@@ -35,3 +39,21 @@ export function validateAssetUrl(type: 'image' | 'video', url: string) {
     imageElement.src = url;
   });
 }
+
+export const TextSizes = {
+  minFontSize: TEXT_MIN_FONT_SIZE,
+  minLineHeight: 1,
+  maxLineHeight: 2,
+  minLetterSpacing: -5,
+  maxLetterSpacing: 150,
+} as const;
+
+export const validateFontSize = type(`number>=${TextSizes.minFontSize}`);
+
+export const validateLineHeight = type(
+  `${TextSizes.minLineHeight}<=number<=${TextSizes.maxLineHeight}`
+);
+
+export const validateLetterSpacing = type(
+  `${TextSizes.minLetterSpacing}<=number<=${TextSizes.maxLetterSpacing}`
+);

@@ -114,3 +114,25 @@ export type KonvaNodeAndElement<
         node: KonvaNodeByElementType[TType];
       }
     : never;
+
+type UndefinedProperites<T> = { [K in keyof T]?: undefined };
+
+/**
+ * Works like a union but sets the keys that don't exist in one of the sides of
+ * the union but exist in the other as optional and `undefined` instead of
+ * non-existent.
+ *
+ * This type is called `JsUnion` because, as in JavaScript, when accessing a
+ * property that doesn't exist in an object, it doesn't throw an error, it will
+ * just have a value of `undefined`.
+ *
+ * @example
+ * type A = JsUnion<{ foo: string }, { bar: string }>;
+ * // is equivalent to
+ * type B = { foo: string; bar?: undefined } | { bar: string; foo?: undefined };
+ *
+ * @see https://github.com/microsoft/TypeScript/issues/42775
+ */
+export type JsUnion<A, B> =
+  | (A & UndefinedProperites<Omit<B, keyof A>>)
+  | (B & UndefinedProperites<Omit<A, keyof B>>);

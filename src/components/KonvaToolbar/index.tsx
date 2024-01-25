@@ -26,6 +26,7 @@ import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionSto
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import {
   CustomKonvaAttributes,
+  defaultElementAttributes,
   waitUntilKonvaNodeSizeIsCalculated,
 } from '@/utils/konva';
 import type {
@@ -36,26 +37,7 @@ import type {
 
 import { Tooltip, TooltipProvider } from '@/components/Tooltip';
 import { AddAssetElementDialog } from './AddAssetElementDialog';
-
-const defaultElementAttributes = {
-  video: {
-    draggable: true,
-  },
-  image: {
-    draggable: true,
-  },
-  text: {
-    text: 'Text',
-    fill: 'white',
-    fontSize: 32,
-    align: 'center',
-    draggable: true,
-  },
-} satisfies {
-  [K in CanvasElement['type']]: Partial<
-    Omit<CanvasElementOfType<K>, 'id' | 'type'>
-  >;
-};
+import { TextSizesPopover } from './TextSizesPopover';
 
 const mediumIconSize = 18;
 const smallIconSize = 14;
@@ -86,6 +68,10 @@ export function KonvaToolbar() {
           selection?.type === 'text' &&
           canvasElement?.type === 'text' && (
             <>
+              <TextSizesButton
+                node={selection.node}
+                canvasElement={canvasElement}
+              />
               <TextAlignmentButton
                 node={selection.node}
                 canvasElement={canvasElement}
@@ -244,6 +230,26 @@ function AddElementButton() {
           </AddAssetElementDialog>
         </Popover.Content>
       </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+function TextSizesButton({ node, canvasElement }: KonvaNodeAndElement<'text'>) {
+  return (
+    <Popover.Root>
+      <Tooltip content="Text sizes" side="right" sideOffset={tooltipOffset}>
+        <Popover.Trigger asChild>
+          <Toolbar.Button className={styles.toolbarButton} data-icon-only>
+            <Type size={mediumIconSize} />
+          </Toolbar.Button>
+        </Popover.Trigger>
+      </Tooltip>
+
+      <TextSizesPopover
+        node={node}
+        canvasElement={canvasElement}
+        popoverOffset={popoverOffset}
+      />
     </Popover.Root>
   );
 }

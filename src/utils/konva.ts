@@ -1,9 +1,10 @@
 import type { ElementType } from 'react';
 import type Konva from 'konva';
 
+import type { CanvasElement, CanvasElementOfType } from '@/utils/types';
+
 import { Image, Video } from '@/components/konva/Image';
 import { Text } from '@/components/konva/Text';
-import type { CanvasElement } from '@/utils/types';
 
 export const CanvasComponentByType = {
   video: Video,
@@ -14,6 +15,28 @@ export const CanvasComponentByType = {
 export const CustomKonvaAttributes = {
   unselectable: '_unselectable',
 } as const;
+
+export const defaultElementAttributes = {
+  video: {
+    draggable: true,
+  },
+  image: {
+    draggable: true,
+  },
+  text: {
+    text: 'Text',
+    fill: 'white',
+    fontSize: 32,
+    lineHeight: 1,
+    letterSpacing: 0,
+    align: 'center',
+    draggable: true,
+  },
+} satisfies {
+  [K in CanvasElement['type']]: Partial<
+    Omit<CanvasElementOfType<K>, 'id' | 'type'>
+  >;
+};
 
 /**
  * When creating a Konva node, the size at which it will appear on the screen

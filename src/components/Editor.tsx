@@ -94,6 +94,7 @@ export function Editor() {
           style={{ overflow: 'hidden' }}
           width={1440}
           height={815}
+          tabIndex={0}
           onClick={handleSelectNode}
           onTap={handleSelectNode}
           onDblClick={handleStartCroppingImage}

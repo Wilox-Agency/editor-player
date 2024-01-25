@@ -145,6 +145,11 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       ) {
         closeTextArea();
 
+        /* Focus the canvas container so the user can interact with the canvas
+        elements with the keyboard */
+        const canvasContainer = stageRef.current?.container();
+        canvasContainer?.focus();
+
         if (event.key === 'Enter') {
           didJustCloseTextAreaWithEnterRef.current = true;
         }
@@ -222,14 +227,18 @@ export const Text = forwardRef<Konva.Text, TextProps>(
     useEffect(() => {
       if (isTextAreaVisible) return;
 
+      const canvasContainer = stageRef.current?.container();
+      if (!canvasContainer) return;
+
       /* Open the textarea when pressing Enter with the current text node as the
       only selected node */
       function handleTextKeyDown(event: KeyboardEvent) {
         if (event.key !== 'Enter') return;
 
-        /* The window's keydown listener runs after the textarea's keydown
-        listener, so when the user presses Enter, the textarea closes (by its
-        event listener) and then opens again (by the window's event listener) */
+        /* The keydown listener of the canvas container runs after the
+        textarea's keydown listener, so when the user presses Enter, the
+        textarea closes (by its event listener) and then opens again (by the
+        event listener of the canvas container) */
         if (didJustCloseTextAreaWithEnterRef.current) {
           didJustCloseTextAreaWithEnterRef.current = false;
           return;
@@ -247,9 +256,11 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         }
       }
 
-      window.addEventListener('keydown', handleTextKeyDown);
-      return () => window.removeEventListener('keydown', handleTextKeyDown);
-    }, [getSelectedNodes, isTextAreaVisible, openTextArea]);
+      canvasContainer.addEventListener('keydown', handleTextKeyDown);
+      return () => {
+        canvasContainer.removeEventListener('keydown', handleTextKeyDown);
+      };
+    }, [getSelectedNodes, isTextAreaVisible, openTextArea, stageRef]);
 
     useEffect(() => {
       if (!isTextAreaVisible || !textAreaRef.current) return;

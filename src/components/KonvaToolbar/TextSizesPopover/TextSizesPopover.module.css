@@ -26,7 +26,6 @@
 
 .input {
   background-color: var(--clr-neutral-dark);
-  min-width: 0;
   padding: 0.25rem 0.5rem;
   border-radius: 0.5rem;
 }

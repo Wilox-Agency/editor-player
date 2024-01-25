@@ -96,8 +96,8 @@ export function useTransformer({
 
   return {
     /**
-     * The `onClick` event handler to be used in your `Stage` component from
-     * `react-konva`.
+     * The `onClick`/`onTap` event handler to be used in your `Stage` component
+     * from `react-konva`.
      */
     handleSelectNode,
   };

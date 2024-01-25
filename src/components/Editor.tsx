@@ -95,6 +95,7 @@ export function Editor() {
           width={1440}
           height={815}
           onClick={handleSelectNode}
+          onTap={handleSelectNode}
           onDblClick={handleStartCroppingImage}
           onDblTap={handleStartCroppingImage}
           onMouseDown={(event) => {

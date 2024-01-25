@@ -53,7 +53,7 @@
   background-color: var(--clr-primary-highlight);
 }
 .toolbarButton[data-disabled] {
-  color: var(--clr-neutral-dimmed);
+  color: var(--clr-text-neutral-dimmed);
 }
 
 .toggleGroup {
@@ -65,7 +65,7 @@
 }
 
 .toolbarSeparator {
-  background-color: var(--clr-neutral-dimmed);
+  background-color: var(--clr-neutral-highlight);
   height: 1px;
   margin-block: calc(0.5rem - var(--_toolbar-gap));
 }

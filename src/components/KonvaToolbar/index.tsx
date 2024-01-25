@@ -25,7 +25,6 @@ import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import {
-  CustomKonvaAttributes,
   defaultElementAttributes,
   waitUntilKonvaNodeSizeIsCalculated,
 } from '@/utils/konva';
@@ -143,7 +142,6 @@ function AddElementButton() {
 
       // Hide the node before centering and selecting it
       node.visible(false);
-      node.setAttr(CustomKonvaAttributes.unselectable, true);
 
       // Wait until the node size is calculated
       await waitUntilKonvaNodeSizeIsCalculated(node);
@@ -182,12 +180,11 @@ function AddElementButton() {
         ...node.size(),
       });
 
-      // Select the node
-      selectNodes([node]);
-
       // Show the node
       node.visible(true);
-      node.setAttr(CustomKonvaAttributes.unselectable, undefined);
+
+      // Select the node
+      selectNodes([node]);
     })();
   }, [idOfNewlyCreatedElement, layerRef, selectNodes, updateElement]);
 

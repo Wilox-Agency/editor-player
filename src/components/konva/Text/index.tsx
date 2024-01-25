@@ -305,7 +305,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
           ref={mergeRefs(textRef, forwardedRef)}
         />
         {isTextAreaVisible && (
-          <Html>
+          <Html divProps={{ style: { zIndex: 'unset' } }}>
             <textarea
               style={textAreaStyles}
               className={styles.textArea}

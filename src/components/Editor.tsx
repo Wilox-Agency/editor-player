@@ -8,6 +8,7 @@ import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { useTransformer } from '@/hooks/useTransformer';
 import { useSelectionRect } from '@/hooks/useSelectionRect';
 import { useImageCropTransformer } from '@/hooks/useImageCropTransformer';
+import { useWindowResize } from '@/hooks/useWindowResize';
 import { CanvasComponentByType } from '@/utils/konva';
 import type { CanvasElement } from '@/utils/types';
 
@@ -86,6 +87,10 @@ export function Editor() {
   useEffect(() => {
     loadCanvasTree(initialElements);
   }, [loadCanvasTree]);
+
+  useWindowResize((width, height) => {
+    stageRef.current?.size({ width, height });
+  });
 
   return (
     <main>

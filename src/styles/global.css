@@ -6,8 +6,11 @@
   --clr-neutral-highlight: #71717a;
   --clr-text-neutral-dimmed: #71717a;
   --clr-text-neutral-soft: #a1a1aa;
+  --clr-accent-subtle-highlight: #e4e4e7;
+  --clr-accent: #ffffff;
   --clr-primary: #a855f7;
   --clr-primary-highlight: #c084fc;
+  --clr-danger: #f87171;
 
   /* Shadows */
   --shadow-lg-right: 10px 0 15px -3px rgb(24 24 27 / 0.5),

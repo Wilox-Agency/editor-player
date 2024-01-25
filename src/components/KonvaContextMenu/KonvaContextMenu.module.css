@@ -1,5 +1,5 @@
 .contextMenu {
-  background-color: #3f3f46;
+  background-color: var(--clr-neutral-background);
   font-size: 0.875rem;
   padding: 0.5rem;
   border-radius: 0.5rem;
@@ -16,14 +16,14 @@
   /* cursor: pointer; */
 }
 .contextMenuItem[data-state='open'] {
-  background-color: #52525b;
+  background-color: var(--clr-neutral-subtle-highlight);
 }
 .contextMenuItem[data-highlighted] {
-  background-color: #a855f7;
+  background-color: var(--clr-primary);
   outline: 2px solid transparent;
 }
 .contextMenuItem[data-disabled] {
-  color: #71717a;
+  color: var(--clr-text-neutral-dimmed);
 }
 
 .contextMenuIconRightContainer {

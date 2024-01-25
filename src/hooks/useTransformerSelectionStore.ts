@@ -3,7 +3,7 @@ import { create } from 'zustand';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
-import { TEXT_MIN_FONT_SIZE } from '@/hooks/useTransformer';
+import { TextSizes } from '@/utils/validation';
 import { CustomKonvaAttributes } from '@/utils/konva';
 import type { KonvaNodeWithType } from '@/utils/types';
 
@@ -106,7 +106,10 @@ function setTransformerAttributes(
         const isResizingOnlyWidth =
           activeAnchor && activeAnchor.startsWith('middle');
         if (isResizingOnlyWidth) {
-          const currentMinWidth = Math.max(text.fontSize(), TEXT_MIN_FONT_SIZE);
+          const currentMinWidth = Math.max(
+            text.fontSize(),
+            TextSizes.minFontSize
+          );
           if (Math.abs(newBox.width) < currentMinWidth) {
             return { ...oldBox, width: currentMinWidth };
           }

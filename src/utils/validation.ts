@@ -1,7 +1,5 @@
 import { type } from 'arktype';
 
-import { TEXT_MIN_FONT_SIZE } from '@/hooks/useTransformer';
-
 export function validateUrl(string: string) {
   try {
     new URL(string);
@@ -41,7 +39,7 @@ export function validateAssetUrl(type: 'image' | 'video', url: string) {
 }
 
 export const TextSizes = {
-  minFontSize: TEXT_MIN_FONT_SIZE,
+  minFontSize: 12,
   minLineHeight: 1,
   maxLineHeight: 2,
   minLetterSpacing: -5,

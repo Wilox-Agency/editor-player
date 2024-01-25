@@ -5,8 +5,6 @@ import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { CustomKonvaAttributes } from '@/utils/konva';
 
-export const TEXT_MIN_FONT_SIZE = 12;
-
 export function useTransformer({
   stageRef,
 }: {

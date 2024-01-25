@@ -14,7 +14,7 @@ import styles from './Text.module.css';
 
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
-import { TEXT_MIN_FONT_SIZE } from '@/hooks/useTransformer';
+import { TextSizes } from '@/utils/validation';
 import { mergeRefs } from '@/utils/mergeRefs';
 import type {
   CanvasElementOfTypeWithActions,
@@ -84,7 +84,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
 
       const newFontSize = Math.max(
         text.fontSize() * text.scaleY(),
-        TEXT_MIN_FONT_SIZE
+        TextSizes.minFontSize
       );
       /* Updating the font size and the width according to the scale, while also
       resetting the scale */

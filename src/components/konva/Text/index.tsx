@@ -169,6 +169,13 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       // Hiding the text node
       text.visible(false);
 
+      let textHeight = text.height();
+
+      if (text.textDecoration().includes('underline')) {
+        // Text decoration thickness
+        textHeight += text.fontSize() * 0.07;
+      }
+
       const textAreaStyles: CSSProperties = {
         color: text.fill(),
         fontFamily: text.fontFamily(),
@@ -177,12 +184,12 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         letterSpacing: text.letterSpacing(),
         fontWeight: text.fontStyle().includes('bold') ? 'bold' : undefined,
         fontStyle: text.fontStyle().includes('italic') ? 'italic' : undefined,
-        textDecoration: text.textDecoration(),
+        textDecorationLine: text.textDecoration(),
         textAlign: text.align() as 'left' | 'center' | 'right',
         top: stageBox.top + textPosition.y,
         left: stageBox.left + textPosition.x,
         width: text.width(),
-        height: text.height(),
+        height: textHeight,
         transformOrigin: 'left top',
         transform: `rotate(${text.rotation()}deg)`,
       };

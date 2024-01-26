@@ -3,6 +3,7 @@ import Konva from 'konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
+import { useNodeBeingEditedStore } from '@/hooks/useNodeBeingEditedStore';
 import {
   CustomKonvaAttributes,
   getCanvasImageIntrinsicSize,
@@ -21,6 +22,9 @@ export function useImageCropTransformer({
 
   const selectNodes = useTransformerSelectionStore(
     (state) => state.selectNodes
+  );
+  const setNodeBeingEdited = useNodeBeingEditedStore(
+    (state) => state.setNodeBeingEdited
   );
 
   function handleStartCroppingImage(
@@ -84,6 +88,8 @@ export function useImageCropTransformer({
     selectNodes([]);
     // Setting the image as the one being cropped
     setImageBeingCropped(image);
+    // Setting the node as the one being edited
+    setNodeBeingEdited({ imageBeingCropped: image });
     // Setting the crop rect position and size
     cropRect.setAttrs({
       x: image.x(),
@@ -266,7 +272,9 @@ export function useImageCropTransformer({
     cropTransformer.nodes([]);
     cropRect.visible(false);
     setImageBeingCropped(undefined);
-  }, [cropRectRef, cropTransformerRef, imageBeingCropped]);
+    // Clearing the node being edited
+    setNodeBeingEdited({ imageBeingCropped: undefined });
+  }, [cropRectRef, cropTransformerRef, imageBeingCropped, setNodeBeingEdited]);
 
   // Setup window event listeners for crop transformer
   useEffect(() => {

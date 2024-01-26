@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import Konva from 'konva';
+import type Konva from 'konva';
 import { Layer, Stage, Transformer, Rect } from 'react-konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
@@ -8,6 +8,7 @@ import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { useTransformer } from '@/hooks/useTransformer';
 import { useSelectionRect } from '@/hooks/useSelectionRect';
 import { useImageCropTransformer } from '@/hooks/useImageCropTransformer';
+import { useHoverBorder } from '@/hooks/useHoverBorder';
 import { useWindowResize } from '@/hooks/useWindowResize';
 import { CanvasComponentByType } from '@/utils/konva';
 import type { CanvasElement } from '@/utils/types';
@@ -92,8 +93,13 @@ export function Editor() {
     (state) => state.selectNodes
   );
 
-  const { stageRef, layerRef, transformerRef, selectionRectRef } =
-    useKonvaRefsStore();
+  const {
+    stageRef,
+    layerRef,
+    transformerRef,
+    selectionRectRef,
+    hoverBorderTransformerRef,
+  } = useKonvaRefsStore();
   const cropTransformerRef = useRef<Konva.Transformer>(null);
   const cropRectRef = useRef<Konva.Rect>(null);
 
@@ -110,6 +116,9 @@ export function Editor() {
   } = useImageCropTransformer({
     cropTransformerRef,
     cropRectRef,
+  });
+  const { handleHoverStart, handleHoverEnd } = useHoverBorder({
+    hoverBorderTransformerRef,
   });
 
   function handleContextMenu(event: Konva.KonvaEventObject<PointerEvent>) {
@@ -150,6 +159,9 @@ export function Editor() {
             handleStartSelectionRect(event);
             handleFinishCroppingImage(event);
           }}
+          onMouseOver={handleHoverStart}
+          onMouseMove={handleHoverStart}
+          onMouseOut={handleHoverEnd}
           onContextMenu={handleContextMenu}
           ref={stageRef}
         >
@@ -165,6 +177,13 @@ export function Editor() {
           <Layer name="controllers">
             {/* Image crop rect */}
             <ImageCropRect ref={cropRectRef} />
+            {/* Hover border transformer */}
+            <Transformer
+              resizeEnabled={false}
+              rotateEnabled={false}
+              keepRatio={false}
+              ref={hoverBorderTransformerRef}
+            />
             {/* Resize transformer */}
             <Transformer
               flipEnabled={false}

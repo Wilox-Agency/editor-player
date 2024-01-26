@@ -13,6 +13,7 @@ import { Html } from 'react-konva-utils';
 import styles from './Text.module.css';
 
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
+import { useNodeBeingEditedStore } from '@/hooks/useNodeBeingEditedStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { TextSizes } from '@/utils/validation';
 import { MouseButton } from '@/utils/input';
@@ -52,6 +53,9 @@ export const Text = forwardRef<Konva.Text, TextProps>(
 
     const getSelectedNodes = useTransformerSelectionStore(
       (state) => state.getSelectedNodes
+    );
+    const setNodeBeingEdited = useNodeBeingEditedStore(
+      (state) => state.setNodeBeingEdited
     );
 
     const [textAreaValue, setTextAreaValue] = useState('');
@@ -212,7 +216,9 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       // Setting the value and styles of the textarea
       setTextAreaValue(text.text());
       setTextAreaStyles(textAreaStyles);
-    }, [stageRef]);
+      // Setting the node as the one being edited
+      setNodeBeingEdited({ textBeingEdited: text });
+    }, [setNodeBeingEdited, stageRef]);
 
     const closeTextArea = useCallback(() => {
       const text = textRef.current;
@@ -227,7 +233,9 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       setTextAreaStyles(undefined);
       // Saving the new text and width
       saveAttrs({ text: text.text(), width: text.width() });
-    }, [saveAttrs]);
+      // Clearing the node being edited
+      setNodeBeingEdited({ textBeingEdited: undefined });
+    }, [saveAttrs, setNodeBeingEdited]);
 
     // Setting the initial attributes only on the first render
     useEffect(() => {

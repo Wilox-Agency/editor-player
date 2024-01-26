@@ -5,6 +5,15 @@ import type { ImageProps, VideoProps } from '@/components/konva/Image';
 import type { TextProps } from '@/components/konva/Text';
 
 /**
+ * Computes a type to make it more readable.
+ * @see https://www.totaltypescript.com/concepts/the-prettify-helper
+ */
+export type Prettify<T> = {
+  [K in keyof T]: T[K];
+  // eslint-disable-next-line @typescript-eslint/ban-types
+} & {};
+
+/**
  * Removes the index signature of an object type.
  * @see https://stackoverflow.com/questions/51465182/how-to-remove-index-signature-using-mapped-types
  */
@@ -26,6 +35,26 @@ export type RemoveIndex<T> = {
 export type DistributiveOmit<T, TOmitted extends PropertyKey> = T extends any
   ? Omit<T, TOmitted>
   : never;
+
+/**
+ * Sets all the properties of an object to optional and `undefined`.
+ *
+ * @example
+ * type A = UndefinedProperites<{ foo: string }>;
+ * // is equivalent to
+ * type B = { foo?: undefined };
+ */
+export type UndefinedProperites<T> = { [K in keyof T]?: undefined };
+
+/**
+ * Turns a union into an intersection.
+ * @see https://stackoverflow.com/questions/50374908/transform-union-type-to-intersection-type
+ */
+export type UnionToIntersection<U> =
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (U extends any ? (k: U) => void : never) extends (k: infer I) => void
+    ? I
+    : never;
 
 export type KonvaComponentProps<T> = T extends KonvaNodeComponent<
   infer _TNode,
@@ -114,8 +143,6 @@ export type KonvaNodeAndElement<
         node: KonvaNodeByElementType[TType];
       }
     : never;
-
-type UndefinedProperites<T> = { [K in keyof T]?: undefined };
 
 /**
  * Works like a union but sets the keys that don't exist in one of the sides of

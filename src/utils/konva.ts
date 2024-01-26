@@ -32,7 +32,7 @@ export const defaultElementAttributes = {
     align: 'center',
     draggable: true,
   },
-} satisfies {
+} as const satisfies {
   [K in CanvasElement['type']]: Partial<
     Omit<CanvasElementOfType<K>, 'id' | 'type'>
   >;

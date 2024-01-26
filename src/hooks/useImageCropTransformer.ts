@@ -275,8 +275,11 @@ export function useImageCropTransformer({
       if (!cropTransformer) return;
 
       const someImageIsBeingCropped = imageBeingCropped !== undefined;
-      // Finish cropping image when pressing Escape
-      if (event.key === 'Escape' && someImageIsBeingCropped) {
+      // Finish cropping image when pressing Escape or Enter
+      if (
+        (event.key === 'Escape' || event.key === 'Enter') &&
+        someImageIsBeingCropped
+      ) {
         // Prevent leaving fullscreen
         event.preventDefault();
         finishCroppingImage();

@@ -1,10 +1,11 @@
 import {
   type ChangeEvent,
+  type FormEvent,
+  forwardRef,
   type PropsWithChildren,
   useId,
   useRef,
   useState,
-  forwardRef,
 } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Loader2, X } from 'lucide-react';
@@ -66,6 +67,7 @@ const AddAssetElementDialogContent = forwardRef<
   const [fileUrlError, setFileUrlError] = useState<string>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Refs
+  const fileUrlInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // IDs
@@ -83,8 +85,15 @@ const AddAssetElementDialogContent = forwardRef<
     setFileUrlError(undefined);
   }
 
-  function handleSubmitFileUrl() {
-    addAsset(fileUrl);
+  async function handleSubmitFileUrl(event: FormEvent<HTMLFormElement>) {
+    // Prevent native form submission
+    event.preventDefault();
+
+    const isValid = await addAsset(fileUrl);
+    if (!isValid) {
+      // Focusing back the input when it's invalid
+      fileUrlInputRef.current?.focus();
+    }
   }
 
   function handleOpenFileInput() {
@@ -115,67 +124,72 @@ const AddAssetElementDialogContent = forwardRef<
     if (!isValid) {
       setFileUrlError(`Invalid ${type} URL`);
       setIsSubmitting(false);
-      return;
+      return false;
     }
 
     onSubmit(url);
+    return true;
   }
 
   return (
     <Dialog.Content className={styles.dialog} ref={ref}>
       <Dialog.Title className={styles.title}>Add {type} element</Dialog.Title>
 
-      <div className={styles.inputRow}>
-        <label htmlFor={fileUrlInputId} className="sr-only">
-          {fileInputLabel}
-        </label>
-        <input
-          id={fileUrlInputId}
-          className="focus-ring"
-          type="text"
-          value={fileUrl}
-          placeholder={fileInputLabel}
-          aria-invalid={!isValidUrlOfFileType}
-          aria-labelledby={fileUrlErrorMessageId}
-          onChange={handleChangeFileUrl}
-        />
+      <form className={styles.form} onSubmit={handleSubmitFileUrl}>
+        <div className={styles.inputRow}>
+          <label htmlFor={fileUrlInputId} className="sr-only">
+            {fileInputLabel}
+          </label>
+          <input
+            id={fileUrlInputId}
+            className="focus-ring"
+            type="text"
+            value={fileUrl}
+            placeholder={fileInputLabel}
+            aria-invalid={!isValidUrlOfFileType}
+            aria-labelledby={fileUrlErrorMessageId}
+            onChange={handleChangeFileUrl}
+            ref={fileUrlInputRef}
+          />
+
+          <button
+            className="focus-ring"
+            type="submit"
+            disabled={!isValidUrl || !isValidUrlOfFileType || isSubmitting}
+            aria-label={`Submit ${type} URL`}
+          >
+            Submit
+          </button>
+        </div>
+
+        {fileUrlError && (
+          <span
+            id={fileUrlErrorMessageId}
+            className={styles.fileUrlError}
+            role="alert"
+          >
+            {fileUrlError}
+          </span>
+        )}
 
         <button
-          className="focus-ring"
-          aria-label={`Submit ${type} URL`}
-          disabled={!isValidUrl || !isValidUrlOfFileType || isSubmitting}
-          onClick={handleSubmitFileUrl}
+          className={`${styles.uploadFileButton} focus-ring`}
+          type="button"
+          disabled={isSubmitting}
+          onClick={handleOpenFileInput}
         >
-          Submit
+          Upload file
         </button>
-      </div>
 
-      {fileUrlError && (
-        <span
-          id={fileUrlErrorMessageId}
-          className={styles.fileUrlError}
-          role="alert"
-        >
-          {fileUrlError}
-        </span>
-      )}
-
-      <button
-        className={`${styles.uploadFileButton} focus-ring`}
-        disabled={isSubmitting}
-        onClick={handleOpenFileInput}
-      >
-        Upload file
-      </button>
-
-      <input
-        type="file"
-        accept={`${type}/*`}
-        hidden
-        disabled={isSubmitting}
-        onChange={handleSelectFile}
-        ref={fileInputRef}
-      />
+        <input
+          type="file"
+          accept={`${type}/*`}
+          hidden
+          disabled={isSubmitting}
+          onChange={handleSelectFile}
+          ref={fileInputRef}
+        />
+      </form>
 
       <Dialog.Close
         className={`${styles.closeButton} focus-ring`}

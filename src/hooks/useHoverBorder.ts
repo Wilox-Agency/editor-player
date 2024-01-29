@@ -1,6 +1,7 @@
-import type { RefObject } from 'react';
+import { type RefObject, useEffect, useCallback } from 'react';
 import Konva from 'konva';
 
+import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useNodeBeingEditedStore } from '@/hooks/useNodeBeingEditedStore';
 
 export function useHoverBorder({
@@ -8,7 +9,9 @@ export function useHoverBorder({
 }: {
   hoverBorderTransformerRef: RefObject<Konva.Transformer>;
 }) {
-  function getHoverBorderTransformer() {
+  const canvasTree = useCanvasTreeStore((state) => state.canvasTree);
+
+  const getHoverBorderTransformer = useCallback(() => {
     const hoverBorderTransformer = hoverBorderTransformerRef.current;
     if (!hoverBorderTransformer) {
       throw new Error(
@@ -17,20 +20,35 @@ export function useHoverBorder({
     }
 
     return hoverBorderTransformer;
-  }
+  }, [hoverBorderTransformerRef]);
 
   function handleHoverStart(event: Konva.KonvaEventObject<MouseEvent>) {
     const shouldShowHoverBorder = getShouldShowHoverBorder(event.target);
     if (!shouldShowHoverBorder) return;
 
-    // Select the node with the hover border transformer
+    // Show hover border
     getHoverBorderTransformer().nodes([event.target]);
   }
 
   function handleHoverEnd() {
-    // Clear the selection of the hover border transformer
+    // Hide hover border
     getHoverBorderTransformer().nodes([]);
   }
+
+  // Hide the hover border if the hovered node gets deleted
+  useEffect(() => {
+    const hoverBorderTransformer = getHoverBorderTransformer();
+    const nodeWithHover = hoverBorderTransformer.nodes()[0];
+    if (!nodeWithHover) return;
+
+    const nodeStillExists = canvasTree.some(
+      (element) => element.id === nodeWithHover.id()
+    );
+    if (!nodeStillExists) {
+      // Hide hover border when node with hover doesn't exist anymore
+      hoverBorderTransformer.nodes([]);
+    }
+  }, [getHoverBorderTransformer, canvasTree]);
 
   return {
     /**

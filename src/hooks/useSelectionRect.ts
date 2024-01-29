@@ -24,6 +24,9 @@ export function useSelectionRect({
   const selectNodes = useTransformerSelectionStore(
     (state) => state.selectNodes
   );
+  const setNodesInsideSelectionRect = useTransformerSelectionStore(
+    (state) => state.setNodesInsideSelectionRect
+  );
 
   function handleStartSelectionRect(
     event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
@@ -78,6 +81,12 @@ export function useSelectionRect({
         width: Math.abs(coordinates.currentX - coordinates.initialX),
         height: Math.abs(coordinates.currentY - coordinates.initialY),
       } satisfies Konva.RectConfig);
+
+      const layer = layerRef.current;
+      if (!layer) return;
+
+      const nodesToSelect = getIntersectingNodes(selectionRect, layer);
+      setNodesInsideSelectionRect(nodesToSelect);
     }
 
     function handleWindowMouseUp() {
@@ -91,18 +100,11 @@ export function useSelectionRect({
       if (!selectionRect.visible()) return;
 
       selectionRect.visible(false);
-      const selectionClientRect = selectionRect.getClientRect();
-      /* No need to filter out the nodes that are from the 'controllers' layer
-      because we're only getting the children from the correct layer */
-      const nodesToSelect = layer.getChildren((node) => {
-        const isIntersecting = Konva.Util.haveIntersection(
-          selectionClientRect,
-          node.getClientRect()
-        );
-        return isIntersecting;
-      });
-
+      const nodesToSelect = getIntersectingNodes(selectionRect, layer);
+      // Select the nodes
       selectNodes(nodesToSelect);
+      // Clear the nodes inside the selection rect
+      setNodesInsideSelectionRect([]);
     }
 
     // Setting mousemove listeners
@@ -119,7 +121,13 @@ export function useSelectionRect({
       window.removeEventListener('mouseup', handleWindowMouseUp);
       window.removeEventListener('touchend', handleWindowMouseUp);
     };
-  }, [layerRef, selectNodes, selectionRectRef, stageRef]);
+  }, [
+    layerRef,
+    selectNodes,
+    selectionRectRef,
+    setNodesInsideSelectionRect,
+    stageRef,
+  ]);
 
   return {
     /**
@@ -128,4 +136,19 @@ export function useSelectionRect({
      */
     handleStartSelectionRect,
   };
+}
+
+function getIntersectingNodes(selectionRect: Konva.Rect, layer: Konva.Layer) {
+  const selectionClientRect = selectionRect.getClientRect();
+  /* No need to filter out the nodes that are from the 'controllers' layer
+      because we're only getting the children from the correct layer */
+  const nodesToSelect = layer.getChildren((node) => {
+    const isIntersecting = Konva.Util.haveIntersection(
+      selectionClientRect,
+      node.getClientRect()
+    );
+    return isIntersecting;
+  });
+
+  return nodesToSelect;
 }

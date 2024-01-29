@@ -44,7 +44,7 @@ const popoverOffset = 12;
 const tooltipOffset = 4;
 
 export function KonvaToolbar() {
-  const { selection } = useTransformerSelectionStore();
+  const selection = useTransformerSelectionStore((state) => state.selection);
   const canvasElement = useCanvasTreeStore(
     useShallow((state) => {
       if (selection === undefined || Array.isArray(selection)) return undefined;

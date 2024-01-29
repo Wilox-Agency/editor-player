@@ -28,7 +28,10 @@ export function KonvaContextMenu({
 }: ContextMenuProps) {
   const { layerRef } = useKonvaRefsStore();
   const removeElements = useCanvasTreeStore((state) => state.removeElements);
-  const { selection, selectNodes } = useTransformerSelectionStore();
+  const selection = useTransformerSelectionStore((state) => state.selection);
+  const selectNodes = useTransformerSelectionStore(
+    (state) => state.selectNodes
+  );
 
   function handleStartCroppingImageThroughContextMenu() {
     if (

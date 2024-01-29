@@ -15,6 +15,7 @@ import type { CanvasElement } from '@/utils/types';
 
 import { KonvaContextMenu } from '@/components/KonvaContextMenu';
 import { ImageCropRect } from '@/components/konva/ImageCropRect';
+import { BordersOfSelectedNodes } from '@/components/konva/BordersOfSelectedNodes';
 import { KonvaToolbar } from '@/components/KonvaToolbar';
 
 const initialElementsFromStorage = localStorage.getItem(
@@ -184,6 +185,8 @@ export function Editor() {
               keepRatio={false}
               ref={hoverBorderTransformerRef}
             />
+            {/* Borders of selected nodes (and nodes inside selection rect) */}
+            <BordersOfSelectedNodes />
             {/* Resize transformer */}
             <Transformer
               flipEnabled={false}

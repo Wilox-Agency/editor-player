@@ -11,21 +11,19 @@ type TransformerSelection = KonvaNodeWithType | Konva.Node[] | undefined;
 
 type TransformerSelectionStore = {
   selection: TransformerSelection;
+  nodesInsideSelectionRect: Konva.Node[];
   getSelectedNodes: () => Konva.Node[];
   selectNodes: (nodes: Konva.Node[]) => void;
+  setNodesInsideSelectionRect: (nodes: Konva.Node[]) => void;
 };
 
 export const useTransformerSelectionStore = create<TransformerSelectionStore>(
   (set, get) => ({
     selection: undefined,
+    nodesInsideSelectionRect: [],
     getSelectedNodes: () => {
       const selection = get().selection;
-      const selectedNodes =
-        selection === undefined
-          ? []
-          : !Array.isArray(selection)
-          ? [selection.node]
-          : selection;
+      const selectedNodes = selectionToNodeArray(selection);
 
       return selectedNodes;
     },
@@ -37,6 +35,9 @@ export const useTransformerSelectionStore = create<TransformerSelectionStore>(
       setTransformerAttributes(transformer, filteredNodesToSelect);
       transformer.nodes(filteredNodesToSelect);
       set({ selection: newSelection });
+    },
+    setNodesInsideSelectionRect(nodes: Konva.Node[]) {
+      set({ nodesInsideSelectionRect: nodes });
     },
   })
 );
@@ -67,6 +68,14 @@ function nodeArrayToSelection(nodes: Konva.Node[]): TransformerSelection {
   }
 
   return nodes;
+}
+
+export function selectionToNodeArray(
+  selection: TransformerSelection
+): Konva.Node[] {
+  if (selection === undefined) return [];
+  if (!Array.isArray(selection)) return [selection.node];
+  return selection;
 }
 
 function getIsNodeSelectable(node: Konva.Node) {

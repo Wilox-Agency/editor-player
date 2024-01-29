@@ -238,12 +238,14 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       setNodeBeingEdited({ textBeingEdited: undefined });
     }, [saveAttrs, setNodeBeingEdited]);
 
-    // Setting the initial attributes only on the first render
+    // Set the initial attributes only on the first render
     useEffect(() => {
       textRef.current?.setAttrs(initialAttributes satisfies Konva.TextConfig);
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    /* Set event listener for opening the textarea when pressing Enter with the
+    current text node as the only selected node */
     useEffect(() => {
       if (isTextBeingEdited) return;
 
@@ -282,6 +284,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       };
     }, [getSelectedNodes, isTextBeingEdited, openTextArea, stageRef]);
 
+    // Set event listener for closing the textarea when clicking outisde
     useEffect(() => {
       if (!isTextBeingEdited || !textAreaRef.current) return;
 
@@ -308,6 +311,25 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         window.removeEventListener('touchstart', handleMouseDownOutside);
       };
     }, [closeTextArea, isTextBeingEdited]);
+
+    /* Clear text being edited state if this is the text being edited and it
+    gets deleted */
+    useEffect(() => {
+      return () => {
+        const { textBeingEdited, setNodeBeingEdited } =
+          useNodeBeingEditedStore.getState();
+        const isTextBeingEdited = textBeingEdited?.id() === id;
+
+        /* When the text gets deleted (i.e. the component unmounts) and it's
+        being edited, clear the text being edited state */
+        if (isTextBeingEdited) {
+          setNodeBeingEdited({ textBeingEdited: undefined });
+        }
+      };
+      /* The effect should be executed only once and none of its dependecies
+      should change */
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
       <>

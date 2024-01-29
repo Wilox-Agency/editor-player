@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useEffect, useState } from 'react';
+import { type RefObject, useCallback, useEffect } from 'react';
 import Konva from 'konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
@@ -18,10 +18,11 @@ export function useImageCropTransformer({
   cropTransformerRef: RefObject<Konva.Transformer>;
   cropRectRef: RefObject<Konva.Rect>;
 }) {
-  const [imageBeingCropped, setImageBeingCropped] = useState<Konva.Image>();
-
   const selectNodes = useTransformerSelectionStore(
     (state) => state.selectNodes
+  );
+  const imageBeingCropped = useNodeBeingEditedStore(
+    (state) => state.imageBeingCropped
   );
   const setNodeBeingEdited = useNodeBeingEditedStore(
     (state) => state.setNodeBeingEdited
@@ -87,8 +88,6 @@ export function useImageCropTransformer({
     // Clearing the current selection
     selectNodes([]);
     // Setting the image as the one being cropped
-    setImageBeingCropped(image);
-    // Setting the node as the one being edited
     setNodeBeingEdited({ imageBeingCropped: image });
     // Setting the crop rect position and size
     cropRect.setAttrs({
@@ -271,8 +270,7 @@ export function useImageCropTransformer({
 
     cropTransformer.nodes([]);
     cropRect.visible(false);
-    setImageBeingCropped(undefined);
-    // Clearing the node being edited
+    // Clearing the image being cropped
     setNodeBeingEdited({ imageBeingCropped: undefined });
   }, [cropRectRef, cropTransformerRef, imageBeingCropped, setNodeBeingEdited]);
 

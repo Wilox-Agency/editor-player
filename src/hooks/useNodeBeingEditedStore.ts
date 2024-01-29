@@ -1,7 +1,7 @@
-import Konva from 'konva';
+import type Konva from 'konva';
 import { create } from 'zustand';
 
-import {
+import type {
   JsUnion,
   Prettify,
   UndefinedProperites,

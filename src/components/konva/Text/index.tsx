@@ -54,14 +54,15 @@ export const Text = forwardRef<Konva.Text, TextProps>(
     const getSelectedNodes = useTransformerSelectionStore(
       (state) => state.getSelectedNodes
     );
+    const isTextBeingEdited = useNodeBeingEditedStore(
+      (state) => state.textBeingEdited?.id() === id
+    );
     const setNodeBeingEdited = useNodeBeingEditedStore(
       (state) => state.setNodeBeingEdited
     );
 
     const [textAreaValue, setTextAreaValue] = useState('');
     const [textAreaStyles, setTextAreaStyles] = useState<CSSProperties>();
-
-    const isTextAreaVisible = textAreaStyles !== undefined;
 
     function handleDoubleClick(
       event: Konva.KonvaEventObject<MouseEvent | TouchEvent>
@@ -244,7 +245,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
     }, []);
 
     useEffect(() => {
-      if (isTextAreaVisible) return;
+      if (isTextBeingEdited) return;
 
       const canvasContainer = stageRef.current?.container();
       if (!canvasContainer) return;
@@ -279,10 +280,10 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       return () => {
         canvasContainer.removeEventListener('keydown', handleTextKeyDown);
       };
-    }, [getSelectedNodes, isTextAreaVisible, openTextArea, stageRef]);
+    }, [getSelectedNodes, isTextBeingEdited, openTextArea, stageRef]);
 
     useEffect(() => {
-      if (!isTextAreaVisible || !textAreaRef.current) return;
+      if (!isTextBeingEdited || !textAreaRef.current) return;
 
       // Focusing the textarea when opening it
       textAreaRef.current.focus();
@@ -306,7 +307,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         window.removeEventListener('mousedown', handleMouseDownOutside);
         window.removeEventListener('touchstart', handleMouseDownOutside);
       };
-    }, [closeTextArea, isTextAreaVisible]);
+    }, [closeTextArea, isTextBeingEdited]);
 
     return (
       <>
@@ -319,7 +320,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
           onDragEnd={handleDragEnd}
           ref={mergeRefs(textRef, forwardedRef)}
         />
-        {isTextAreaVisible && (
+        {isTextBeingEdited && (
           <Html divProps={{ style: { zIndex: 'unset' } }}>
             <textarea
               style={textAreaStyles}

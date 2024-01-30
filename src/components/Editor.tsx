@@ -3,6 +3,10 @@ import type Konva from 'konva';
 import { Layer, Stage, Transformer, Rect } from 'react-konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
+import {
+  type CanvasStyleStateJson,
+  useCanvasStyleStore,
+} from '@/hooks/useCanvasStyleStore';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { useTransformer } from '@/hooks/useTransformer';
@@ -85,8 +89,17 @@ const initialElements: CanvasElement[] = initialElementsFromStorage
       },
     ];
 
+const initialCanvasStyleFromStorage = localStorage.getItem(
+  '@sophia-slide-editor:canvas-style'
+);
+const initialCanvasStyle = initialCanvasStyleFromStorage
+  ? (JSON.parse(initialCanvasStyleFromStorage) as CanvasStyleStateJson)
+  : undefined;
+
 export function Editor() {
   const { canvasTree, loadCanvasTree } = useCanvasTreeStore();
+  const { canvasBackgroundColor, loadCanvasStyleFromJson } =
+    useCanvasStyleStore();
   const getSelectedNodes = useTransformerSelectionStore(
     (state) => state.getSelectedNodes
   );
@@ -134,7 +147,8 @@ export function Editor() {
 
   useEffect(() => {
     loadCanvasTree(initialElements);
-  }, [loadCanvasTree]);
+    if (initialCanvasStyle) loadCanvasStyleFromJson(initialCanvasStyle);
+  }, [loadCanvasStyleFromJson, loadCanvasTree]);
 
   useWindowResize((width, height) => {
     stageRef.current?.size({ width, height });
@@ -144,7 +158,10 @@ export function Editor() {
     <main>
       <KonvaContextMenu startCroppingImage={startCroppingImage}>
         <Stage
-          style={{ overflow: 'hidden' }}
+          style={{
+            backgroundColor: canvasBackgroundColor.toString('css'),
+            overflow: 'hidden',
+          }}
           width={1440}
           height={815}
           tabIndex={0}

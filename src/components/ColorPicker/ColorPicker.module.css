@@ -1,0 +1,172 @@
+@value COLOR_PICKER_WIDTH_IN_REM: 12rem;
+@value TRACK_THICKNESS_IN_REM: 1.5rem;
+
+.container {
+  --_color-picker-width: COLOR_PICKER_WIDTH_IN_REM;
+  --_color-area-size: calc(var(--_color-picker-width) / 2);
+  --_track-thickness: TRACK_THICKNESS_IN_REM;
+  --_thumb-size: 1.25rem;
+  --_focused-thumb-size: calc(
+    var(--_track-thickness) + var(--_thumb-border-width) * 2
+  );
+  --_thumb-border-width: 0.125rem;
+  --_color-swatch-size: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: var(--_color-picker-width);
+}
+
+.colorAreaAndWheel {
+  position: relative;
+  width: var(--_color-picker-width);
+}
+
+.colorAreaWrapper {
+  position: absolute;
+  display: grid;
+  justify-content: center;
+  align-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.colorSwatchAndField {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.colorArea {
+  width: var(--_color-area-size);
+  height: var(--_color-area-size);
+  border-radius: 0.25rem;
+  z-index: 1;
+}
+.colorArea[data-disabled] {
+  opacity: 0.3;
+}
+
+.colorAreaGradient {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+.colorAreaGradient[data-disabled] {
+  /* TODO: Use another color */
+  background-color: rgb(142, 142, 142);
+}
+
+.thumb {
+  --_current-thumb-size: var(--_thumb-size);
+  width: var(--_current-thumb-size);
+  height: var(--_current-thumb-size);
+  border: var(--_thumb-border-width) solid white;
+  border-radius: 100vw;
+  box-shadow: 0 0 0 1px black, inset 0 0 0 1px black;
+}
+.thumb[data-focus-visible] {
+  --_current-thumb-size: var(--_focused-thumb-size);
+}
+.thumb[data-disabled] {
+  background-color: rgb(142, 142, 142);
+  border-color: rgb(142, 142, 142);
+}
+
+.colorWheel {
+  position: relative;
+}
+
+.colorSliderHeaderAndTrack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.colorSliderHeader {
+  /* TODO: Check if `align-self: stretch;` is necessary */
+  align-self: stretch;
+  display: flex;
+}
+
+.colorSliderOutput {
+  flex-grow: 1;
+  text-align: end;
+}
+
+.colorSliderTrack,
+.colorSliderTrackBackground,
+.colorSliderTrackColor {
+  width: 100%;
+  border-radius: 0.25rem;
+  forced-color-adjust: none;
+}
+
+.colorSliderTrack {
+  position: relative;
+  height: var(--_track-thickness);
+}
+
+.colorSliderTrackBackground,
+.colorSliderTrackColor {
+  position: absolute;
+  height: 100%;
+}
+
+.colorSliderThumb {
+  position: absolute;
+  top: calc(var(--_track-thickness) / 2);
+}
+
+.colorSliderTrackBackground,
+.colorSliderThumbBackground {
+  background-color: white;
+  background-image: var(--transparency-grid);
+  background-size: 16px 16px;
+  background-position: -2px -2px, -2px 6px, 6px -10px, -10px -2px;
+}
+
+.colorSliderThumbBackground,
+.colorSliderThumbColor {
+  position: absolute;
+  border-radius: 100vw;
+  width: 100%;
+  height: 100%;
+}
+
+.colorSwatch {
+  position: relative;
+  width: var(--_color-swatch-size);
+  height: var(--_color-swatch-size);
+  border-radius: 0.25rem;
+  overflow: hidden;
+  forced-color-adjust: none;
+}
+
+.colorSwatchBackground {
+  background-color: white;
+  background-image: var(--transparency-grid);
+  background-size: 16px 16px;
+  background-position: -2px -2px, -2px 6px, 6px -10px, -10px -2px;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.colorSwatchColor {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.colorField {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.colorFieldInput {
+  background-color: var(--clr-neutral-dark);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+}

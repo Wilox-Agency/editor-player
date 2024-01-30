@@ -12,6 +12,7 @@ import {
   Image,
   Italic,
   type LucideIcon,
+  PaintBucket,
   PlusSquare,
   Save,
   Type,
@@ -22,6 +23,7 @@ import {
 import styles from './KonvaToolbar.module.css';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
+import { useCanvasStyleStore } from '@/hooks/useCanvasStyleStore';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import {
@@ -35,6 +37,7 @@ import type {
 } from '@/utils/types';
 
 import { Tooltip, TooltipProvider } from '@/components/Tooltip';
+import { ColorPicker } from '@/components/ColorPicker';
 import { AddAssetElementDialog } from './AddAssetElementDialog';
 import { TextSizesPopover } from './TextSizesPopover';
 
@@ -59,6 +62,8 @@ export function KonvaToolbar() {
     <TooltipProvider>
       <Toolbar.Root className={styles.toolbar} orientation="vertical">
         <AddElementButton />
+
+        <ChangeBackgroundColorButton />
 
         <Toolbar.Separator className={styles.toolbarSeparator} />
 
@@ -225,6 +230,45 @@ function AddElementButton() {
               Video
             </button>
           </AddAssetElementDialog>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+function ChangeBackgroundColorButton() {
+  const canvasBackgroundColor = useCanvasStyleStore(
+    (state) => state.canvasBackgroundColor
+  );
+  const changeCanvasBackgroundColor = useCanvasStyleStore(
+    (state) => state.changeCanvasBackgroundColor
+  );
+
+  return (
+    <Popover.Root>
+      <Tooltip
+        content="Change background"
+        side="right"
+        sideOffset={tooltipOffset}
+      >
+        <Popover.Trigger asChild>
+          <Toolbar.Button className={styles.toolbarButton} data-icon-only>
+            <PaintBucket size={mediumIconSize} />
+          </Toolbar.Button>
+        </Popover.Trigger>
+      </Tooltip>
+
+      <Popover.Portal>
+        <Popover.Content
+          className={styles.popover}
+          side="right"
+          sideOffset={popoverOffset}
+          data-padding="medium"
+        >
+          <ColorPicker
+            color={canvasBackgroundColor}
+            onColorChange={changeCanvasBackgroundColor}
+          />
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
@@ -407,8 +451,21 @@ function TextFormattingToggleGroup({
 
 function SaveButton() {
   function handleSaveCanvasTree() {
-    const string = JSON.stringify(useCanvasTreeStore.getState().canvasTree);
-    localStorage.setItem('@sophia-slide-editor:canvas-tree', string);
+    const canvasTreeAsString = JSON.stringify(
+      useCanvasTreeStore.getState().canvasTree
+    );
+    const canvasStyleAsString = JSON.stringify(
+      useCanvasStyleStore.getState().canvasStyleToJson()
+    );
+
+    localStorage.setItem(
+      '@sophia-slide-editor:canvas-tree',
+      canvasTreeAsString
+    );
+    localStorage.setItem(
+      '@sophia-slide-editor:canvas-style',
+      canvasStyleAsString
+    );
   }
 
   return (

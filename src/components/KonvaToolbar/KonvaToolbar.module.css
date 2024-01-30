@@ -19,8 +19,12 @@
   gap: var(--_toolbar-gap);
   box-shadow: 0 0 50px -12px rgb(24 24 27 / 0.9);
 }
+
 .popover {
   box-shadow: var(--shadow-lg-left);
+}
+.popover[data-padding='medium'] {
+  padding: 1rem;
 }
 
 .toolbarButton {

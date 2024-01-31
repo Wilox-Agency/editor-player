@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { type KeyboardEvent, useRef } from 'react';
 import {
   useColorArea,
   useColorField,
@@ -255,8 +255,20 @@ function ColorField(
 
   const label = props.label || 'Color';
 
+  function handleEnterPress(event: KeyboardEvent) {
+    if (event.key !== 'Enter') return;
+    state.commit();
+  }
+
   const { inputProps, labelProps } = useColorField(
-    { ...props, label },
+    {
+      ...props,
+      label,
+      onKeyDown: (event) => {
+        handleEnterPress(event);
+        props.onKeyDown?.(event);
+      },
+    },
     state,
     inputRef
   );

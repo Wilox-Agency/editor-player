@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Typed CSS modules declaration files
+*.css.d.ts

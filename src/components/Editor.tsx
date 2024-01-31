@@ -65,7 +65,7 @@ const initialElements: CanvasElement[] = initialElementsFromStorage
         id: 'b7154603-4d58-4816-8dcb-6df703e13364',
         type: 'text',
         text: 'Redes sociales y\nSalud mental',
-        fill: 'white',
+        fill: 'rgb(255,255,255)',
         fontSize: 109.156059095869,
         align: 'left',
         draggable: true,

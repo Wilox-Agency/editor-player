@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import * as Toolbar from '@radix-ui/react-toolbar';
 import * as Popover from '@radix-ui/react-popover';
 import * as RadioGroup from '@radix-ui/react-radio-group';
+import { type Color, parseColor } from '@react-stately/color';
 import {
   AlignCenter,
   AlignLeft,
@@ -12,6 +13,7 @@ import {
   Image,
   Italic,
   type LucideIcon,
+  Paintbrush,
   PaintBucket,
   PlusSquare,
   Save,
@@ -62,7 +64,6 @@ export function KonvaToolbar() {
     <TooltipProvider>
       <Toolbar.Root className={styles.toolbar} orientation="vertical">
         <AddElementButton />
-
         <ChangeBackgroundColorButton />
 
         <Toolbar.Separator className={styles.toolbarSeparator} />
@@ -77,6 +78,10 @@ export function KonvaToolbar() {
                 canvasElement={canvasElement}
               />
               <TextAlignmentButton
+                node={selection.node}
+                canvasElement={canvasElement}
+              />
+              <TextColorButton
                 node={selection.node}
                 canvasElement={canvasElement}
               />
@@ -361,6 +366,46 @@ function TextAlignmentButton({
               )
             )}
           </RadioGroup.Root>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+function TextColorButton({ node, canvasElement }: KonvaNodeAndElement<'text'>) {
+  const [color, setColor] = useState(() => {
+    // Set the initial state as the current color of the text
+    return parseColor(node.fill()).toFormat('hsb');
+  });
+
+  function handleColorChange(color: Color) {
+    // Update the state
+    setColor(color);
+
+    // Set and save the new text color
+    const cssColor = color.toString('css');
+    node.fill(cssColor);
+    canvasElement.saveAttrs({ fill: cssColor });
+  }
+
+  return (
+    <Popover.Root>
+      <Tooltip content="Text color" side="right" sideOffset={tooltipOffset}>
+        <Popover.Trigger asChild>
+          <Toolbar.Button className={styles.toolbarButton} data-icon-only>
+            <Paintbrush size={mediumIconSize} />
+          </Toolbar.Button>
+        </Popover.Trigger>
+      </Tooltip>
+
+      <Popover.Portal>
+        <Popover.Content
+          className={styles.popover}
+          side="right"
+          sideOffset={popoverOffset}
+          data-padding="medium"
+        >
+          <ColorPicker color={color} onColorChange={handleColorChange} />
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

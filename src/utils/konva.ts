@@ -25,7 +25,7 @@ export const defaultElementAttributes = {
   },
   text: {
     text: 'Text',
-    fill: 'white',
+    fill: 'rgb(255,255,255)',
     fontSize: 32,
     lineHeight: 1,
     letterSpacing: 0,

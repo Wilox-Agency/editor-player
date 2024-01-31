@@ -223,14 +223,16 @@ function ColorSlider(props: Omit<ColorSliderStateOptions, 'locale'>) {
 }
 
 function ColorSwatch({ color }: { color: Color }) {
-  const cssColor = color.toString('css');
-
   return (
-    <div className={styles.colorSwatch} role="img" aria-label={cssColor}>
+    <div
+      className={styles.colorSwatch}
+      role="img"
+      aria-label={`Current color: ${color.toString('hsba')}`}
+    >
       <div className={styles.colorSwatchBackground} />
       <div
         className={styles.colorSwatchColor}
-        style={{ backgroundColor: cssColor }}
+        style={{ backgroundColor: color.toString('css') }}
       />
     </div>
   );

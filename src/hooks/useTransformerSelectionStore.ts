@@ -78,7 +78,7 @@ export function selectionToNodeArray(
   return selection;
 }
 
-function getIsNodeSelectable(node: Konva.Node) {
+export function getIsNodeSelectable(node: Konva.Node) {
   return (
     // Cannot select the stage
     !(node instanceof Konva.Stage) &&

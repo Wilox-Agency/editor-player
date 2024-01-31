@@ -2,8 +2,10 @@ import { type RefObject, useEffect } from 'react';
 import Konva from 'konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
-import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
-import { CustomKonvaAttributes } from '@/utils/konva';
+import {
+  getIsNodeSelectable,
+  useTransformerSelectionStore,
+} from '@/hooks/useTransformerSelectionStore';
 import { MouseButton } from '@/utils/input';
 
 export function useTransformer({
@@ -36,14 +38,9 @@ export function useTransformer({
       return;
     }
 
-    // Prevent selecting any node in the controllers layer
-    const layerName = event.target.getLayer()?.name();
-    if (layerName === 'controllers') return;
-
     // Prevent selecting unselectable elements
-    const elementIsUnselectable =
-      event.target.getAttr(CustomKonvaAttributes.unselectable) === true;
-    if (elementIsUnselectable) return;
+    const isNodeSelectable = getIsNodeSelectable(event.target);
+    if (!isNodeSelectable) return;
 
     const isMetaPress =
       event.evt.shiftKey || event.evt.ctrlKey || event.evt.metaKey;

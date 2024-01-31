@@ -2,7 +2,10 @@ import { type RefObject, useCallback, useEffect } from 'react';
 import Konva from 'konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
-import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
+import {
+  getIsNodeSelectable,
+  useTransformerSelectionStore,
+} from '@/hooks/useTransformerSelectionStore';
 import { useNodeBeingEditedStore } from '@/hooks/useNodeBeingEditedStore';
 import {
   CustomKonvaAttributes,
@@ -62,7 +65,9 @@ export function useImageCropTransformer({
   }
 
   function startCroppingImage(image: Konva.Image) {
-    if (image.getAttr(CustomKonvaAttributes.unselectable) === true) return;
+    // Prevent cropping an unselectable image
+    const isImageSelectable = getIsNodeSelectable(image);
+    if (!isImageSelectable) return;
 
     const cropTransformer = cropTransformerRef.current;
     const cropRect = cropRectRef.current;

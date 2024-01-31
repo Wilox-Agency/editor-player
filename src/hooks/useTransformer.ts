@@ -1,4 +1,4 @@
-import { type RefObject, useEffect } from 'react';
+import { useEffect } from 'react';
 import Konva from 'konva';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
@@ -8,11 +8,7 @@ import {
 } from '@/hooks/useTransformerSelectionStore';
 import { MouseButton } from '@/utils/input';
 
-export function useTransformer({
-  stageRef,
-}: {
-  stageRef: RefObject<Konva.Stage>;
-}) {
+export function useTransformer() {
   const removeElements = useCanvasTreeStore((state) => state.removeElements);
   const getSelectedNodes = useTransformerSelectionStore(
     (state) => state.getSelectedNodes
@@ -32,8 +28,9 @@ export function useTransformer({
       return;
     }
 
-    // When clicking on an empty area, clear the selection
-    if (event.target === stageRef.current) {
+    /* When clicking on an empty area (i.e. clicking directly the stage), clear
+    the selection */
+    if (event.target instanceof Konva.Stage) {
       selectNodes([]);
       return;
     }

@@ -117,7 +117,7 @@ export function Editor() {
   const cropTransformerRef = useRef<Konva.Transformer>(null);
   const cropRectRef = useRef<Konva.Rect>(null);
 
-  const { handleSelectNode } = useTransformer({ stageRef });
+  const { handleSelectNode } = useTransformer();
   const { handleStartSelectionRect } = useSelectionRect({
     stageRef,
     layerRef,

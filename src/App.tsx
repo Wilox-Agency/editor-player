@@ -1,11 +1,11 @@
 import { Toaster } from 'sonner';
 
-import { Editor } from '@/components/Editor';
+import { AnimationPlayer } from '@/components/AnimationPlayer';
 
 export function App() {
   return (
     <>
-      <Editor />
+      <AnimationPlayer />
       <Toaster
         toastOptions={{
           style: {

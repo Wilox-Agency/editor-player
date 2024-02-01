@@ -25,6 +25,7 @@
     "arktype": "1.0.29-alpha",
     "clsx": "^2.1.0",
     "filter-obj": "^5.1.0",
+    "gsap": "^3.12.5",
     "konva": "^9.3.0",
     "lucide-react": "^0.311.0",
     "react": "^18.2.0",

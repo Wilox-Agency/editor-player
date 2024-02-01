@@ -106,6 +106,7 @@ function setTransformerAttributes(
         'bottom-left',
         'bottom-right',
       ],
+      keepRatio: undefined,
       rotateEnabled: undefined,
       boundBoxFunc: (oldBox, newBox) => {
         const text = nodes[0] as Konva.Text;
@@ -134,7 +135,19 @@ function setTransformerAttributes(
   if (isImage) {
     transformer.setAttrs({
       enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+      keepRatio: undefined,
       rotateEnabled: false,
+      boundBoxFunc: undefined,
+    } satisfies Konva.TransformerConfig);
+    return;
+  }
+
+  const isRect = nodes.length === 1 && nodes[0] instanceof Konva.Rect;
+  if (isRect) {
+    transformer.setAttrs({
+      enabledAnchors: undefined,
+      keepRatio: false,
+      rotateEnabled: undefined,
       boundBoxFunc: undefined,
     } satisfies Konva.TransformerConfig);
     return;
@@ -144,6 +157,7 @@ function setTransformerAttributes(
   if (isMultiSelect) {
     transformer.setAttrs({
       enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right'],
+      keepRatio: undefined,
       rotateEnabled: false,
       boundBoxFunc: undefined,
     } satisfies Konva.TransformerConfig);
@@ -152,6 +166,7 @@ function setTransformerAttributes(
 
   transformer.setAttrs({
     enabledAnchors: undefined,
+    keepRatio: undefined,
     rotateEnabled: undefined,
     boundBoxFunc: undefined,
   } satisfies Konva.TransformerConfig);

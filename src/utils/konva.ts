@@ -5,11 +5,13 @@ import type { CanvasElement, CanvasElementOfType } from '@/utils/types';
 
 import { Image, Video } from '@/components/konva/Image';
 import { Text } from '@/components/konva/Text';
+import { Rect } from '@/components/konva/Rect';
 
 export const CanvasComponentByType = {
   video: Video,
   image: Image,
   text: Text,
+  rect: Rect,
 } as const satisfies Record<CanvasElement['type'], ElementType>;
 
 export const CustomKonvaAttributes = {
@@ -30,6 +32,19 @@ export const defaultElementAttributes = {
     lineHeight: 1,
     letterSpacing: 0,
     align: 'center',
+    draggable: true,
+  },
+  rect: {
+    width: 100,
+    height: 100,
+    fill: 'rgb(255,255,255)',
+    // Konva sets this value as true by default
+    strokeEnabled: false,
+    stroke: 'rgb(0,0,0)',
+    strokeWidth: 2,
+    // Konva sets this value as true by default
+    dashEnabled: false,
+    dash: [10, 5],
     draggable: true,
   },
 } as const satisfies {

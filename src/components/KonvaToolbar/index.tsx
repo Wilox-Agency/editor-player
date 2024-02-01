@@ -17,6 +17,7 @@ import {
   PaintBucket,
   PlusSquare,
   Save,
+  Square,
   Type,
   Underline,
   Video,
@@ -95,9 +96,25 @@ export function KonvaToolbar() {
             </>
           )}
 
+        {/* RECT */}
+        {!Array.isArray(selection) &&
+          selection?.type === 'rect' &&
+          canvasElement?.type === 'rect' && (
+            <>
+              <RectColorButton
+                node={selection.node}
+                canvasElement={canvasElement}
+              />
+              <RectBorderButton
+                node={selection.node}
+                canvasElement={canvasElement}
+              />
+            </>
+          )}
+
         {selection &&
           !Array.isArray(selection) &&
-          selection?.type === 'text' && (
+          (selection.type === 'text' || selection.type === 'rect') && (
             <Toolbar.Separator className={styles.toolbarSeparator} />
           )}
 
@@ -235,6 +252,13 @@ function AddElementButton() {
               Video
             </button>
           </AddAssetElementDialog>
+
+          <button
+            className={styles.toolbarButton}
+            onClick={() => handleAddElement('rect')}
+          >
+            <Square size={smallIconSize} /> Rectangle
+          </button>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
@@ -491,6 +515,50 @@ function TextFormattingToggleGroup({
         )
       )}
     </Toolbar.ToggleGroup>
+  );
+}
+
+function RectColorButton({ node, canvasElement }: KonvaNodeAndElement<'rect'>) {
+  const [color, setColor] = useState(() => {
+    // Set the initial state as the current color of the rect
+    return parseColor(node.fill()).toFormat('hsb');
+  });
+
+  function handleColorChange(color: Color) {
+    // Update the state
+    setColor(color);
+
+    // Set and save the new rect color
+    const cssColor = color.toString('css');
+    node.fill(cssColor);
+    canvasElement.saveAttrs({ fill: cssColor });
+  }
+
+  return (
+    <Popover.Root>
+      <Tooltip
+        content="Rectangle color"
+        side="right"
+        sideOffset={tooltipOffset}
+      >
+        <Popover.Trigger asChild>
+          <Toolbar.Button className={styles.toolbarButton} data-icon-only>
+            <Paintbrush size={mediumIconSize} />
+          </Toolbar.Button>
+        </Popover.Trigger>
+      </Tooltip>
+
+      <Popover.Portal>
+        <Popover.Content
+          className={styles.popover}
+          side="right"
+          sideOffset={popoverOffset}
+          data-padding="medium"
+        >
+          <ColorPicker color={color} onColorChange={handleColorChange} />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }
 

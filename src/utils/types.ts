@@ -3,6 +3,7 @@ import type { KonvaNodeComponent, KonvaNodeEvents } from 'react-konva';
 
 import type { ImageProps, VideoProps } from '@/components/konva/Image';
 import type { TextProps } from '@/components/konva/Text';
+import type { RectProps } from '@/components/konva/Rect';
 
 /**
  * Computes a type to make it more readable.
@@ -87,6 +88,7 @@ export type CanvasElement = DistributiveOmit<
     | (ImageProps & { type: 'image' })
     | (VideoProps & { type: 'video' })
     | (TextProps & { type: 'text' })
+    | (RectProps & { type: 'rect' })
   ) & { id: string },
   'saveAttrs' | 'remove'
 >;
@@ -116,6 +118,7 @@ type KonvaNodeByElementType = {
   video: Konva.Image;
   image: Konva.Image;
   text: Konva.Text;
+  rect: Konva.Rect;
 };
 
 export type KonvaNodeWithType<

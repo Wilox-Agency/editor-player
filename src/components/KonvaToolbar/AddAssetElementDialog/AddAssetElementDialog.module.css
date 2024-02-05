@@ -15,6 +15,7 @@
   gap: 1rem;
   width: 30rem;
   padding: 1.5rem;
+  border: 1px solid var(--clr-neutral-subtle-highlight);
   border-radius: 1rem;
   box-shadow: var(--shadow-lg-bottom);
 }

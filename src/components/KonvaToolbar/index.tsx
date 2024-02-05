@@ -605,7 +605,7 @@ function RectCornerRadiusButton({
           className={styles.popover}
           side="right"
           sideOffset={popoverOffset}
-          data-slider-only
+          data-padding="medium"
         >
           <div className={styles.labelAndInput}>
             <span className={styles.labelAndOutput}>

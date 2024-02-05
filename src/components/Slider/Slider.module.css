@@ -6,6 +6,7 @@
   align-items: center;
   width: 10rem;
   height: calc(var(--_slider-thumb-size) + var(--_slider-padding) * 2);
+  margin-bottom: -0.25rem;
   user-select: none;
   touch-action: none;
 }

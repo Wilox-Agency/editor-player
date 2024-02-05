@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import type Konva from 'konva';
 import { useShallow } from 'zustand/react/shallow';
 import * as Toolbar from '@radix-ui/react-toolbar';
@@ -16,6 +16,7 @@ import {
   Paintbrush,
   PaintBucket,
   PlusSquare,
+  Radius,
   Save,
   Square,
   Type,
@@ -41,6 +42,7 @@ import type {
 
 import { Tooltip, TooltipProvider } from '@/components/Tooltip';
 import { ColorPicker } from '@/components/ColorPicker';
+import { Slider } from '@/components/Slider';
 import { AddAssetElementDialog } from './AddAssetElementDialog';
 import { TextSizesPopover } from './TextSizesPopover';
 
@@ -105,7 +107,7 @@ export function KonvaToolbar() {
                 node={selection.node}
                 canvasElement={canvasElement}
               />
-              <RectBorderButton
+              <RectCornerRadiusButton
                 node={selection.node}
                 canvasElement={canvasElement}
               />
@@ -556,6 +558,72 @@ function RectColorButton({ node, canvasElement }: KonvaNodeAndElement<'rect'>) {
           data-padding="medium"
         >
           <ColorPicker color={color} onColorChange={handleColorChange} />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+function RectCornerRadiusButton({
+  node,
+  canvasElement,
+}: KonvaNodeAndElement<'rect'>) {
+  const cornerRadiusLabelId = useId();
+  const cornerRadiusInputId = useId();
+
+  /* Asserting the corner radius as a number because there's no way to modify it
+  as an array */
+  const currentCornerRadius = (canvasElement.cornerRadius ||
+    node.cornerRadius()) as number;
+  // The maximum corner radius is half of the smallest side
+  const maxCornerRadius = Math.ceil(
+    Math.min(
+      canvasElement.width || defaultElementAttributes.rect.width,
+      canvasElement.height || defaultElementAttributes.rect.height
+    ) / 2
+  );
+
+  function handleChangeCornerRadius([cornerRadius]: number[]) {
+    if (cornerRadius === undefined) return;
+
+    node.cornerRadius(Math.min(cornerRadius, maxCornerRadius));
+    canvasElement.saveAttrs({ cornerRadius: node.cornerRadius() });
+  }
+
+  return (
+    <Popover.Root>
+      <Tooltip content="Corner radius" side="right" sideOffset={tooltipOffset}>
+        <Popover.Trigger asChild>
+          <Toolbar.Button className={styles.toolbarButton} data-icon-only>
+            <Radius size={mediumIconSize} />
+          </Toolbar.Button>
+        </Popover.Trigger>
+      </Tooltip>
+
+      <Popover.Portal>
+        <Popover.Content
+          className={styles.popover}
+          side="right"
+          sideOffset={popoverOffset}
+          data-slider-only
+        >
+          <div className={styles.labelAndInput}>
+            <span className={styles.labelAndOutput}>
+              <label id={cornerRadiusLabelId}>Corner radius</label>
+              <output htmlFor={cornerRadiusInputId}>
+                {currentCornerRadius}
+              </output>
+            </span>
+            <Slider
+              id={cornerRadiusInputId}
+              defaultValue={[currentCornerRadius]}
+              min={0}
+              max={maxCornerRadius}
+              step={1}
+              aria-labelledby={cornerRadiusLabelId}
+              onValueChange={handleChangeCornerRadius}
+            />
+          </div>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

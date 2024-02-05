@@ -38,13 +38,6 @@ export const defaultElementAttributes = {
     width: 100,
     height: 100,
     fill: 'rgb(255,255,255)',
-    // Konva sets this value as true by default
-    strokeEnabled: false,
-    stroke: 'rgb(0,0,0)',
-    strokeWidth: 2,
-    // Konva sets this value as true by default
-    dashEnabled: false,
-    dash: [10, 5],
     draggable: true,
   },
 } as const satisfies {

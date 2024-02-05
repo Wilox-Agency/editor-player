@@ -1,7 +1,7 @@
 import { type ChangeEvent, useId } from 'react';
 import * as Popover from '@radix-ui/react-popover';
 
-import styles from './TextSizesPopover.module.css';
+import styles from '../KonvaToolbar.module.css';
 
 import { defaultElementAttributes } from '@/utils/konva';
 import {
@@ -80,6 +80,8 @@ export function TextSizesPopover({
         className={styles.popover}
         side="right"
         sideOffset={popoverOffset}
+        data-gap="medium"
+        data-padding="medium"
       >
         <div className={styles.labelAndInput}>
           <label htmlFor={fontSizeInputId}>

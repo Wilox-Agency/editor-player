@@ -21,6 +21,9 @@
 .popover {
   box-shadow: var(--shadow-lg-left);
 }
+.popover[data-gap='medium'] {
+  gap: 1rem;
+}
 .popover[data-padding='medium'] {
   padding: 1rem;
 }
@@ -85,4 +88,14 @@
 .labelAndOutput {
   display: flex;
   justify-content: space-between;
+}
+
+.softText {
+  color: var(--clr-text-neutral-soft);
+}
+
+.input {
+  background-color: var(--clr-neutral-dark);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
 }

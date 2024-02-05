@@ -14,7 +14,7 @@ import { useSelectionRect } from '@/hooks/useSelectionRect';
 import { useImageCropTransformer } from '@/hooks/useImageCropTransformer';
 import { useHoverBorder } from '@/hooks/useHoverBorder';
 import { useWindowResize } from '@/hooks/useWindowResize';
-import { CanvasComponentByType } from '@/utils/konva';
+import { CanvasComponentByType, saveCanvas } from '@/utils/konva';
 import type { CanvasElement } from '@/utils/types';
 
 import { KonvaContextMenu } from '@/components/KonvaContextMenu';
@@ -153,6 +153,31 @@ export function Editor() {
   useWindowResize((width, height) => {
     stageRef.current?.size({ width, height });
   });
+
+  // Add shortcut for saving the canvas
+  useEffect(() => {
+    function handleSaveShortcut(event: KeyboardEvent) {
+      /**
+       * @see https://stackoverflow.com/questions/10527983/best-way-to-detect-mac-os-x-or-windows-computers-with-javascript-or-jquery
+       */
+      const platform =
+        'userAgentData' in navigator
+          ? (navigator.userAgentData as { platform: string }).platform
+          : navigator.platform;
+      const isAppleDevice = /(Mac|iPhone|iPod|iPad)/i.test(platform);
+
+      const isMetaPress = isAppleDevice ? event.metaKey : event.ctrlKey;
+      const isSaveShortcut = isMetaPress && event.key === 's';
+
+      if (isSaveShortcut) {
+        event.preventDefault();
+        saveCanvas();
+      }
+    }
+
+    window.addEventListener('keydown', handleSaveShortcut);
+    return () => window.removeEventListener('keydown', handleSaveShortcut);
+  }, []);
 
   return (
     <main>

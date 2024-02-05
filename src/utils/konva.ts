@@ -1,6 +1,9 @@
 import type { ElementType } from 'react';
 import type Konva from 'konva';
+import { toast } from 'sonner';
 
+import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
+import { useCanvasStyleStore } from '@/hooks/useCanvasStyleStore';
 import type { CanvasElement, CanvasElementOfType } from '@/utils/types';
 
 import { Image, Video } from '@/components/konva/Image';
@@ -118,4 +121,21 @@ export function getCanvasImageIntrinsicSize(imageSource: CanvasImageSource): {
   }
 
   return { width: imageSource.width, height: imageSource.height };
+}
+
+export function saveCanvas() {
+  const canvasTreeAsString = JSON.stringify(
+    useCanvasTreeStore.getState().canvasTree
+  );
+  const canvasStyleAsString = JSON.stringify(
+    useCanvasStyleStore.getState().canvasStyleToJson()
+  );
+
+  localStorage.setItem('@sophia-slide-editor:canvas-tree', canvasTreeAsString);
+  localStorage.setItem(
+    '@sophia-slide-editor:canvas-style',
+    canvasStyleAsString
+  );
+
+  toast.success('Canvas saved successfully!');
 }

@@ -32,6 +32,7 @@ import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionSto
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import {
   defaultElementAttributes,
+  saveCanvas,
   waitUntilKonvaNodeSizeIsCalculated,
 } from '@/utils/konva';
 import type {
@@ -631,29 +632,11 @@ function RectCornerRadiusButton({
 }
 
 function SaveButton() {
-  function handleSaveCanvasTree() {
-    const canvasTreeAsString = JSON.stringify(
-      useCanvasTreeStore.getState().canvasTree
-    );
-    const canvasStyleAsString = JSON.stringify(
-      useCanvasStyleStore.getState().canvasStyleToJson()
-    );
-
-    localStorage.setItem(
-      '@sophia-slide-editor:canvas-tree',
-      canvasTreeAsString
-    );
-    localStorage.setItem(
-      '@sophia-slide-editor:canvas-style',
-      canvasStyleAsString
-    );
-  }
-
   return (
     <Tooltip content="Save" side="right" sideOffset={tooltipOffset}>
       <Toolbar.Button
         className={styles.toolbarButton}
-        onClick={handleSaveCanvasTree}
+        onClick={saveCanvas}
         data-icon-only
       >
         <Save size={mediumIconSize} />

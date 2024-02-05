@@ -196,19 +196,19 @@ function AddElementButton() {
             height: layer.height(),
           });
         }
+        // Saving the new size and position
+        updateElement(idOfNewlyCreatedElement, {
+          ...node.position(),
+          ...node.size(),
+        });
       }
 
-      // Center the node
+      // Center the node and save its new position
       node.position({
         x: layer.width() / 2 - node.width() / 2,
         y: layer.height() / 2 - node.height() / 2,
       });
-
-      // Save the new position and size
-      updateElement(idOfNewlyCreatedElement, {
-        ...node.position(),
-        ...node.size(),
-      });
+      updateElement(idOfNewlyCreatedElement, node.position());
 
       // Show the node
       node.visible(true);

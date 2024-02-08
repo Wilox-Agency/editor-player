@@ -33,6 +33,7 @@ import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import {
   defaultElementAttributes,
   saveCanvas,
+  StageVirtualSize,
   waitUntilKonvaNodeSizeIsCalculated,
 } from '@/utils/konva';
 import type {
@@ -164,10 +165,7 @@ function AddElementButton() {
 
       setIdOfNewlyCreatedElement(undefined);
 
-      const layer = layerRef.current;
-      if (!layer) return;
-
-      const node = layer.findOne(`#${idOfNewlyCreatedElement}`);
+      const node = layerRef.current?.findOne(`#${idOfNewlyCreatedElement}`);
       if (!node) return;
 
       // Hide the node before centering and selecting it
@@ -177,23 +175,25 @@ function AddElementButton() {
       await waitUntilKonvaNodeSizeIsCalculated(node);
 
       const isNodeOverflowingCanvas =
-        node.width() > layer.width() || node.height() > layer.height();
+        node.width() > StageVirtualSize.width ||
+        node.height() > StageVirtualSize.height;
       // Reduce node size if it overflows the canvas
       if (isNodeOverflowingCanvas) {
-        const layerAspectRatio = layer.width() / layer.height();
+        const stageAspectRatio =
+          StageVirtualSize.width / StageVirtualSize.height;
         const nodeAspectRatio = node.width() / node.height();
 
-        if (nodeAspectRatio >= layerAspectRatio) {
-          const scale = layer.width() / node.width();
+        if (nodeAspectRatio >= stageAspectRatio) {
+          const scale = StageVirtualSize.width / node.width();
           node.size({
-            width: layer.width(),
+            width: StageVirtualSize.width,
             height: node.height() * scale,
           });
         } else {
-          const scale = layer.height() / node.height();
+          const scale = StageVirtualSize.height / node.height();
           node.size({
             width: node.width() * scale,
-            height: layer.height(),
+            height: StageVirtualSize.height,
           });
         }
         // Saving the new size and position
@@ -205,8 +205,8 @@ function AddElementButton() {
 
       // Center the node and save its new position
       node.position({
-        x: layer.width() / 2 - node.width() / 2,
-        y: layer.height() / 2 - node.height() / 2,
+        x: StageVirtualSize.width / 2 - node.width() / 2,
+        y: StageVirtualSize.height / 2 - node.height() / 2,
       });
       updateElement(idOfNewlyCreatedElement, node.position());
 

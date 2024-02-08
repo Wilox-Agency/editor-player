@@ -9,6 +9,7 @@ import {
 import { useNodeBeingEditedStore } from '@/hooks/useNodeBeingEditedStore';
 import {
   CustomKonvaAttributes,
+  convertScale,
   getCanvasImageIntrinsicSize,
 } from '@/utils/konva';
 import { MouseButton } from '@/utils/input';
@@ -81,12 +82,11 @@ export function useImageCropTransformer({
     let uncroppedImageRect = imageState.uncroppedImageRect;
     // Saving the uncropped image size if not saved already
     if (!uncroppedImageRect) {
-      const currentImageRect = image.getClientRect();
       uncroppedImageRect = {
         cropXWithScale: 0,
         cropYWithScale: 0,
-        width: currentImageRect.width,
-        height: currentImageRect.height,
+        width: image.width(),
+        height: image.height(),
       };
       imageState.saveAttrs({ uncroppedImageRect });
     }
@@ -101,7 +101,8 @@ export function useImageCropTransformer({
       width: image.width(),
       height: image.height(),
       visible: true,
-      dragBoundFunc: (position) => {
+      dragBoundFunc: (scaledPosition) => {
+        const position = convertScale(scaledPosition, { to: 'unscaled' });
         const positionWithConstraints = { ...position };
 
         // Limiting drag to the left of the image
@@ -132,7 +133,7 @@ export function useImageCropTransformer({
             image.y() + image.height() - cropRect.height();
         }
 
-        return positionWithConstraints;
+        return convertScale(positionWithConstraints, { to: 'scaled' });
       },
     } satisfies Konva.RectConfig);
 
@@ -149,7 +150,15 @@ export function useImageCropTransformer({
     } satisfies Partial<Konva.ImageConfig>);
 
     cropTransformer.setAttrs({
-      boundBoxFunc: (oldBox, newBox) => {
+      boundBoxFunc: (scaledOldBox, scaledNewBox) => {
+        const oldBox = convertScale(scaledOldBox, {
+          to: 'unscaled',
+          ignoreKeys: ['rotation'],
+        });
+        const newBox = convertScale(scaledNewBox, {
+          to: 'unscaled',
+          ignoreKeys: ['rotation'],
+        });
         const boxWithConstraints = { ...newBox };
         const MIN_SIZE = 8;
 
@@ -205,7 +214,10 @@ export function useImageCropTransformer({
           // }
         }
 
-        return boxWithConstraints;
+        return convertScale(boxWithConstraints, {
+          to: 'scaled',
+          ignoreKeys: ['rotation'],
+        });
       },
     } satisfies Konva.TransformerConfig);
 

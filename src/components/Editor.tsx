@@ -13,8 +13,12 @@ import { useTransformer } from '@/hooks/useTransformer';
 import { useSelectionRect } from '@/hooks/useSelectionRect';
 import { useImageCropTransformer } from '@/hooks/useImageCropTransformer';
 import { useHoverBorder } from '@/hooks/useHoverBorder';
-import { useWindowResize } from '@/hooks/useWindowResize';
-import { CanvasComponentByType, saveCanvas } from '@/utils/konva';
+import { useResponsiveStage } from '@/hooks/useResponsiveStage';
+import {
+  CanvasComponentByType,
+  saveCanvas,
+  StageVirtualSize,
+} from '@/utils/konva';
 import type { CanvasElement } from '@/utils/types';
 
 import { KonvaContextMenu } from '@/components/KonvaContextMenu';
@@ -134,6 +138,11 @@ export function Editor() {
   const { handleHoverStart, handleHoverEnd } = useHoverBorder({
     hoverBorderTransformerRef,
   });
+  const { stageWrapperId } = useResponsiveStage({
+    stageVirtualWidth: StageVirtualSize.width,
+    stageVirtualHeight: StageVirtualSize.height,
+    stageRef,
+  });
 
   function handleContextMenu(event: Konva.KonvaEventObject<PointerEvent>) {
     const isTargetSelected = getSelectedNodes().some(
@@ -149,10 +158,6 @@ export function Editor() {
     loadCanvasTree(initialElements);
     if (initialCanvasStyle) loadCanvasStyleFromJson(initialCanvasStyle);
   }, [loadCanvasStyleFromJson, loadCanvasTree]);
-
-  useWindowResize((width, height) => {
-    stageRef.current?.size({ width, height });
-  });
 
   // Add shortcut for saving the canvas
   useEffect(() => {
@@ -183,12 +188,13 @@ export function Editor() {
     <main>
       <KonvaContextMenu startCroppingImage={startCroppingImage}>
         <Stage
+          id={stageWrapperId}
+          className="konva-stage-wrapper"
           style={{
-            backgroundColor: canvasBackgroundColor.toString('css'),
-            overflow: 'hidden',
+            '--canvas-background-color': canvasBackgroundColor.toString('css'),
           }}
-          width={1440}
-          height={815}
+          width={StageVirtualSize.width}
+          height={StageVirtualSize.height}
           tabIndex={0}
           onClick={handleSelectNode}
           onTap={handleSelectNode}

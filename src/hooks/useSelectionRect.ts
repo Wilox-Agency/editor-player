@@ -2,6 +2,7 @@ import { type RefObject, useEffect, useRef } from 'react';
 import Konva from 'konva';
 
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
+import { convertScale } from '@/utils/konva';
 import { MouseButton } from '@/utils/input';
 
 export function useSelectionRect({
@@ -46,7 +47,9 @@ export function useSelectionRect({
     // Do nothing when mousedown not on stage
     if (event.target !== stage) return;
 
-    const pointerPosition = stage.getPointerPosition()!;
+    const pointerPosition = convertScale(stage.getPointerPosition()!, {
+      to: 'unscaled',
+    });
     coordinatesRef.current = {
       initialX: pointerPosition.x,
       initialY: pointerPosition.y,
@@ -70,7 +73,9 @@ export function useSelectionRect({
       if (!isSelectingRef.current) return;
 
       const coordinates = coordinatesRef.current;
-      const pointerPosition = stage.getPointerPosition()!;
+      const pointerPosition = convertScale(stage.getPointerPosition()!, {
+        to: 'unscaled',
+      });
       coordinates.currentX = pointerPosition.x;
       coordinates.currentY = pointerPosition.y;
 

@@ -15,6 +15,7 @@ import styles from './Text.module.css';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { useNodeBeingEditedStore } from '@/hooks/useNodeBeingEditedStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
+import { convertScale } from '@/utils/konva';
 import { TextSizes } from '@/utils/validation';
 import { MouseButton } from '@/utils/input';
 import { mergeRefs } from '@/utils/mergeRefs';
@@ -22,6 +23,7 @@ import type {
   CanvasElementOfTypeWithActions,
   RemoveIndex,
 } from '@/utils/types';
+import { useStageScaleStore } from '@/hooks/useStageScaleStore';
 
 export type TextProps = Pick<
   RemoveIndex<Konva.TextConfig>,
@@ -168,8 +170,17 @@ export const Text = forwardRef<Konva.Text, TextProps>(
 
     const openTextArea = useCallback(() => {
       const text = textRef.current!;
-      const stageBox = stageRef.current!.container().getBoundingClientRect();
-      const textPosition = text.getAbsolutePosition();
+      /* Even though this value is not from Konva itself, it is scaled too
+      because the stage container gets a scale transform */
+      const stageBox = convertScale(
+        stageRef
+          .current!.content.getBoundingClientRect()
+          .toJSON() as DOMRectReadOnly,
+        { to: 'unscaled' }
+      );
+      const textPosition = convertScale(text.getAbsolutePosition(), {
+        to: 'unscaled',
+      });
 
       // Hiding the text node
       text.visible(false);
@@ -181,20 +192,24 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         textHeight += text.fontSize() * 0.07;
       }
 
+      // TODO: Explaing why I need to use this scale
+      const stageContainerScale =
+        useStageScaleStore.getState().stageContainerScale;
+
       const textAreaStyles: CSSProperties = {
         color: text.fill(),
         fontFamily: text.fontFamily(),
-        fontSize: text.fontSize(),
+        fontSize: text.fontSize() * stageContainerScale,
         lineHeight: text.lineHeight(),
         letterSpacing: text.letterSpacing(),
         fontWeight: text.fontStyle().includes('bold') ? 'bold' : undefined,
         fontStyle: text.fontStyle().includes('italic') ? 'italic' : undefined,
         textDecorationLine: text.textDecoration(),
         textAlign: text.align() as 'left' | 'center' | 'right',
-        top: stageBox.top + textPosition.y,
-        left: stageBox.left + textPosition.x,
-        width: text.width(),
-        height: textHeight,
+        top: stageBox.top + textPosition.y * stageContainerScale,
+        left: stageBox.left + textPosition.x * stageContainerScale,
+        width: text.width() * stageContainerScale,
+        height: textHeight * stageContainerScale,
         transformOrigin: 'left top',
         transform: `rotate(${text.rotation()}deg)`,
       };
@@ -206,12 +221,13 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       const isSafari =
         userAgent.includes('safari') && !userAgent.includes('chrome');
       const isFirefox = userAgent.includes('firefox');
+      // TODO: Test these translates at different stage scales
       textAreaStyles.transform += `translateY(-${
         isSafari
           ? 0
           : isFirefox
-          ? Math.round(text.fontSize() / 24)
-          : Math.round(text.fontSize() / 20)
+          ? Math.round((text.fontSize() * stageContainerScale) / 24)
+          : Math.round((text.fontSize() * stageContainerScale) / 20)
       }px)`;
 
       // Setting the value and styles of the textarea

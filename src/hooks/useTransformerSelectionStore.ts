@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { TextSizes } from '@/utils/validation';
-import { CustomKonvaAttributes } from '@/utils/konva';
+import { CustomKonvaAttributes, convertScale } from '@/utils/konva';
 import type { KonvaNodeWithType } from '@/utils/types';
 
 type TransformerSelection = KonvaNodeWithType | Konva.Node[] | undefined;
@@ -108,7 +108,7 @@ function setTransformerAttributes(
       ],
       keepRatio: undefined,
       rotateEnabled: undefined,
-      boundBoxFunc: (oldBox, newBox) => {
+      boundBoxFunc: (scaledOldBox, scaledNewBox) => {
         const text = nodes[0] as Konva.Text;
 
         const activeAnchor = transformer.getActiveAnchor();
@@ -116,16 +116,16 @@ function setTransformerAttributes(
         const isResizingOnlyWidth =
           activeAnchor && activeAnchor.startsWith('middle');
         if (isResizingOnlyWidth) {
-          const currentMinWidth = Math.max(
-            text.fontSize(),
-            TextSizes.minFontSize
+          const currentMinWidth = convertScale(
+            Math.max(text.fontSize(), TextSizes.minFontSize),
+            { to: 'scaled' }
           );
-          if (Math.abs(newBox.width) < currentMinWidth) {
-            return { ...oldBox, width: currentMinWidth };
+          if (Math.abs(scaledNewBox.width) < currentMinWidth) {
+            return { ...scaledOldBox, width: currentMinWidth };
           }
         }
 
-        return newBox;
+        return scaledNewBox;
       },
     } satisfies Konva.TransformerConfig);
     return;

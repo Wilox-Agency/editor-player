@@ -146,7 +146,7 @@ export function useSelectionRect({
 function getIntersectingNodes(selectionRect: Konva.Rect, layer: Konva.Layer) {
   const selectionClientRect = selectionRect.getClientRect();
   /* No need to filter out the nodes that are from the 'controllers' layer
-      because we're only getting the children from the correct layer */
+  because we're only getting the children from the correct layer */
   const nodesToSelect = layer.getChildren((node) => {
     const isIntersecting = Konva.Util.haveIntersection(
       selectionClientRect,

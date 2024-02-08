@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type Konva from 'konva';
 import { useShallow } from 'zustand/react/shallow';
 import * as Toolbar from '@radix-ui/react-toolbar';
@@ -569,9 +569,6 @@ function RectCornerRadiusButton({
   node,
   canvasElement,
 }: KonvaNodeAndElement<'rect'>) {
-  const cornerRadiusLabelId = useId();
-  const cornerRadiusInputId = useId();
-
   /* Asserting the corner radius as a number because there's no way to modify it
   as an array */
   const currentCornerRadius = (canvasElement.cornerRadius ||
@@ -584,7 +581,7 @@ function RectCornerRadiusButton({
     ) / 2
   );
 
-  function handleChangeCornerRadius([cornerRadius]: number[]) {
+  function handleChangeCornerRadius(cornerRadius: number) {
     if (cornerRadius === undefined) return;
 
     node.cornerRadius(Math.min(cornerRadius, maxCornerRadius));
@@ -608,23 +605,14 @@ function RectCornerRadiusButton({
           sideOffset={popoverOffset}
           data-padding="medium"
         >
-          <div className={styles.labelAndInput}>
-            <span className={styles.labelAndOutput}>
-              <label id={cornerRadiusLabelId}>Corner radius</label>
-              <output htmlFor={cornerRadiusInputId}>
-                {currentCornerRadius}
-              </output>
-            </span>
-            <Slider
-              id={cornerRadiusInputId}
-              defaultValue={[currentCornerRadius]}
-              min={0}
-              max={maxCornerRadius}
-              step={1}
-              aria-labelledby={cornerRadiusLabelId}
-              onValueChange={handleChangeCornerRadius}
-            />
-          </div>
+          <Slider
+            label="Corner radius"
+            defaultValue={currentCornerRadius}
+            minValue={0}
+            maxValue={maxCornerRadius}
+            step={1}
+            onChange={handleChangeCornerRadius}
+          />
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

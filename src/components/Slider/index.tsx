@@ -1,45 +1,84 @@
-import * as SliderPrimitive from '@radix-ui/react-slider';
+import { useMemo, useRef } from 'react';
+import {
+  type AriaSliderProps,
+  type AriaSliderThumbOptions,
+  useSlider,
+  useSliderThumb,
+} from '@react-aria/slider';
+import { type SliderState, useSliderState } from '@react-stately/slider';
 
 import styles from './Slider.module.css';
 
-import type { JsUnion } from '@/utils/types';
-
-type SliderProps = Pick<
-  SliderPrimitive.SliderProps,
-  | 'defaultValue'
-  | 'value'
-  | 'onValueChange'
-  | 'onValueCommit'
-  | 'name'
-  | 'disabled'
-  | 'orientation'
-  | 'inverted'
-  | 'min'
-  | 'max'
-  | 'step'
-> & {
-  id?: string;
+type SliderProps = AriaSliderProps<number> & {
   width?: 'fixed' | 'full';
-} & JsUnion<{ 'aria-label': string }, { 'aria-labelledby': string }>;
+};
 
-export function Slider({
-  id,
-  width = 'fixed',
-  'aria-label': ariaLabel,
-  'aria-labelledby': ariaLabelledBy,
-  ...props
-}: SliderProps) {
+export function Slider({ width = 'fixed', ...props }: SliderProps) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const numberFormatter = useMemo(() => new Intl.NumberFormat(), []);
+  const state = useSliderState({ ...props, numberFormatter });
+  const { groupProps, trackProps, labelProps, outputProps } = useSlider(
+    props,
+    state,
+    trackRef
+  );
+
   return (
-    <SliderPrimitive.Root {...props} className={styles.root} data-width={width}>
-      <SliderPrimitive.Track className={styles.track}>
-        <SliderPrimitive.Range className={styles.range} />
-      </SliderPrimitive.Track>
-      <SliderPrimitive.Thumb
-        id={id}
-        className={styles.thumb}
-        aria-label={ariaLabel}
-        aria-labelledby={ariaLabelledBy}
-      />
-    </SliderPrimitive.Root>
+    <div
+      {...groupProps}
+      className={styles.group}
+      data-orientation={state.orientation}
+    >
+      {props.label && (
+        <div className={styles.labelAndOutput}>
+          <label {...labelProps}>{props.label}</label>
+          <output {...outputProps}>{state.getThumbValueLabel(0)}</output>
+        </div>
+      )}
+
+      <div
+        {...trackProps}
+        className={styles.track}
+        data-width={width}
+        // `data-disabled` will only be present when disabled
+        data-disabled={state.isDisabled ? '' : undefined}
+        ref={trackRef}
+      >
+        {/* Track line */}
+        <div className={styles.trackLine} />
+        {/* Track fill */}
+        <div
+          className={styles.trackFill}
+          style={{
+            '--_slider-percentage': state.getThumbPercent(0) * 100 + '%',
+          }}
+        />
+        <Thumb state={state} trackRef={trackRef} />
+      </div>
+    </div>
+  );
+}
+
+function Thumb({
+  state,
+  ...props
+}: Omit<AriaSliderThumbOptions, 'inputRef'> & { state: SliderState }) {
+  const inputRef = useRef(null);
+  const { thumbProps, inputProps, isDragging, isFocused } = useSliderThumb(
+    { ...props, inputRef },
+    state
+  );
+
+  return (
+    <div
+      {...thumbProps}
+      className={styles.thumb}
+      // `data-focused` will only be present when is focused
+      data-focused={isFocused ? '' : undefined}
+      // `data-dragging` will only be present when is dragging
+      data-dragging={isDragging ? '' : undefined}
+    >
+      <input {...inputProps} className="sr-only" ref={inputRef} />
+    </div>
   );
 }

@@ -24,10 +24,6 @@ export function TextSizesPopover({
   popoverOffset,
 }: TextSizesPopoverProps) {
   const fontSizeInputId = useId();
-  const lineHeightLabelId = useId();
-  const lineHeightInputId = useId();
-  const letterSpacingLabelId = useId();
-  const letterSpacingInputId = useId();
 
   const currentFontSize =
     canvasElement.fontSize || defaultElementAttributes.text.fontSize;
@@ -50,7 +46,7 @@ export function TextSizesPopover({
     canvasElement.saveAttrs({ fontSize: newFontSize });
   }
 
-  function handleChangeLineHeight([unvalidatedLineHeight]: number[]) {
+  function handleChangeLineHeight(unvalidatedLineHeight: number) {
     const validation = validateLineHeight(unvalidatedLineHeight);
     const newLineHeight = validation.data;
 
@@ -62,7 +58,7 @@ export function TextSizesPopover({
     canvasElement.saveAttrs({ lineHeight: newLineHeight });
   }
 
-  function handleChangeLetterSpacing([unvalidatedLetterSpacing]: number[]) {
+  function handleChangeLetterSpacing(unvalidatedLetterSpacing: number) {
     const validation = validateLetterSpacing(unvalidatedLetterSpacing);
     const newLetterSpacing = validation.data;
 
@@ -102,41 +98,25 @@ export function TextSizesPopover({
           />
         </div>
 
-        <div className={styles.labelAndInput}>
-          <span className={styles.labelAndOutput}>
-            <span id={lineHeightLabelId}>Line height</span>
-            <output htmlFor={lineHeightInputId}>{currentLineHeight}</output>
-          </span>
-          <Slider
-            id={lineHeightInputId}
-            aria-labelledby={lineHeightLabelId}
-            defaultValue={[currentLineHeight]}
-            min={TextSizes.minLineHeight}
-            max={TextSizes.maxLineHeight}
-            step={0.1}
-            width="full"
-            onValueChange={handleChangeLineHeight}
-          />
-        </div>
+        <Slider
+          label="Line height"
+          defaultValue={currentLineHeight}
+          minValue={TextSizes.minLineHeight}
+          maxValue={TextSizes.maxLineHeight}
+          step={0.1}
+          width="full"
+          onChange={handleChangeLineHeight}
+        />
 
-        <div className={styles.labelAndInput}>
-          <span className={styles.labelAndOutput}>
-            <span id={letterSpacingLabelId}>Letter spacing</span>
-            <output htmlFor={letterSpacingInputId}>
-              {currentLetterSpacing}
-            </output>
-          </span>
-          <Slider
-            id={letterSpacingInputId}
-            aria-labelledby={letterSpacingLabelId}
-            defaultValue={[currentLetterSpacing]}
-            min={TextSizes.minLetterSpacing}
-            max={TextSizes.maxLetterSpacing}
-            step={1}
-            width="full"
-            onValueChange={handleChangeLetterSpacing}
-          />
-        </div>
+        <Slider
+          label="Letter spacing"
+          defaultValue={currentLetterSpacing}
+          minValue={TextSizes.minLetterSpacing}
+          maxValue={TextSizes.maxLetterSpacing}
+          step={1}
+          width="full"
+          onChange={handleChangeLetterSpacing}
+        />
       </Popover.Content>
     </Popover.Portal>
   );

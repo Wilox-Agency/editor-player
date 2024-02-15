@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import Konva from 'konva';
 import { Layer, Stage, Transformer } from 'react-konva';
 import { Pause, Play } from 'lucide-react';
 import { gsap } from 'gsap';
 
+import styles from './AnimationPlayer.module.css';
+
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { useResponsiveStage } from '@/hooks/useResponsiveStage';
+import { useTimeline } from '@/hooks/useTimeline';
 import {
   CanvasComponentByType,
   StageVirtualSize,
@@ -14,6 +17,8 @@ import {
 } from '@/utils/konva';
 import { combineSlides } from '@/utils/animation';
 import type { CanvasElement } from '@/utils/types';
+
+import { Slider } from '@/components/Slider';
 
 const slides = [
   [
@@ -103,40 +108,21 @@ export function AnimationPlayer() {
     stageVirtualHeight: StageVirtualSize.height,
     stageRef,
   });
+  const {
+    timeline,
+    timelineCurrentTime,
+    timelineEndTime,
+    timelineState,
+    setTimelineEndTime,
+    handlePlayOrPause,
+    handleChangeTime,
+  } = useTimeline({
+    onUpdate: useCallback(() => layerRef.current?.draw(), [layerRef]),
+  });
 
-  // Creating a stable reference to the timeline
-  const timeline = useMemo(() => gsap.timeline(), []);
-  const [timelineState, setTimelineState] = useState<
-    'playing' | 'paused' | 'ended'
-  >('paused');
   const combinedSlidesRef = useRef<
     ReturnType<typeof combineSlides> | undefined
   >(undefined);
-
-  function handlePlayOrPause() {
-    const timelineEnded = timeline.time() === timeline.duration();
-
-    // If the timeline ended, reset and play it
-    if (timelineEnded) {
-      timeline.time(0);
-      timeline.play();
-
-      setTimelineState('playing');
-      return;
-    }
-
-    // If the timeline is playing, pause it
-    if (timeline.isActive()) {
-      timeline.pause();
-
-      setTimelineState('paused');
-      return;
-    }
-
-    // If the timeline is paused, resume it
-    timeline.resume();
-    setTimelineState('playing');
-  }
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -185,20 +171,17 @@ export function AnimationPlayer() {
         });
       });
 
-      timeline.eventCallback('onUpdate', () => {
-        layerRef.current?.draw();
-      });
-      timeline.eventCallback('onComplete', () => {
-        setTimelineState('ended');
-      });
+      setTimelineEndTime(timeline.duration());
+
+      // Pause the timeline so it doesn't play automatically
       timeline.pause();
 
-      /* Showing the nodes setting up the timeline, though they're not actually
-      visible yet because of the initial transition */
+      /* Show the nodes setting up the timeline, though they will not actually
+      be visible yet because of the initial transition */
       nodes.forEach((node) => node.visible(true));
     }
     setupTimeline();
-  }, [canvasTree, layerRef, stageRef, timeline]);
+  }, [canvasTree, layerRef, setTimelineEndTime, stageRef, timeline]);
 
   return (
     <main>
@@ -225,32 +208,42 @@ export function AnimationPlayer() {
         </Layer> */}
       </Stage>
 
-      <div
-        style={{
-          backgroundColor: 'var(--clr-neutral-background)',
-          position: 'absolute',
-          left: '0.5rem',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          borderRadius: '0.5rem',
-          boxShadow: '0 0 50px -12px rgb(24 24 27 / 0.9)',
-        }}
-      >
-        <button
-          style={{ padding: '0.5rem', borderRadius: '0.5rem' }}
-          onClick={handlePlayOrPause}
-        >
+      <div className={styles.playerBar}>
+        <button className={styles.playPauseButton} onClick={handlePlayOrPause}>
           {timelineState === 'playing' ? (
             <Pause size={18} />
           ) : (
             <Play size={18} />
           )}
         </button>
+
+        <Slider
+          aria-label="Timeline"
+          value={timelineCurrentTime}
+          minValue={0}
+          maxValue={timelineEndTime}
+          step={0.001}
+          bottomMargin="none"
+          onChange={handleChangeTime}
+        />
+
+        <span className={styles.playerBarTime}>
+          <span>{formatTime(timelineCurrentTime)}</span> /{' '}
+          <span>{formatTime(timelineEndTime)}</span>
+        </span>
       </div>
     </main>
   );
+}
+
+function formatTime(timeInSeconds: number) {
+  const minutes = Math.floor(timeInSeconds / 60)
+    .toString()
+    .padStart(2, '0');
+  const seconds = Math.floor(timeInSeconds % 60)
+    .toString()
+    .padStart(2, '0');
+  return `${minutes}:${seconds}`;
 }
 
 /** Adds a border around the node with the provided ID. Used for debugging. */

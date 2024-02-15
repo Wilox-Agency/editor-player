@@ -15,11 +15,13 @@
   --_slider-padding: 0.5rem;
   width: calc(var(--_slider-track-width) - var(--_slider-thumb-size));
   height: calc(var(--_slider-thumb-size) + var(--_slider-padding) * 2);
-  margin-bottom: -0.25rem;
   margin-inline: calc(var(--_slider-thumb-size) / 2);
 }
 .track[data-width='full'] {
   --_slider-track-width: 100%;
+}
+.track[data-bottom-margin='negative'] {
+  margin-bottom: -0.25rem;
 }
 
 .trackLine,

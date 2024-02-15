@@ -10,10 +10,17 @@ import { type SliderState, useSliderState } from '@react-stately/slider';
 import styles from './Slider.module.css';
 
 type SliderProps = AriaSliderProps<number> & {
+  /** @default 'full' */
   width?: 'fixed' | 'full';
+  /** @default 'negative' */
+  bottomMargin?: 'negative' | 'none';
 };
 
-export function Slider({ width = 'fixed', ...props }: SliderProps) {
+export function Slider({
+  width = 'fixed',
+  bottomMargin = 'negative',
+  ...props
+}: SliderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const numberFormatter = useMemo(() => new Intl.NumberFormat(), []);
   const state = useSliderState({ ...props, numberFormatter });
@@ -40,6 +47,7 @@ export function Slider({ width = 'fixed', ...props }: SliderProps) {
         {...trackProps}
         className={styles.track}
         data-width={width}
+        data-bottom-margin={bottomMargin}
         // `data-disabled` will only be present when disabled
         data-disabled={state.isDisabled ? '' : undefined}
         ref={trackRef}

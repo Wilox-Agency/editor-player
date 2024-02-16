@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef } from 'react';
+import { RefObject, forwardRef, useEffect, useRef } from 'react';
 import Konva from 'konva';
 import { Image as KonvaImage } from 'react-konva';
 import useImage from 'use-image';
@@ -11,6 +11,10 @@ import type {
   RemoveIndex,
   UncroppedImageRect,
 } from '@/utils/types';
+import {
+  getCanvasImageIntrinsicSize,
+  waitUntilKonvaNodeSizeIsCalculated,
+} from '@/utils/konva';
 
 type PrimitiveImageProps = Pick<
   RemoveIndex<Konva.ImageConfig>,
@@ -92,24 +96,30 @@ export const PrimitiveImage = forwardRef<Konva.Image, PrimitiveImageProps>(
 
 export type ImageProps = Omit<PrimitiveImageProps, 'image'> & {
   imageUrl: string;
+  objectFit?: ObjectFit;
 };
 
-export function Image({ imageUrl, ...props }: ImageProps) {
-  const [imageElement] = useImage(imageUrl);
+export function Image({ imageUrl, objectFit, ...props }: ImageProps) {
+  const imageRef = useRef<Konva.Image>(null);
 
-  return <PrimitiveImage {...props} image={imageElement} />;
+  const [imageElement, imageStatus] = useImage(imageUrl);
+  useObjectFit({ imageNodeRef: imageRef, objectFit, loadStatus: imageStatus });
+
+  return <PrimitiveImage {...props} image={imageElement} ref={imageRef} />;
 }
 
 export type VideoProps = Omit<PrimitiveImageProps, 'image'> & {
   videoUrl: string;
   autoPlay?: boolean;
+  objectFit?: ObjectFit;
 };
 
-export function Video({ videoUrl, autoPlay, ...props }: VideoProps) {
+export function Video({ videoUrl, autoPlay, objectFit, ...props }: VideoProps) {
   const { layerRef } = useKonvaRefsStore();
   const videoRef = useRef<Konva.Image>(null);
 
   const [video, videoStatus] = useVideo(videoUrl, { layerRef, videoRef });
+  useObjectFit({ imageNodeRef: videoRef, objectFit, loadStatus: videoStatus });
 
   useEffect(() => {
     if (videoStatus === 'loaded') {
@@ -124,4 +134,63 @@ export function Video({ videoUrl, autoPlay, ...props }: VideoProps) {
   }, [autoPlay, video, videoStatus]);
 
   return <PrimitiveImage {...props} image={video} ref={videoRef} />;
+}
+
+type ObjectFit = 'stretch' | 'cover';
+
+function useObjectFit({
+  imageNodeRef,
+  objectFit = 'stretch',
+  loadStatus,
+}: {
+  imageNodeRef: RefObject<Konva.Image>;
+  objectFit?: ObjectFit;
+  loadStatus: 'loaded' | 'loading' | 'failed';
+}) {
+  useEffect(() => {
+    async function setObjectFit() {
+      if (loadStatus !== 'loaded') return;
+
+      const image = imageNodeRef.current;
+      if (!image || objectFit === 'stretch') return;
+
+      const imageSource = image.image();
+      if (!imageSource) return;
+
+      await waitUntilKonvaNodeSizeIsCalculated(image);
+
+      const originalImageSize = getCanvasImageIntrinsicSize(imageSource);
+      const currentSize = image.size();
+      console.log(originalImageSize, currentSize);
+
+      const originalAspectRatio =
+        originalImageSize.width / originalImageSize.height;
+      const currentAspectRatio = currentSize.width / currentSize.height;
+
+      if (currentAspectRatio >= originalAspectRatio) {
+        const yMultiplier =
+          originalImageSize.height / (image.width() / originalAspectRatio);
+        const cropHeight = currentSize.height * yMultiplier;
+
+        image.crop({
+          x: 0,
+          y: (originalImageSize.height - cropHeight) / 2,
+          width: originalImageSize.width,
+          height: cropHeight,
+        });
+      } else {
+        const xMultiplier =
+          originalImageSize.width / (image.height() * originalAspectRatio);
+        const cropWidth = currentSize.width * xMultiplier;
+
+        image.crop({
+          x: (originalImageSize.width - cropWidth) / 2,
+          y: 0,
+          width: cropWidth,
+          height: originalImageSize.height,
+        });
+      }
+    }
+    setObjectFit();
+  }, [imageNodeRef, loadStatus, objectFit]);
 }

@@ -1,7 +1,8 @@
 import type { IRect } from 'konva/lib/types';
 
 import { StageVirtualSize, defaultElementAttributes } from './konva';
-import type { CanvasElement, CanvasElementOfType, JsUnion } from './types';
+import type { CanvasElement, CanvasElementOfType } from './types';
+import { findLastIndex } from './array';
 
 // function getIntersectionRect(firstShape: IRect, secondShape: IRect) {
 //   const { leftMostShape, rightMostShape } =
@@ -78,7 +79,9 @@ type RectWithMatches = {
   matches: {
     rect: CanvasElementOfType<'rect'>;
     score: number;
+    canvasElementIndex: number;
   }[];
+  canvasElementIndex: number;
 };
 
 function getArrayOfRectsWithMatches(
@@ -87,37 +90,41 @@ function getArrayOfRectsWithMatches(
 ) {
   const arrayOfRectsWithMatches: RectWithMatches[] = [];
 
-  slide.forEach((canvasElement) => {
+  slide.forEach((canvasElement, canvasElementIndex) => {
     if (canvasElement.type !== 'rect') return;
 
     const canvasElementWithMatches: RectWithMatches = {
       rect: canvasElement,
       matches: [],
+      canvasElementIndex,
     };
 
-    nextSlide.forEach((canvasElementOfNextSlide) => {
-      if (canvasElementOfNextSlide.type !== 'rect') return;
+    nextSlide.forEach(
+      (canvasElementOfNextSlide, indexOfCanvasElementOfNextSlide) => {
+        if (canvasElementOfNextSlide.type !== 'rect') return;
 
-      const score = getRectMorphScore(
-        {
-          x: canvasElement.x || 0,
-          y: canvasElement.y || 0,
-          width: canvasElement.width || 0,
-          height: canvasElement.height || 0,
-        },
-        {
-          x: canvasElementOfNextSlide.x || 0,
-          y: canvasElementOfNextSlide.y || 0,
-          width: canvasElementOfNextSlide.width || 0,
-          height: canvasElementOfNextSlide.height || 0,
-        }
-      );
+        const score = getRectMorphScore(
+          {
+            x: canvasElement.x || 0,
+            y: canvasElement.y || 0,
+            width: canvasElement.width || 0,
+            height: canvasElement.height || 0,
+          },
+          {
+            x: canvasElementOfNextSlide.x || 0,
+            y: canvasElementOfNextSlide.y || 0,
+            width: canvasElementOfNextSlide.width || 0,
+            height: canvasElementOfNextSlide.height || 0,
+          }
+        );
 
-      canvasElementWithMatches.matches.push({
-        rect: canvasElementOfNextSlide,
-        score,
-      });
-    });
+        canvasElementWithMatches.matches.push({
+          rect: canvasElementOfNextSlide,
+          score,
+          canvasElementIndex: indexOfCanvasElementOfNextSlide,
+        });
+      }
+    );
 
     // Sort from best to worst
     canvasElementWithMatches.matches.sort((a, b) => b.score - a.score);
@@ -148,13 +155,15 @@ function sortArrayOfRectsWithMatchesFromBestToWorst(
 }
 
 /**
- * Sets the same ID for shapes that will be reused. **Does not mutate** the
+ * Sets a shared ID for shapes that will be reused. **Does not mutate** the
  * array.
  */
-export function setIdsForReusedShapes(slides: CanvasElement[][]) {
-  const slidesCopy: CanvasElement[][] = slides.map((slide) => {
-    return slide.map((canvasElement) => ({ ...canvasElement }));
-  });
+export function setSharedIdsForReusedShapes(slides: CanvasElement[][]) {
+  const slidesCopy: (CanvasElement & { sharedId?: string })[][] = slides.map(
+    (slide) => {
+      return slide.map((canvasElement) => ({ ...canvasElement }));
+    }
+  );
 
   slidesCopy.forEach((slide, slideIndex) => {
     const nextSlide = slidesCopy[slideIndex + 1];
@@ -168,25 +177,28 @@ export function setIdsForReusedShapes(slides: CanvasElement[][]) {
     while (arrayOfRectsWithMatches.length > 0) {
       const rectWithMatches = arrayOfRectsWithMatches[0]!;
 
-      // Remove the rect from the array and sort it again
+      // Remove the rect from the array
       arrayOfRectsWithMatches.shift();
-      sortArrayOfRectsWithMatchesFromBestToWorst(arrayOfRectsWithMatches);
 
-      /* Filter out the shapes that are already being reused (i.e. shapes whose
-      ID was already replaced with the ID of another element of the current
-      slide) */
-      const availableMatches = rectWithMatches.matches.filter((match) => {
-        const shapeIsAlreadyBeingReused = slide.some(
-          (canvasElement) => canvasElement.id === match.rect.id
+      if (rectWithMatches.matches.length === 0) continue;
+
+      const currentRect = slide[rectWithMatches.canvasElementIndex]!;
+      const bestAvailableMatch = rectWithMatches.matches[0]!;
+      const sharedId = currentRect.sharedId || crypto.randomUUID();
+      /* Set a shared ID to the current rect and its best available match from
+      the next slide */
+      currentRect.sharedId = sharedId;
+      nextSlide[bestAvailableMatch.canvasElementIndex]!.sharedId = sharedId;
+
+      /* Remove the best available match of the current rect from the `matches`
+      array of the remaining rect since it's now already being used */
+      arrayOfRectsWithMatches.forEach((rect) => {
+        rect.matches = rect.matches.filter(
+          (match) => match.rect.id !== bestAvailableMatch.rect.id
         );
-        return !shapeIsAlreadyBeingReused;
       });
-      if (availableMatches.length === 0) continue;
-
-      /* Set the best available match from the next slide to have the same ID as
-      the current shape */
-      const bestAvailableMatch = availableMatches[0]!;
-      bestAvailableMatch.rect.id = rectWithMatches.rect.id;
+      // Sort the array again
+      sortArrayOfRectsWithMatchesFromBestToWorst(arrayOfRectsWithMatches);
     }
   });
 
@@ -194,73 +206,13 @@ export function setIdsForReusedShapes(slides: CanvasElement[][]) {
 }
 
 type CombinedSlides = {
-  canvasElement: CanvasElement;
+  canvasElement: CanvasElement & { sharedId?: string };
   slideIndex: number;
-  animations?: ({ duration: number; startTime: number } & JsUnion<
-    { from: Record<string, string | number> },
-    { to: Record<string, string | number> }
-  >)[];
+  animations?: ({ duration: number; startTime: number } & Partial<{
+    from: Record<string, string | number>;
+    to: Record<string, string | number>;
+  }>)[];
 }[];
-
-function addElementToCombinedSlides({
-  canvasElement,
-  canvasElementIndex,
-  slide,
-  slideIndex,
-  combinedSlides,
-}: {
-  canvasElement: CanvasElement;
-  canvasElementIndex: number;
-  slide: CanvasElement[];
-  slideIndex: number;
-  combinedSlides: CombinedSlides;
-}) {
-  const elementsAfter = slide.slice(canvasElementIndex + 1);
-
-  // First try adding the element before the closest element that's after it
-  for (const otherCanvasElement of elementsAfter) {
-    const indexFromCombinedSlides = combinedSlides.findIndex(
-      ({ canvasElement: elementFromCombinedSlide }) => {
-        return elementFromCombinedSlide.id === otherCanvasElement.id;
-      }
-    );
-    const doesCombinedSlidesAlreadyIncludeCurrentElementId =
-      indexFromCombinedSlides !== -1;
-
-    if (doesCombinedSlidesAlreadyIncludeCurrentElementId) {
-      combinedSlides.splice(indexFromCombinedSlides, 0, {
-        canvasElement,
-        slideIndex,
-      });
-      return;
-    }
-  }
-
-  const reversedElementsBefore = slide.slice(0, canvasElementIndex).reverse();
-
-  /* Then try adding the element after the closest element that's before it (the
-  array is reversed so the array goes from closes to farthest element) */
-  for (const otherCanvasElement of reversedElementsBefore) {
-    const indexFromCombinedSlides = combinedSlides.findIndex(
-      ({ canvasElement: elementFromCombinedSlide }) => {
-        return elementFromCombinedSlide.id === otherCanvasElement.id;
-      }
-    );
-    const doesCombinedSlidesAlreadyIncludeCurrentElementId =
-      indexFromCombinedSlides !== -1;
-
-    if (doesCombinedSlidesAlreadyIncludeCurrentElementId) {
-      combinedSlides.splice(indexFromCombinedSlides + 1, 0, {
-        canvasElement,
-        slideIndex,
-      });
-      return;
-    }
-  }
-
-  // Fallback to just adding the element to the end of the array
-  combinedSlides.push({ canvasElement, slideIndex });
-}
 
 const SLIDE_DURATION = 1;
 const COMPLETE_SLIDE_TRANSITION_DURATION = 0.5;
@@ -268,6 +220,8 @@ const FADE_ELEMENT_TRANSITION_DURATION = COMPLETE_SLIDE_TRANSITION_DURATION / 2;
 const PRESENTATION_START_END_TRANSITION_DURATION =
   FADE_ELEMENT_TRANSITION_DURATION;
 
+/* TODO: Fade-out elements before morphing rects, and fade-in elements after
+morphing rects (fade-out -> morph -> fade-in) */
 export function combineSlides(slides: CanvasElement[][]) {
   /* 3 slides example (considering the slide duration as 1s, the complete slide
   transition as 0.5s, and the first and last transitions as half the complete
@@ -277,60 +231,83 @@ export function combineSlides(slides: CanvasElement[][]) {
   fade-in should take first 0.25s, fade-out should take last 0.25s) -> 1s static
   -> 0.5s transition -> 1s static -> 0.25s last transition */
   const combinedSlides: CombinedSlides = [];
-  const slidesWithReusedIds = setIdsForReusedShapes(slides);
+  const slidesWithSharedElementIds = setSharedIdsForReusedShapes(slides);
 
-  for (const [slideIndex, slide] of slidesWithReusedIds.entries()) {
-    for (const [canvasElementIndex, canvasElement] of slide.entries()) {
-      const indexOfElementWithSameIdFromCombinedSlide =
-        combinedSlides.findIndex(
-          ({ canvasElement: elementFromCombinedSlide }) => {
-            return elementFromCombinedSlide.id === canvasElement.id;
-          }
-        );
-      const doesCombinedSlideAlreadyIncludeCurrentElementId =
-        indexOfElementWithSameIdFromCombinedSlide !== -1;
+  for (const [slideIndex, slide] of slidesWithSharedElementIds.entries()) {
+    for (const canvasElement of slide) {
+      // Getting the index before adding the current canvas element to the array
+      const indexOfElementToTransitionFrom = findLastIndex(
+        combinedSlides,
+        ({ canvasElement: elementFromCombinedSlides }) => {
+          return elementFromCombinedSlides.sharedId === canvasElement.sharedId;
+        }
+      );
 
-      if (!doesCombinedSlideAlreadyIncludeCurrentElementId) {
-        addElementToCombinedSlides({
-          canvasElement,
-          canvasElementIndex,
-          slide,
-          slideIndex,
-          combinedSlides,
-        });
-        continue;
-      }
+      combinedSlides.push({ canvasElement, slideIndex });
 
-      const elementFromCombinedSlide =
-        combinedSlides[indexOfElementWithSameIdFromCombinedSlide]!;
+      if (!canvasElement.sharedId) continue;
+
+      const hasElementToTransitionFrom = indexOfElementToTransitionFrom !== -1;
+      if (!hasElementToTransitionFrom) continue;
+
+      const elementToTransitionFrom =
+        combinedSlides[indexOfElementToTransitionFrom]!;
       if (
         canvasElement.type !== 'rect' ||
-        elementFromCombinedSlide.canvasElement.type !== 'rect'
+        elementToTransitionFrom.canvasElement.type !== 'rect'
       ) {
         throw new Error(
-          "Element found with duplicate ID whose type is not 'rect'."
+          "Element found with shared ID whose type is not 'rect'."
         );
       }
 
-      elementFromCombinedSlide.animations ??= [];
-      elementFromCombinedSlide.animations.push({
-        to: {
-          x: canvasElement.x || 0,
-          y: canvasElement.y || 0,
-          width: canvasElement.width || defaultElementAttributes.rect.width,
-          height: canvasElement.height || defaultElementAttributes.rect.height,
-          fill: canvasElement.fill || defaultElementAttributes.rect.fill,
-          // TODO: Include other animatable attributes
-        },
-        duration: COMPLETE_SLIDE_TRANSITION_DURATION,
-        startTime:
-          PRESENTATION_START_END_TRANSITION_DURATION +
-          SLIDE_DURATION * slideIndex +
-          /* `slideIndex - 1` can never be negative because there will be no
-          morph transition to the first slide (index 0), only to the second
-          slide (index 1) and beyond */
-          COMPLETE_SLIDE_TRANSITION_DURATION * (slideIndex - 1),
+      const currentElement = combinedSlides[combinedSlides.length - 1]!;
+
+      const animationStartTime =
+        PRESENTATION_START_END_TRANSITION_DURATION +
+        SLIDE_DURATION * slideIndex +
+        /* `slideIndex - 1` can never be negative because there will be no morph
+        transition to the first slide (index 0), only to the second slide (index
+        1) and beyond */
+        COMPLETE_SLIDE_TRANSITION_DURATION * (slideIndex - 1);
+
+      // Make the previous element with same shared ID disappear
+      elementToTransitionFrom.animations ??= [];
+      elementToTransitionFrom.animations.push({
+        // TODO: Test with `{ visible: false }`
+        to: { opacity: 0 },
+        duration: 0.000001,
+        startTime: animationStartTime,
       });
+
+      /* Make the current element morph from the previous one with same shared
+      ID */
+      currentElement.animations = [
+        {
+          // TODO: Test with `{ visible: false }`
+          from: { opacity: 0 },
+          duration: 0.000001,
+          startTime: animationStartTime,
+        },
+        {
+          from: {
+            x: elementToTransitionFrom.canvasElement.x || 0,
+            y: elementToTransitionFrom.canvasElement.y || 0,
+            width:
+              elementToTransitionFrom.canvasElement.width ||
+              defaultElementAttributes.rect.width,
+            height:
+              elementToTransitionFrom.canvasElement.height ||
+              defaultElementAttributes.rect.height,
+            fill:
+              elementToTransitionFrom.canvasElement.fill ||
+              defaultElementAttributes.rect.fill,
+            // TODO: Include other animatable attributes
+          },
+          duration: COMPLETE_SLIDE_TRANSITION_DURATION,
+          startTime: animationStartTime,
+        },
+      ];
     }
   }
 
@@ -372,29 +349,19 @@ export function combineSlides(slides: CanvasElement[][]) {
       return;
     }
 
-    const lastMorphAnimation = item.animations[item.animations.length - 1]!;
-    item.animations = [
-      fadeInDown,
-      ...item.animations,
-      // This is also a fade-out up
-      {
-        to: {
-          y:
-            /* Since the element was morphed, using its original Y would
-            probably move it to the incorrect position, therefore the Y of the
-            last animation is being used */
-            ((lastMorphAnimation.to?.y as number | undefined) || 0) -
-            StageVirtualSize.height * 0.05,
-          opacity: 0,
-        },
-        duration: FADE_ELEMENT_TRANSITION_DURATION,
-        startTime:
-          // This time represents the end of the last slide the shape is visible
-          lastMorphAnimation.startTime +
-          COMPLETE_SLIDE_TRANSITION_DURATION +
-          SLIDE_DURATION,
-      },
-    ];
+    const firstAnimation = item.animations[0]!;
+    const firstAnimationIsEnterAnimation = firstAnimation.from !== undefined;
+    if (!firstAnimationIsEnterAnimation) {
+      item.animations.unshift(fadeInDown);
+    }
+
+    const lastAnimation = item.animations[item.animations.length - 1]!;
+    const lastAnimationIsExitAnimation = lastAnimation.to?.opacity === 0;
+
+    // Add exit animation if the element doesn't have one yet
+    if (!lastAnimationIsExitAnimation) {
+      item.animations.push(fadeOutUp);
+    }
   });
 
   return combinedSlides;

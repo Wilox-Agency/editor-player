@@ -161,7 +161,6 @@ function useObjectFit({
 
       const originalImageSize = getCanvasImageIntrinsicSize(imageSource);
       const currentSize = image.size();
-      console.log(originalImageSize, currentSize);
 
       const originalAspectRatio =
         originalImageSize.width / originalImageSize.height;

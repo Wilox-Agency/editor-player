@@ -166,3 +166,8 @@ export type KonvaNodeAndElement<
 export type JsUnion<A, B> =
   | (A & UndefinedProperites<Omit<B, keyof A>>)
   | (B & UndefinedProperites<Omit<A, keyof B>>);
+
+export type Slide<TElement extends CanvasElement = CanvasElement> = {
+  canvasElements: TElement[];
+  duration: number;
+};

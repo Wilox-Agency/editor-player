@@ -1,8 +1,8 @@
 import type { IRect } from 'konva/lib/types';
 
 import { StageVirtualSize, defaultElementAttributes } from './konva';
-import type { CanvasElement, CanvasElementOfType } from './types';
 import { findLastIndex } from './array';
+import type { CanvasElement, CanvasElementOfType, Slide } from './types';
 
 // function getIntersectionRect(firstShape: IRect, secondShape: IRect) {
 //   const { leftMostShape, rightMostShape } =
@@ -85,12 +85,12 @@ type RectWithMatches = {
 };
 
 function getArrayOfRectsWithMatches(
-  slide: CanvasElement[],
-  nextSlide: CanvasElement[]
+  slideElements: CanvasElement[],
+  nextSlideElements: CanvasElement[]
 ) {
   const arrayOfRectsWithMatches: RectWithMatches[] = [];
 
-  slide.forEach((canvasElement, canvasElementIndex) => {
+  slideElements.forEach((canvasElement, canvasElementIndex) => {
     if (canvasElement.type !== 'rect') return;
 
     const canvasElementWithMatches: RectWithMatches = {
@@ -99,7 +99,7 @@ function getArrayOfRectsWithMatches(
       canvasElementIndex,
     };
 
-    nextSlide.forEach(
+    nextSlideElements.forEach(
       (canvasElementOfNextSlide, indexOfCanvasElementOfNextSlide) => {
         if (canvasElementOfNextSlide.type !== 'rect') return;
 
@@ -154,24 +154,31 @@ function sortArrayOfRectsWithMatchesFromBestToWorst(
   });
 }
 
+type CanvasElementWithSharedId = CanvasElement & { sharedId?: string };
+
+type SlidesWithSharedElementIds = Slide<CanvasElementWithSharedId>[];
+
 /**
  * Sets a shared ID for shapes that will be reused. **Does not mutate** the
  * array.
  */
-export function setSharedIdsForReusedShapes(slides: CanvasElement[][]) {
-  const slidesCopy: (CanvasElement & { sharedId?: string })[][] = slides.map(
-    (slide) => {
-      return slide.map((canvasElement) => ({ ...canvasElement }));
-    }
-  );
+export function setSharedIdsForReusedShapes(slides: Slide[]) {
+  const slidesCopy: SlidesWithSharedElementIds = slides.map((slide) => {
+    return {
+      ...slide,
+      canvasElements: slide.canvasElements.map((canvasElement) => ({
+        ...canvasElement,
+      })),
+    };
+  });
 
   slidesCopy.forEach((slide, slideIndex) => {
     const nextSlide = slidesCopy[slideIndex + 1];
     if (!nextSlide) return;
 
     const arrayOfRectsWithMatches = getArrayOfRectsWithMatches(
-      slide,
-      nextSlide
+      slide.canvasElements,
+      nextSlide.canvasElements
     );
 
     while (arrayOfRectsWithMatches.length > 0) {
@@ -182,13 +189,16 @@ export function setSharedIdsForReusedShapes(slides: CanvasElement[][]) {
 
       if (rectWithMatches.matches.length === 0) continue;
 
-      const currentRect = slide[rectWithMatches.canvasElementIndex]!;
+      const currentRect =
+        slide.canvasElements[rectWithMatches.canvasElementIndex]!;
       const bestAvailableMatch = rectWithMatches.matches[0]!;
       const sharedId = currentRect.sharedId || crypto.randomUUID();
       /* Set a shared ID to the current rect and its best available match from
       the next slide */
       currentRect.sharedId = sharedId;
-      nextSlide[bestAvailableMatch.canvasElementIndex]!.sharedId = sharedId;
+      nextSlide.canvasElements[
+        bestAvailableMatch.canvasElementIndex
+      ]!.sharedId = sharedId;
 
       /* Remove the best available match of the current rect from the `matches`
       array of the remaining rect since it's now already being used */
@@ -205,8 +215,18 @@ export function setSharedIdsForReusedShapes(slides: CanvasElement[][]) {
   return slidesCopy;
 }
 
+function getSumOfDurationOfSlidesUntilNow(
+  slides: Slide[],
+  currentSlideIndex: number
+) {
+  const sumOfDurationOfSlidesUntilNow = slides
+    .slice(0, currentSlideIndex)
+    .reduce((accumulator, slide) => accumulator + slide.duration, 0);
+  return sumOfDurationOfSlidesUntilNow;
+}
+
 type CombinedSlides = {
-  canvasElement: CanvasElement & { sharedId?: string };
+  canvasElement: CanvasElementWithSharedId;
   slideIndex: number;
   animations?: ({ duration: number; startTime: number } & Partial<{
     from: Record<string, string | number>;
@@ -214,7 +234,6 @@ type CombinedSlides = {
   }>)[];
 }[];
 
-const SLIDE_DURATION = 1;
 const COMPLETE_SLIDE_TRANSITION_DURATION = 1;
 const MORPH_ELEMENT_TRANSITION_DURATION =
   COMPLETE_SLIDE_TRANSITION_DURATION / 2;
@@ -222,7 +241,7 @@ const FADE_ELEMENT_TRANSITION_DURATION = COMPLETE_SLIDE_TRANSITION_DURATION / 4;
 const PRESENTATION_START_END_TRANSITION_DURATION =
   FADE_ELEMENT_TRANSITION_DURATION;
 
-export function combineSlides(slides: CanvasElement[][]) {
+export function combineSlides(slides: SlidesWithSharedElementIds) {
   /* 3 slides example (considering the slide duration as 1s, the complete slide
   transition as 0.5s, and the first and last transitions as half the complete
   slide transition (0.25s) each):
@@ -234,7 +253,7 @@ export function combineSlides(slides: CanvasElement[][]) {
   const slidesWithSharedElementIds = setSharedIdsForReusedShapes(slides);
 
   for (const [slideIndex, slide] of slidesWithSharedElementIds.entries()) {
-    for (const canvasElement of slide) {
+    for (const canvasElement of slide.canvasElements) {
       // Getting the index before adding the current canvas element to the array
       const indexOfElementToTransitionFrom = findLastIndex(
         combinedSlides,
@@ -263,9 +282,13 @@ export function combineSlides(slides: CanvasElement[][]) {
 
       const currentElement = combinedSlides[combinedSlides.length - 1]!;
 
+      const sumOfDurationOfSlidesUntilNow = getSumOfDurationOfSlidesUntilNow(
+        slidesWithSharedElementIds,
+        slideIndex
+      );
       const animationStartTime =
         PRESENTATION_START_END_TRANSITION_DURATION +
-        SLIDE_DURATION * slideIndex +
+        sumOfDurationOfSlidesUntilNow +
         FADE_ELEMENT_TRANSITION_DURATION +
         /* `slideIndex - 1` can never be negative because there will be no morph
         transition to the first slide (index 0), only to the second slide (index
@@ -313,6 +336,13 @@ export function combineSlides(slides: CanvasElement[][]) {
   }
 
   combinedSlides.forEach((item) => {
+    const sumOfDurationOfSlidesUntilNow = getSumOfDurationOfSlidesUntilNow(
+      slidesWithSharedElementIds,
+      item.slideIndex
+    );
+    const currentSlideDuration =
+      slidesWithSharedElementIds[item.slideIndex]!.duration;
+
     const fadeInDown = {
       from: {
         y: (item.canvasElement.y || 0) + StageVirtualSize.height * 0.05,
@@ -327,7 +357,7 @@ export function combineSlides(slides: CanvasElement[][]) {
         item.slideIndex === 0
           ? 0
           : PRESENTATION_START_END_TRANSITION_DURATION +
-            SLIDE_DURATION * item.slideIndex +
+            sumOfDurationOfSlidesUntilNow +
             COMPLETE_SLIDE_TRANSITION_DURATION * (item.slideIndex - 1) +
             (FADE_ELEMENT_TRANSITION_DURATION +
               MORPH_ELEMENT_TRANSITION_DURATION),
@@ -340,7 +370,7 @@ export function combineSlides(slides: CanvasElement[][]) {
       duration: FADE_ELEMENT_TRANSITION_DURATION,
       startTime:
         PRESENTATION_START_END_TRANSITION_DURATION +
-        SLIDE_DURATION * (item.slideIndex + 1) +
+        (sumOfDurationOfSlidesUntilNow + currentSlideDuration) +
         COMPLETE_SLIDE_TRANSITION_DURATION * item.slideIndex,
     };
 

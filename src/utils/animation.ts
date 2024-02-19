@@ -213,6 +213,70 @@ export function setSharedIdsForReusedShapes(slides: Slide[]) {
   return slidesCopy;
 }
 
+type CanvasElementWithSharedIdAndEnterDelay = CanvasElementWithSharedId & {
+  enterDelay?: number;
+};
+
+function setElementsEnterDelays(slides: Slide<CanvasElementWithSharedId>[]) {
+  type NonTextElement = Extract<
+    CanvasElementWithSharedIdAndEnterDelay,
+    { type: Exclude<CanvasElement['type'], 'text'> }
+  >;
+
+  const BASE_DELAY = 0.1;
+
+  const slidesCopy: Slide<CanvasElementWithSharedIdAndEnterDelay>[] =
+    slides.map((slide) => {
+      return {
+        ...slide,
+        canvasElements: slide.canvasElements.map((canvasElement) => ({
+          ...canvasElement,
+        })),
+      };
+    });
+
+  slidesCopy.forEach((slide, slideIndex) => {
+    const previousSlide = slidesCopy[slideIndex - 1];
+
+    slide.canvasElements
+      /* Get only the elements that will have an entering animation whose type
+      is not 'text' */
+      .filter((canvasElement): canvasElement is NonTextElement => {
+        /* If an element from the previous slide has the same shared ID, it
+        means the current element will morph from it */
+        const elementWillMorphFromOtherElement =
+          canvasElement.sharedId &&
+          previousSlide?.canvasElements.some(
+            (canvasElementFromPreviousSlide) => {
+              return (
+                canvasElementFromPreviousSlide.sharedId ===
+                canvasElement.sharedId
+              );
+            }
+          );
+
+        const elementWillHaveEnteringAnimation =
+          !elementWillMorphFromOtherElement;
+        const isText = canvasElement.type === 'text';
+
+        return elementWillHaveEnteringAnimation && !isText;
+      })
+      // Sort from largest to smallest area
+      .sort((elementA, elementB) => {
+        const areaOfElementA = (elementA.width || 0) * (elementA.height || 0);
+        const areaOfElementB = (elementB.width || 0) * (elementB.height || 0);
+        return areaOfElementB - areaOfElementA;
+      })
+      /* Set the enter delay based on the index (the smaller the element, the
+      longer the delay, but scaling with the order, not the area) */
+      .forEach((canvasElement, elementIndex) => {
+        canvasElement.enterDelay = BASE_DELAY * elementIndex;
+      });
+  });
+
+  return slidesCopy;
+}
+
 function getSumOfDurationOfSlidesUntilNow(
   slides: Slide[],
   currentSlideIndex: number
@@ -224,7 +288,7 @@ function getSumOfDurationOfSlidesUntilNow(
 }
 
 type CombinedSlides = {
-  canvasElement: CanvasElementWithSharedId;
+  canvasElement: CanvasElementWithSharedIdAndEnterDelay;
   slideIndex: number;
   animations?: ({ duration: number; startTime: number } & Partial<{
     from: Record<string, string | number>;
@@ -249,8 +313,13 @@ export function combineSlides(slides: Slide[]) {
   transition -> third slide duration -> 0.25s last transition (fade-out) */
   const combinedSlides: CombinedSlides = [];
   const slidesWithSharedElementIds = setSharedIdsForReusedShapes(slides);
+  const slidesWithSharedElementIdsAndElementEnterDelays =
+    setElementsEnterDelays(slidesWithSharedElementIds);
 
-  for (const [slideIndex, slide] of slidesWithSharedElementIds.entries()) {
+  for (const [
+    slideIndex,
+    slide,
+  ] of slidesWithSharedElementIdsAndElementEnterDelays.entries()) {
     for (const canvasElement of slide.canvasElements) {
       // Getting the index before adding the current canvas element to the array
       const indexOfElementToTransitionFrom = findLastIndex(
@@ -348,17 +417,18 @@ export function combineSlides(slides: Slide[]) {
       },
       duration: FADE_ELEMENT_TRANSITION_DURATION,
       startTime:
-        /* When it's from the first slide, the start time should be the start of
-        the presentation (i.e. 0s). When it's from any other slide, the start
-        time should be right after the non-reused elements of the previous slide
-        finished fading out */
+        /* When it's from the first slide, the start time only be the element's
+        enter delay. When it's from any other slide, the start time should be
+        right after the morph element transition of the reused elements plus the
+        element's enter delay */
         item.slideIndex === 0
-          ? 0
+          ? item.canvasElement.enterDelay || 0
           : PRESENTATION_START_END_TRANSITION_DURATION +
             sumOfDurationOfSlidesUntilNow +
             COMPLETE_SLIDE_TRANSITION_DURATION * (item.slideIndex - 1) +
             (FADE_ELEMENT_TRANSITION_DURATION +
-              MORPH_ELEMENT_TRANSITION_DURATION),
+              MORPH_ELEMENT_TRANSITION_DURATION) +
+            (item.canvasElement.enterDelay || 0),
     };
     const fadeOutUp = {
       to: {

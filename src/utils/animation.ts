@@ -156,14 +156,12 @@ function sortArrayOfRectsWithMatchesFromBestToWorst(
 
 type CanvasElementWithSharedId = CanvasElement & { sharedId?: string };
 
-type SlidesWithSharedElementIds = Slide<CanvasElementWithSharedId>[];
-
 /**
  * Sets a shared ID for shapes that will be reused. **Does not mutate** the
  * array.
  */
 export function setSharedIdsForReusedShapes(slides: Slide[]) {
-  const slidesCopy: SlidesWithSharedElementIds = slides.map((slide) => {
+  const slidesCopy: Slide<CanvasElementWithSharedId>[] = slides.map((slide) => {
     return {
       ...slide,
       canvasElements: slide.canvasElements.map((canvasElement) => ({
@@ -241,7 +239,7 @@ const FADE_ELEMENT_TRANSITION_DURATION = COMPLETE_SLIDE_TRANSITION_DURATION / 4;
 const PRESENTATION_START_END_TRANSITION_DURATION =
   FADE_ELEMENT_TRANSITION_DURATION;
 
-export function combineSlides(slides: SlidesWithSharedElementIds) {
+export function combineSlides(slides: Slide[]) {
   /* 3 slides example (considering the slide duration as 1s, the complete slide
   transition as 0.5s, and the first and last transitions as half the complete
   slide transition (0.25s) each):

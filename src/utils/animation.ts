@@ -215,13 +215,13 @@ type CombinedSlides = {
 }[];
 
 const SLIDE_DURATION = 1;
-const COMPLETE_SLIDE_TRANSITION_DURATION = 0.5;
-const FADE_ELEMENT_TRANSITION_DURATION = COMPLETE_SLIDE_TRANSITION_DURATION / 2;
+const COMPLETE_SLIDE_TRANSITION_DURATION = 1;
+const MORPH_ELEMENT_TRANSITION_DURATION =
+  COMPLETE_SLIDE_TRANSITION_DURATION / 2;
+const FADE_ELEMENT_TRANSITION_DURATION = COMPLETE_SLIDE_TRANSITION_DURATION / 4;
 const PRESENTATION_START_END_TRANSITION_DURATION =
   FADE_ELEMENT_TRANSITION_DURATION;
 
-/* TODO: Fade-out elements before morphing rects, and fade-in elements after
-morphing rects (fade-out -> morph -> fade-in) */
 export function combineSlides(slides: CanvasElement[][]) {
   /* 3 slides example (considering the slide duration as 1s, the complete slide
   transition as 0.5s, and the first and last transitions as half the complete
@@ -266,6 +266,7 @@ export function combineSlides(slides: CanvasElement[][]) {
       const animationStartTime =
         PRESENTATION_START_END_TRANSITION_DURATION +
         SLIDE_DURATION * slideIndex +
+        FADE_ELEMENT_TRANSITION_DURATION +
         /* `slideIndex - 1` can never be negative because there will be no morph
         transition to the first slide (index 0), only to the second slide (index
         1) and beyond */
@@ -304,7 +305,7 @@ export function combineSlides(slides: CanvasElement[][]) {
               defaultElementAttributes.rect.fill,
             // TODO: Include other animatable attributes
           },
-          duration: COMPLETE_SLIDE_TRANSITION_DURATION,
+          duration: MORPH_ELEMENT_TRANSITION_DURATION,
           startTime: animationStartTime,
         },
       ];
@@ -328,7 +329,8 @@ export function combineSlides(slides: CanvasElement[][]) {
           : PRESENTATION_START_END_TRANSITION_DURATION +
             SLIDE_DURATION * item.slideIndex +
             COMPLETE_SLIDE_TRANSITION_DURATION * (item.slideIndex - 1) +
-            FADE_ELEMENT_TRANSITION_DURATION,
+            (FADE_ELEMENT_TRANSITION_DURATION +
+              MORPH_ELEMENT_TRANSITION_DURATION),
     };
     const fadeOutUp = {
       to: {

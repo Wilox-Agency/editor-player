@@ -240,13 +240,13 @@ const PRESENTATION_START_END_TRANSITION_DURATION =
   FADE_ELEMENT_TRANSITION_DURATION;
 
 export function combineSlides(slides: Slide[]) {
-  /* 3 slides example (considering the slide duration as 1s, the complete slide
-  transition as 0.5s, and the first and last transitions as half the complete
-  slide transition (0.25s) each):
+  /* 3 slides example (considering the complete slide transition as 1s, the
+  morph transition as half the complete slide transition (0.5s), and the fade
+  transitions as one-fourth the complete slide transition (0.25s) each):
 
-  0.25s first transition -> 1s static -> 0.5s transition (morph should take 0.5,
-  fade-in should take first 0.25s, fade-out should take last 0.25s) -> 1s static
-  -> 0.5s transition -> 1s static -> 0.25s last transition */
+  0.25s first transition (fade-in) -> first slide duration -> 1s transition
+  (0.25s fade-out -> 0.5s morph -> 0.25s fade-in) -> second slide duration -> 1s
+  transition -> third slide duration -> 0.25s last transition (fade-out) */
   const combinedSlides: CombinedSlides = [];
   const slidesWithSharedElementIds = setSharedIdsForReusedShapes(slides);
 

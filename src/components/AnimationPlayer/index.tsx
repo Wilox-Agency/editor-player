@@ -1,8 +1,7 @@
 import { useEffect, useRef } from 'react';
 import Konva from 'konva';
-import { Layer, Stage, Transformer } from 'react-konva';
+import { Group, Layer, Stage, Transformer } from 'react-konva';
 import { Pause, Play } from 'lucide-react';
-import { gsap } from 'gsap';
 
 import styles from './AnimationPlayer.module.css';
 
@@ -18,7 +17,7 @@ import {
   StageVirtualSize,
   waitUntilKonvaNodeSizeIsCalculated,
 } from '@/utils/konva';
-import { combineSlides } from '@/utils/animation';
+import { combineSlides, createTweens } from '@/utils/animation';
 import type { Slide } from '@/utils/types';
 
 import { Slider } from '@/components/Slider';
@@ -113,15 +112,15 @@ const slidesWithValuesAsPercentages = [
   // Slide 3
   {
     canvasElements: [
-      {
-        id: crypto.randomUUID(),
-        type: 'rect',
-        x: 0,
-        y: 0,
-        width: 100,
-        height: 100,
-        fill: '#D1A3F3',
-      },
+      // {
+      //   id: crypto.randomUUID(),
+      //   type: 'rect',
+      //   x: 0,
+      //   y: 0,
+      //   width: 100,
+      //   height: 100,
+      //   fill: '#D1A3F3',
+      // },
       {
         id: crypto.randomUUID(),
         type: 'rect',
@@ -548,9 +547,9 @@ const slidesWithValuesAsPercentages = [
         id: crypto.randomUUID(),
         type: 'rect',
         x: 0,
-        y: 0,
-        width: 100,
-        height: 100,
+        y: 58,
+        width: 33,
+        height: 42,
         fill: '#000000',
       },
       {
@@ -648,6 +647,10 @@ export function AnimationPlayer() {
       const combinedSlides = combinedSlidesRef.current;
       if (!stage || !firstNode || !combinedSlides) return;
 
+      if (!(firstNode instanceof Konva.Group)) {
+        throw new Error('Node being animated is not contained within a group');
+      }
+
       // Hide the nodes so they are not visible before the timeline is set up
       nodes.forEach((node) => node.visible(false));
 
@@ -655,24 +658,32 @@ export function AnimationPlayer() {
       (even though this function says it waits until the node size is
       calculated, it technically waits until all initial properties are set,
       because they're all set at the same time) */
-      await waitUntilKonvaNodeSizeIsCalculated(firstNode);
+      await waitUntilKonvaNodeSizeIsCalculated(firstNode.children[0]!);
 
       combinedSlides.forEach((item, itemIndex) => {
-        const node = nodes[itemIndex];
-        if (!node) return;
+        const group = nodes[itemIndex];
+        if (!group) return;
+
+        if (!(group instanceof Konva.Group)) {
+          throw new Error(
+            'Node being animated is not contained within a group'
+          );
+        }
 
         item.animations?.forEach((animation) => {
-          const tween = animation.from
-            ? gsap.from(node, {
-                ...animation.from,
-                duration: animation.duration,
-              })
-            : gsap.to(node, {
-                ...animation.to,
-                duration: animation.duration,
-              });
+          const node = group.children[0]!;
+          const { groupTween, nodeTween } = createTweens({
+            animation,
+            group,
+            node,
+          });
 
-          timeline.add(tween, animation.startTime);
+          if (groupTween) {
+            timeline.add(groupTween, animation.startTime);
+          }
+          if (nodeTween) {
+            timeline.add(nodeTween, animation.startTime);
+          }
         });
       });
 
@@ -706,8 +717,26 @@ export function AnimationPlayer() {
             const { type, ...props } = element;
             const Component = CanvasComponentByType[type];
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return <Component key={props.id} {...(props as any)} />;
+            const { x, y, ...otherProps } = props;
+
+            /* Text animations are not implemented yet and they will be handled
+            differently */
+            if (type === 'text') return null;
+
+            return (
+              <Group
+                key={props.id}
+                x={x}
+                y={y}
+                clipX={0}
+                clipY={0}
+                clipWidth={props.width || 0}
+                clipHeight={element.height || 0}
+              >
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <Component {...(otherProps as any)} />
+              </Group>
+            );
           })}
         </Layer>
         {/* <Layer name="controllers">

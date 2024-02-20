@@ -1,4 +1,6 @@
+import Konva from 'konva';
 import type { IRect } from 'konva/lib/types';
+import gsap from 'gsap';
 
 import { StageVirtualSize, defaultElementAttributes } from './konva';
 import { findLastIndex } from './array';
@@ -36,6 +38,25 @@ import type { CanvasElement, CanvasElementOfType, Slide } from './types';
 //   // Calculate the mean of the scores
 //   return (firstShapeIntersectionScore + secondShapeIntersectionScore) / 2;
 // }
+
+function getTextHeight(canvasTextElement: CanvasElementOfType<'text'>) {
+  const textNode = new Konva.Text(canvasTextElement);
+  /* TODO: Test if the height is calculated immediately or I need to wait until
+  it is calculated */
+  return textNode.height();
+}
+
+function getCanvasElementRect(canvasElement: CanvasElement) {
+  return {
+    x: canvasElement.x || 0,
+    y: canvasElement.y || 0,
+    width: canvasElement.width || 0,
+    height:
+      canvasElement.type === 'text'
+        ? getTextHeight(canvasElement)
+        : canvasElement.height || 0,
+  };
+}
 
 function getRectSizeScore(firstShape: IRect, secondShape: IRect) {
   const widthScore =
@@ -104,18 +125,8 @@ function getArrayOfRectsWithMatches(
         if (canvasElementOfNextSlide.type !== 'rect') return;
 
         const score = getRectMorphScore(
-          {
-            x: canvasElement.x || 0,
-            y: canvasElement.y || 0,
-            width: canvasElement.width || 0,
-            height: canvasElement.height || 0,
-          },
-          {
-            x: canvasElementOfNextSlide.x || 0,
-            y: canvasElementOfNextSlide.y || 0,
-            width: canvasElementOfNextSlide.width || 0,
-            height: canvasElementOfNextSlide.height || 0,
-          }
+          getCanvasElementRect(canvasElement),
+          getCanvasElementRect(canvasElementOfNextSlide)
         );
 
         canvasElementWithMatches.matches.push({
@@ -287,16 +298,137 @@ function getSumOfDurationOfSlidesUntilNow(
   return sumOfDurationOfSlidesUntilNow;
 }
 
+function getElementSideClosestToStageEdge(elementRect: IRect) {
+  const sideDistances = {
+    left: Math.max(elementRect.x, 0),
+    right: Math.max(
+      StageVirtualSize.width - (elementRect.x + elementRect.width),
+      0
+    ),
+    top: Math.max(elementRect.y, 0),
+    bottom: Math.max(
+      StageVirtualSize.height - (elementRect.y + elementRect.height)
+    ),
+  } as const;
+
+  let sideClosestToStageEdge: keyof typeof sideDistances = 'left';
+  for (const untypedSide in sideDistances) {
+    const side = untypedSide as keyof typeof sideDistances;
+
+    if (sideDistances[side] < sideDistances[sideClosestToStageEdge]) {
+      sideClosestToStageEdge = side;
+    }
+  }
+
+  return sideClosestToStageEdge;
+}
+
+type AnimationStates = Partial<{
+  from: Record<string, string | number>;
+  to: Record<string, string | number>;
+}>;
+
+type Animation = {
+  type: 'morph' | 'enter' | 'exit' | 'appear' | 'disappear';
+  duration: number;
+  startTime: number;
+  groupAnimation?: AnimationStates;
+  nodeAnimation?: AnimationStates;
+};
+
+/**
+ * Some animations don't work properly if their duration is exactly 0,
+ * therefore, a decimal close to 0 is used instead.
+ */
+const ALMOST_ZERO_DURATION = 0.001;
+
+function getEnterExitAnimations({
+  canvasElement,
+  duration,
+  enterStartTime,
+  exitStartTime,
+}: {
+  canvasElement: CanvasElement;
+  duration: number;
+  enterStartTime: number;
+  exitStartTime: number;
+}) {
+  const elementRect = getCanvasElementRect(canvasElement);
+  const sideClosestToStageEdge = getElementSideClosestToStageEdge(elementRect);
+
+  const animationsVarsByDirection = {
+    left: {
+      invisible: { clipWidth: 0 },
+      visible: { clipWidth: elementRect.width },
+    },
+    right: {
+      invisible: { clipX: elementRect.width, clipWidth: 0 },
+      visible: { clipX: 0, clipWidth: elementRect.width },
+    },
+    top: {
+      invisible: { clipHeight: 0 },
+      visible: { clipHeight: elementRect.height },
+    },
+    bottom: {
+      invisible: { clipY: elementRect.height, clipHeight: 0 },
+      visible: { clipY: 0, clipHeight: elementRect.height },
+    },
+  } satisfies Record<
+    typeof sideClosestToStageEdge,
+    {
+      invisible: Record<string, number>;
+      visible: Record<string, number>;
+    }
+  >;
+
+  const animationVars = animationsVarsByDirection[sideClosestToStageEdge];
+
+  const enterAnimations: Animation[] = [
+    {
+      type: 'appear',
+      groupAnimation: { from: { opacity: 0 } },
+      duration: ALMOST_ZERO_DURATION,
+      startTime: enterStartTime,
+    },
+    {
+      type: 'enter',
+      groupAnimation: {
+        from: animationVars.invisible,
+        to: animationVars.visible,
+      },
+      duration,
+      startTime: enterStartTime,
+    },
+  ];
+
+  const exitAnimations: Animation[] = [
+    {
+      type: 'exit',
+      groupAnimation: {
+        from: animationVars.visible,
+        to: animationVars.invisible,
+      },
+      duration,
+      startTime: exitStartTime,
+    },
+    {
+      type: 'disappear',
+      groupAnimation: { to: { opacity: 0 } },
+      duration: ALMOST_ZERO_DURATION,
+      startTime: exitStartTime + duration - ALMOST_ZERO_DURATION,
+    },
+  ];
+
+  return { enterAnimations, exitAnimations };
+}
+
 type CombinedSlides = {
   canvasElement: CanvasElementWithSharedIdAndEnterDelay;
   slideIndex: number;
-  animations?: ({ duration: number; startTime: number } & Partial<{
-    from: Record<string, string | number>;
-    to: Record<string, string | number>;
-  }>)[];
+  animations?: Animation[];
 }[];
 
-const COMPLETE_SLIDE_TRANSITION_DURATION = 1;
+const COMPLETE_SLIDE_TRANSITION_DURATION = 2;
 const MORPH_ELEMENT_TRANSITION_DURATION =
   COMPLETE_SLIDE_TRANSITION_DURATION / 2;
 const FADE_ELEMENT_TRANSITION_DURATION = COMPLETE_SLIDE_TRANSITION_DURATION / 4;
@@ -365,9 +497,9 @@ export function combineSlides(slides: Slide[]) {
       // Make the previous element with same shared ID disappear
       elementToTransitionFrom.animations ??= [];
       elementToTransitionFrom.animations.push({
-        // TODO: Test with `{ visible: false }`
-        to: { opacity: 0 },
-        duration: 0.000001,
+        type: 'disappear',
+        groupAnimation: { to: { opacity: 0 } },
+        duration: ALMOST_ZERO_DURATION,
         startTime: animationStartTime,
       });
 
@@ -375,25 +507,38 @@ export function combineSlides(slides: Slide[]) {
       ID */
       currentElement.animations = [
         {
-          // TODO: Test with `{ visible: false }`
-          from: { opacity: 0 },
-          duration: 0.000001,
+          type: 'appear',
+          groupAnimation: { from: { opacity: 0 } },
+          duration: ALMOST_ZERO_DURATION,
           startTime: animationStartTime,
         },
         {
-          from: {
-            x: elementToTransitionFrom.canvasElement.x || 0,
-            y: elementToTransitionFrom.canvasElement.y || 0,
-            width:
-              elementToTransitionFrom.canvasElement.width ||
-              defaultElementAttributes.rect.width,
-            height:
-              elementToTransitionFrom.canvasElement.height ||
-              defaultElementAttributes.rect.height,
-            fill:
-              elementToTransitionFrom.canvasElement.fill ||
-              defaultElementAttributes.rect.fill,
-            // TODO: Include other animatable attributes
+          type: 'morph',
+          groupAnimation: {
+            from: {
+              x: elementToTransitionFrom.canvasElement.x || 0,
+              y: elementToTransitionFrom.canvasElement.y || 0,
+              clipWidth:
+                elementToTransitionFrom.canvasElement.width ||
+                defaultElementAttributes.rect.width,
+              clipHeight:
+                elementToTransitionFrom.canvasElement.height ||
+                defaultElementAttributes.rect.height,
+            },
+          },
+          nodeAnimation: {
+            from: {
+              width:
+                elementToTransitionFrom.canvasElement.width ||
+                defaultElementAttributes.rect.width,
+              height:
+                elementToTransitionFrom.canvasElement.height ||
+                defaultElementAttributes.rect.height,
+              fill:
+                elementToTransitionFrom.canvasElement.fill ||
+                defaultElementAttributes.rect.fill,
+              // TODO: Include other animatable attributes
+            },
           },
           duration: MORPH_ELEMENT_TRANSITION_DURATION,
           startTime: animationStartTime,
@@ -410,17 +555,13 @@ export function combineSlides(slides: Slide[]) {
     const currentSlideDuration =
       slidesWithSharedElementIds[item.slideIndex]!.duration;
 
-    const fadeInDown = {
-      from: {
-        y: (item.canvasElement.y || 0) + StageVirtualSize.height * 0.05,
-        opacity: 0,
-      },
-      duration: FADE_ELEMENT_TRANSITION_DURATION,
-      startTime:
-        /* When it's from the first slide, the start time only be the element's
-        enter delay. When it's from any other slide, the start time should be
-        right after the morph element transition of the reused elements plus the
-        element's enter delay */
+    const { enterAnimations, exitAnimations } = getEnterExitAnimations({
+      canvasElement: item.canvasElement,
+      enterStartTime:
+        /* When it's from the first slide, the start time should be only the
+        element's enter delay. When it's from any other slide, the start time
+        should be right after the morph element transition of the reused
+        elements plus the element's enter delay */
         item.slideIndex === 0
           ? item.canvasElement.enterDelay || 0
           : PRESENTATION_START_END_TRANSITION_DURATION +
@@ -429,38 +570,35 @@ export function combineSlides(slides: Slide[]) {
             (FADE_ELEMENT_TRANSITION_DURATION +
               MORPH_ELEMENT_TRANSITION_DURATION) +
             (item.canvasElement.enterDelay || 0),
-    };
-    const fadeOutUp = {
-      to: {
-        y: (item.canvasElement.y || 0) - StageVirtualSize.height * 0.05,
-        opacity: 0,
-      },
-      duration: FADE_ELEMENT_TRANSITION_DURATION,
-      startTime:
+      exitStartTime:
         PRESENTATION_START_END_TRANSITION_DURATION +
         (sumOfDurationOfSlidesUntilNow + currentSlideDuration) +
         COMPLETE_SLIDE_TRANSITION_DURATION * item.slideIndex,
-    };
+      duration: FADE_ELEMENT_TRANSITION_DURATION,
+    });
 
     /* Currently the length of `item.animations` will never be 0, but it's being
     checked just to be safe */
     if (!item.animations || item.animations.length === 0) {
-      item.animations = [fadeInDown, fadeOutUp];
+      item.animations = [...enterAnimations, ...exitAnimations];
       return;
     }
 
     const firstAnimation = item.animations[0]!;
-    const firstAnimationIsEnterAnimation = firstAnimation.from !== undefined;
-    if (!firstAnimationIsEnterAnimation) {
-      item.animations.unshift(fadeInDown);
+    const firstAnimationIsAppearAnimation = firstAnimation.type === 'appear';
+
+    // Add enter animations if the element doesn't have yet
+    if (!firstAnimationIsAppearAnimation) {
+      item.animations.unshift(...enterAnimations);
     }
 
     const lastAnimation = item.animations[item.animations.length - 1]!;
-    const lastAnimationIsExitAnimation = lastAnimation.to?.opacity === 0;
+    const lastAnimationIsDisappearAnimation =
+      lastAnimation.type === 'disappear';
 
-    // Add exit animation if the element doesn't have one yet
-    if (!lastAnimationIsExitAnimation) {
-      item.animations.push(fadeOutUp);
+    // Add exit animations if the element doesn't have yet
+    if (!lastAnimationIsDisappearAnimation) {
+      item.animations.push(...exitAnimations);
     }
   });
 
@@ -493,4 +631,65 @@ export function _generateRandomSlide() {
   }
 
   return slide;
+}
+
+function createTween({
+  target,
+  animationStates,
+  duration,
+}: {
+  target: Konva.Node;
+  animationStates: AnimationStates;
+  duration: number;
+}) {
+  if (animationStates.from && animationStates.to) {
+    return gsap.fromTo(
+      target,
+      { ...animationStates.from, duration },
+      { ...animationStates.to, duration }
+    );
+  }
+
+  if (animationStates.from) {
+    return gsap.from(target, { ...animationStates.from, duration });
+  }
+
+  if (animationStates.to) {
+    return gsap.to(target, { ...animationStates.to, duration });
+  }
+
+  throw new Error(
+    'Both `animationStates.from` an `animationStates.to` are undefined'
+  );
+}
+
+export function createTweens({
+  animation,
+  group,
+  node,
+}: {
+  animation: Animation;
+  group: Konva.Group;
+  node: Konva.Node;
+}) {
+  let groupTween: gsap.core.Tween | undefined = undefined;
+  let nodeTween: gsap.core.Tween | undefined = undefined;
+
+  if (animation.groupAnimation) {
+    groupTween = createTween({
+      target: group,
+      animationStates: animation.groupAnimation,
+      duration: animation.duration,
+    });
+  }
+
+  if (animation.nodeAnimation) {
+    nodeTween = createTween({
+      target: node,
+      animationStates: animation.nodeAnimation,
+      duration: animation.duration,
+    });
+  }
+
+  return { groupTween, nodeTween };
 }

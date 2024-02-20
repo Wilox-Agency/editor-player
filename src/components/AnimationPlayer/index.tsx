@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import Konva from 'konva';
 import { Layer, Stage, Transformer } from 'react-konva';
 import { Pause, Play } from 'lucide-react';
@@ -9,7 +9,10 @@ import styles from './AnimationPlayer.module.css';
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { useResponsiveStage } from '@/hooks/useResponsiveStage';
-import { useTimeline } from '@/hooks/useTimeline';
+import {
+  usePlayerTimeline,
+  usePlayerTimelineStore,
+} from '@/hooks/usePlayerTimeline';
 import {
   CanvasComponentByType,
   StageVirtualSize,
@@ -617,15 +620,10 @@ export function AnimationPlayer() {
   });
   const {
     timeline,
-    timelineCurrentTime,
-    timelineEndTime,
-    timelineState,
-    setTimelineEndTime,
+    updateTimelineDuration,
     handlePlayOrPause,
     handleChangeTime,
-  } = useTimeline({
-    onUpdate: useCallback(() => layerRef.current?.draw(), [layerRef]),
-  });
+  } = usePlayerTimeline({ layerRef });
 
   const combinedSlidesRef = useRef<
     ReturnType<typeof combineSlides> | undefined
@@ -678,7 +676,8 @@ export function AnimationPlayer() {
         });
       });
 
-      setTimelineEndTime(timeline.duration());
+      // Update the timeline duration after adding the animations
+      updateTimelineDuration();
 
       // Pause the timeline so it doesn't play automatically
       timeline.pause();
@@ -688,7 +687,7 @@ export function AnimationPlayer() {
       nodes.forEach((node) => node.visible(true));
     }
     setupTimeline();
-  }, [canvasTree, layerRef, setTimelineEndTime, stageRef, timeline]);
+  }, [canvasTree, layerRef, stageRef, timeline, updateTimelineDuration]);
 
   return (
     <main>
@@ -718,31 +717,45 @@ export function AnimationPlayer() {
         </Layer> */}
       </Stage>
 
-      <div className={styles.playerBar}>
-        <button className={styles.playPauseButton} onClick={handlePlayOrPause}>
-          {timelineState === 'playing' ? (
-            <Pause size={18} />
-          ) : (
-            <Play size={18} />
-          )}
-        </button>
-
-        <Slider
-          aria-label="Timeline"
-          value={timelineCurrentTime}
-          minValue={0}
-          maxValue={timelineEndTime}
-          step={0.001}
-          bottomMargin="none"
-          onChange={handleChangeTime}
-        />
-
-        <span className={styles.playerBarTime}>
-          <span>{formatTime(timelineCurrentTime)}</span> /{' '}
-          <span>{formatTime(timelineEndTime)}</span>
-        </span>
-      </div>
+      <PlayerBar
+        handlePlayOrPause={handlePlayOrPause}
+        handleChangeTime={handleChangeTime}
+      />
     </main>
+  );
+}
+
+function PlayerBar({
+  handlePlayOrPause,
+  handleChangeTime,
+}: {
+  handlePlayOrPause: () => void;
+  handleChangeTime: (time: number) => void;
+}) {
+  const { timelineCurrentTime, timelineDuration, timelineState } =
+    usePlayerTimelineStore();
+
+  return (
+    <div className={styles.playerBar}>
+      <button className={styles.playPauseButton} onClick={handlePlayOrPause}>
+        {timelineState === 'playing' ? <Pause size={18} /> : <Play size={18} />}
+      </button>
+
+      <Slider
+        aria-label="Timeline"
+        value={timelineCurrentTime}
+        minValue={0}
+        maxValue={timelineDuration}
+        step={0.001}
+        bottomMargin="none"
+        onChange={handleChangeTime}
+      />
+
+      <span className={styles.playerBarTime}>
+        <span>{formatTime(timelineCurrentTime)}</span> /{' '}
+        <span>{formatTime(timelineDuration)}</span>
+      </span>
+    </div>
   );
 }
 

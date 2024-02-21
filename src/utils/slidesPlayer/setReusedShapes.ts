@@ -1,6 +1,7 @@
-import type { CanvasElement, CanvasElementOfType, Slide } from '@/utils/types';
 import { getRectMorphScore } from './rectMorphScore';
 import { getCanvasElementRect } from './sizes';
+import type { CanvasElementWithSharedId } from './sharedTypes';
+import type { CanvasElement, CanvasElementOfType, Slide } from '@/utils/types';
 
 type RectWithMatches = {
   rect: CanvasElementOfType<'rect'>;
@@ -11,8 +12,6 @@ type RectWithMatches = {
   }[];
   canvasElementIndex: number;
 };
-
-export type CanvasElementWithSharedId = CanvasElement & { sharedId?: string };
 
 function getArrayOfRectsWithMatches(
   slideElements: CanvasElement[],

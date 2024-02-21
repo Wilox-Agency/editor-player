@@ -2,24 +2,6 @@ import type { IRect } from 'konva/lib/types';
 
 import { StageVirtualSize } from '@/utils/konva';
 
-// function getIntersectionRect(firstShape: IRect, secondShape: IRect) {
-//   const { leftMostShape, rightMostShape } =
-//     firstShape.x <= secondShape.x
-//       ? { leftMostShape: firstShape, rightMostShape: secondShape }
-//       : { leftMostShape: secondShape, rightMostShape: firstShape };
-//   const xDifference = rightMostShape.x - leftMostShape.x;
-//   const intersectionWidth = leftMostShape.width - xDifference;
-
-//   const { topMostShape, bottomMostShape } =
-//     firstShape.y <= secondShape.y
-//       ? { topMostShape: firstShape, bottomMostShape: secondShape }
-//       : { topMostShape: secondShape, bottomMostShape: firstShape };
-//   const yDifference = bottomMostShape.y - topMostShape.y;
-//   const intersectionHeight = topMostShape.height - yDifference;
-
-//   return { width: intersectionWidth, height: intersectionHeight };
-// }
-
 // function getIntersectionScore(firstShape: IRect, secondShape: IRect) {
 //   const intersectionRect = getIntersectionRect(firstShape, secondShape);
 //   const intersectionArea = intersectionRect.width * intersectionRect.height;

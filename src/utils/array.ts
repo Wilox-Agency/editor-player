@@ -1,3 +1,11 @@
+export function findLast<T>(
+  array: T[],
+  predicate: (value: T, index: number, obj: T[]) => unknown
+) {
+  const item = [...array].reverse().find(predicate);
+  return item;
+}
+
 export function findLastIndex<T>(
   array: T[],
   predicate: (value: T, index: number, obj: T[]) => unknown

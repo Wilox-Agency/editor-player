@@ -1,7 +1,9 @@
 import type { IRect } from 'konva/lib/types';
 
 import { getCanvasElementRect } from './sizes';
+import type { AddTextContainerId } from './sharedTypes';
 import { StageVirtualSize, defaultElementAttributes } from '@/utils/konva';
+import { pipe } from '@/utils/pipe';
 import type { CanvasElement, CanvasElementOfType, Slide } from '@/utils/types';
 
 export type AnimationStates = Partial<{
@@ -71,14 +73,34 @@ export function createEnterExitAnimations({
   slideIndex,
   enterDelay,
 }: {
-  canvasElement: CanvasElement;
+  canvasElement: AddTextContainerId<CanvasElement>;
   slides: Slide[];
   slideIndex: number;
   /** The enter delay is required, but it may be undefined. */
   enterDelay: number | undefined;
 }) {
   const elementRect = getCanvasElementRect(canvasElement);
-  const sideClosestToStageEdge = getElementSideClosestToStageEdge(elementRect);
+  let sideToAnimateFrom;
+  if (
+    canvasElement.type === 'text' &&
+    canvasElement.containerId !== undefined
+  ) {
+    const textContainer = slides[slideIndex]?.canvasElements.find(
+      (otherElement) => otherElement.id === canvasElement.containerId
+    );
+    if (textContainer) {
+      /* TODO: If a new method of deciding the side an element animates from when
+      entering/exiting is added, instead of using
+      `getElementSideClosestToStageEdge` to get the side the text container is
+      animating from, get directly by the side that was decided previously */
+      sideToAnimateFrom = pipe(
+        textContainer,
+        getCanvasElementRect,
+        getElementSideClosestToStageEdge
+      );
+    }
+  }
+  sideToAnimateFrom ??= getElementSideClosestToStageEdge(elementRect);
 
   const animationsVarsByDirection = {
     left: {
@@ -98,14 +120,14 @@ export function createEnterExitAnimations({
       visible: { clipY: 0, clipHeight: elementRect.height },
     },
   } satisfies Record<
-    typeof sideClosestToStageEdge,
+    typeof sideToAnimateFrom,
     {
       invisible: Record<string, number>;
       visible: Record<string, number>;
     }
   >;
 
-  const animationVars = animationsVarsByDirection[sideClosestToStageEdge];
+  const animationVars = animationsVarsByDirection[sideToAnimateFrom];
 
   const sumOfDurationOfSlidesUntilNow = getSumOfDurationOfSlidesUntilNow(
     slides,

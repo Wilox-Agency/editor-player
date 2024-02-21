@@ -2,10 +2,8 @@ import type Konva from 'konva';
 import gsap from 'gsap';
 
 import { setSharedIdsForReusedShapes } from './setReusedShapes';
-import {
-  type CanvasElementWithSharedIdAndEnterDelay,
-  setElementsEnterDelays,
-} from './setAnimationDelays';
+import { setElementsEnterDelays } from './setAnimationDelays';
+import { setTextContainers } from './setTextContainers';
 import {
   type Animation,
   type AnimationStates,
@@ -14,13 +12,8 @@ import {
 } from './createAnimations';
 import { StageVirtualSize } from '@/utils/konva';
 import { findLastIndex } from '@/utils/array';
+import { pipe } from '@/utils/pipe';
 import type { CanvasElementOfType, Slide } from '@/utils/types';
-
-type CombinedSlides = {
-  canvasElement: CanvasElementWithSharedIdAndEnterDelay;
-  slideIndex: number;
-  animations?: Animation[];
-}[];
 
 /** Combines slides by adding animations to transition between them. */
 export function combineSlides(slides: Slide[]) {
@@ -32,16 +25,20 @@ export function combineSlides(slides: Slide[]) {
   0.25s first transition (enter) -> first slide duration -> 1s transition (0.25s
   exit -> 0.5s morph -> 0.25s enter) -> second slide duration -> 1s transition
   -> third slide duration -> 0.25s last transition (exit) */
-  const combinedSlides: CombinedSlides = [];
-  const slidesWithSharedElementIds = setSharedIdsForReusedShapes(slides);
-  const slidesWithSharedElementIdsAndElementEnterDelays =
-    setElementsEnterDelays(slidesWithSharedElementIds);
+  const parsedSlides = pipe(
+    slides,
+    setSharedIdsForReusedShapes,
+    setTextContainers,
+    setElementsEnterDelays
+  );
+  const combinedSlides: {
+    canvasElement: (typeof parsedSlides)[number]['canvasElements'][number];
+    slideIndex: number;
+    animations?: Animation[];
+  }[] = [];
 
   // Setup rect morph animations
-  for (const [
-    slideIndex,
-    slide,
-  ] of slidesWithSharedElementIdsAndElementEnterDelays.entries()) {
+  for (const [slideIndex, slide] of parsedSlides.entries()) {
     for (const canvasElement of slide.canvasElements) {
       // Getting the index before adding the current canvas element to the array
       const indexOfElementToTransitionFrom = findLastIndex(

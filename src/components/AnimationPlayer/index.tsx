@@ -18,6 +18,7 @@ import {
   waitUntilKonvaNodeSizeIsCalculated,
 } from '@/utils/konva';
 import { combineSlides, createTweens } from '@/utils/slidesPlayer';
+import { getCanvasElementRect } from '@/utils/slidesPlayer/sizes';
 import type { Slide } from '@/utils/types';
 
 import { Slider } from '@/components/Slider';
@@ -44,6 +45,18 @@ const slidesWithValuesAsPercentages = [
         width: 64,
         height: 78,
         fill: '#000000',
+      },
+      {
+        id: crypto.randomUUID(),
+        type: 'text',
+        text: 'Redes sociales y Salud mental',
+        x: 44,
+        y: 25,
+        width: 45,
+        fill: '#D1A3F3',
+        fontSize: 12,
+        lineHeight: 1.2,
+        fontStyle: 'bold',
       },
       {
         id: crypto.randomUUID(),
@@ -602,8 +615,15 @@ const slides = slidesWithValuesAsPercentages.map((slide) => {
         ...canvasElement,
         x: (canvasElement.x / 100) * StageVirtualSize.width,
         y: (canvasElement.y / 100) * StageVirtualSize.height,
-        width: (canvasElement.width / 100) * StageVirtualSize.width,
-        height: (canvasElement.height / 100) * StageVirtualSize.height,
+        ...(canvasElement.width !== undefined
+          ? { width: (canvasElement.width / 100) * StageVirtualSize.width }
+          : {}),
+        ...(canvasElement.type !== 'text'
+          ? { height: (canvasElement.height / 100) * StageVirtualSize.height }
+          : {
+              fontSize:
+                (canvasElement.fontSize / 100) * StageVirtualSize.height,
+            }),
       };
     }),
   };
@@ -719,9 +739,7 @@ export function AnimationPlayer() {
 
             const { x, y, ...otherProps } = props;
 
-            /* Text animations are not implemented yet and they will be handled
-            differently */
-            if (type === 'text') return null;
+            const elementRect = getCanvasElementRect(element);
 
             return (
               <Group
@@ -730,8 +748,8 @@ export function AnimationPlayer() {
                 y={y}
                 clipX={0}
                 clipY={0}
-                clipWidth={props.width || 0}
-                clipHeight={element.height || 0}
+                clipWidth={elementRect.width}
+                clipHeight={elementRect.height}
               >
                 {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <Component {...(otherProps as any)} />

@@ -17,7 +17,7 @@ import {
   StageVirtualSize,
   waitUntilKonvaNodeSizeIsCalculated,
 } from '@/utils/konva';
-import { combineSlides, createTweens } from '@/utils/animation';
+import { combineSlides, createTweens } from '@/utils/slidesPlayer';
 import type { Slide } from '@/utils/types';
 
 import { Slider } from '@/components/Slider';

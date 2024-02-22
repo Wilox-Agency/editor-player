@@ -19,12 +19,13 @@ export type Animation = {
   nodeAnimation?: AnimationStates;
 };
 
-const COMPLETE_SLIDE_TRANSITION_DURATION = 2;
+const COMPLETE_SLIDE_TRANSITION_DURATION = 3;
 const MORPH_ELEMENT_TRANSITION_DURATION =
-  COMPLETE_SLIDE_TRANSITION_DURATION / 2;
-const FADE_ELEMENT_TRANSITION_DURATION = COMPLETE_SLIDE_TRANSITION_DURATION / 4;
+  COMPLETE_SLIDE_TRANSITION_DURATION / 3;
+export const ENTER_EXIT_ELEMENT_TRANSITION_DURATION =
+  COMPLETE_SLIDE_TRANSITION_DURATION / 3;
 const PRESENTATION_START_END_TRANSITION_DURATION =
-  FADE_ELEMENT_TRANSITION_DURATION;
+  ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
 
 function getSumOfDurationOfSlidesUntilNow(
   slides: Slide[],
@@ -144,7 +145,8 @@ export function createEnterExitAnimations({
       : PRESENTATION_START_END_TRANSITION_DURATION +
         sumOfDurationOfSlidesUntilNow +
         COMPLETE_SLIDE_TRANSITION_DURATION * (slideIndex - 1) +
-        (FADE_ELEMENT_TRANSITION_DURATION + MORPH_ELEMENT_TRANSITION_DURATION) +
+        (ENTER_EXIT_ELEMENT_TRANSITION_DURATION +
+          MORPH_ELEMENT_TRANSITION_DURATION) +
         (enterDelay || 0);
   const exitStartTime =
     PRESENTATION_START_END_TRANSITION_DURATION +
@@ -164,7 +166,7 @@ export function createEnterExitAnimations({
         from: animationVars.invisible,
         to: animationVars.visible,
       },
-      duration: FADE_ELEMENT_TRANSITION_DURATION,
+      duration: ENTER_EXIT_ELEMENT_TRANSITION_DURATION,
       startTime: enterStartTime,
     },
   ];
@@ -176,7 +178,7 @@ export function createEnterExitAnimations({
         from: animationVars.visible,
         to: animationVars.invisible,
       },
-      duration: FADE_ELEMENT_TRANSITION_DURATION,
+      duration: ENTER_EXIT_ELEMENT_TRANSITION_DURATION,
       startTime: exitStartTime,
     },
     {
@@ -184,7 +186,9 @@ export function createEnterExitAnimations({
       groupAnimation: { to: { opacity: 0 } },
       duration: ALMOST_ZERO_DURATION,
       startTime:
-        exitStartTime + FADE_ELEMENT_TRANSITION_DURATION - ALMOST_ZERO_DURATION,
+        exitStartTime +
+        ENTER_EXIT_ELEMENT_TRANSITION_DURATION -
+        ALMOST_ZERO_DURATION,
     },
   ];
 
@@ -207,7 +211,7 @@ export function createRectMorphAnimations({
   const animationStartTime =
     PRESENTATION_START_END_TRANSITION_DURATION +
     sumOfDurationOfSlidesUntilNow +
-    FADE_ELEMENT_TRANSITION_DURATION +
+    ENTER_EXIT_ELEMENT_TRANSITION_DURATION +
     /* `slideIndex - 1` can never be negative because there will be no morph
     transition to the first slide (index 0), only to the second slide (index 1)
     and beyond */

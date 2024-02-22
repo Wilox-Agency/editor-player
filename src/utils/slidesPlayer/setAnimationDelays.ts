@@ -1,3 +1,4 @@
+import { ENTER_EXIT_ELEMENT_TRANSITION_DURATION } from './createAnimations';
 import { getCanvasElementRect } from './sizes';
 import type {
   AddTextContainerId,
@@ -74,7 +75,8 @@ export function setElementsEnterDelays<
 
       if (textContainer?.enterDelay === undefined) return;
 
-      canvasElement.enterDelay = textContainer.enterDelay + BASE_ENTER_DELAY;
+      canvasElement.enterDelay =
+        textContainer.enterDelay + ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
     });
   });
 

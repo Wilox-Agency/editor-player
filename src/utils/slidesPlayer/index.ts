@@ -17,14 +17,12 @@ import type { CanvasElementOfType, Slide } from '@/utils/types';
 
 /** Combines slides by adding animations to transition between them. */
 export function combineSlides(slides: Slide[]) {
-  /* 3 slides example (considering the complete slide transition as 1s, the
-  morph transition as half the complete slide transition (0.5s), and the
-  enter/exit transitions as one-fourth the complete slide transition (0.25s)
-  each):
+  /* 3 slides example (considering the complete slide transition as 3s, and each
+  part of the transition as one-third of the complete slide transition):
 
-  0.25s first transition (enter) -> first slide duration -> 1s transition (0.25s
-  exit -> 0.5s morph -> 0.25s enter) -> second slide duration -> 1s transition
-  -> third slide duration -> 0.25s last transition (exit) */
+  1s first transition (enter) -> first slide duration -> 3s transition (1s exit
+  -> 1 morph -> 1s enter) -> second slide duration -> 3s transition -> third
+  slide duration -> 1s last transition (exit) */
   const parsedSlides = pipe(
     slides,
     setSharedIdsForReusedShapes,

@@ -1131,7 +1131,7 @@ export function AnimationPlayer() {
         height={StageVirtualSize.height}
         ref={stageRef}
       >
-        <Layer ref={layerRef}>
+        <Layer listening={false} ref={layerRef}>
           {canvasTree.map((element) => {
             const { type, ...props } = element;
             const Component = CanvasComponentByType[type];

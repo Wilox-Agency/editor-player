@@ -19,7 +19,9 @@ export function useVideo(
     autoplay */
     videoElement.muted = true;
     // Empty animation just to update the layer
-    const animation = new Konva.Animation(() => {}, layerRef.current);
+    const animation = new Konva.Animation(() => {
+      if (videoElement.paused) return false;
+    }, layerRef.current);
 
     function handleLoad() {
       setStatus('loaded');

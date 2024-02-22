@@ -152,18 +152,32 @@ export function _generateRandomSlide() {
 
 function createTween({
   target,
+  animationType,
   animationStates,
   duration,
 }: {
   target: Konva.Node;
+  animationType: Animation['type'];
   animationStates: AnimationStates;
   duration: number;
 }) {
+  const listeners =
+    // On 'appear' and 'disappear' animations...
+    animationType === 'appear' || animationType === 'disappear'
+      ? {
+          /* ...show or hide the element depending on the opacity, so the
+          element doesn't have to be rendered, improving performance */
+          onUpdate: () => {
+            target.visible(target.opacity() > 0);
+          },
+        }
+      : {};
+
   if (animationStates.from && animationStates.to) {
     return gsap.fromTo(
       target,
-      { ...animationStates.from, duration, ease: 'power2.out' },
-      { ...animationStates.to, duration, ease: 'power2.out' }
+      { ...animationStates.from, duration, ease: 'power2.out', ...listeners },
+      { ...animationStates.to, duration, ease: 'power2.out', ...listeners }
     );
   }
 
@@ -172,6 +186,7 @@ function createTween({
       ...animationStates.from,
       duration,
       ease: 'power2.out',
+      ...listeners,
     });
   }
 
@@ -180,6 +195,7 @@ function createTween({
       ...animationStates.to,
       duration,
       ease: 'power2.out',
+      ...listeners,
     });
   }
 
@@ -203,6 +219,7 @@ export function createTweens({
   if (animation.groupAnimation) {
     groupTween = createTween({
       target: group,
+      animationType: animation.type,
       animationStates: animation.groupAnimation,
       duration: animation.duration,
     });
@@ -211,6 +228,7 @@ export function createTweens({
   if (animation.nodeAnimation) {
     nodeTween = createTween({
       target: node,
+      animationType: animation.type,
       animationStates: animation.nodeAnimation,
       duration: animation.duration,
     });

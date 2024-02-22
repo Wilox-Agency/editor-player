@@ -1113,9 +1113,8 @@ export function AnimationPlayer() {
       // Pause the timeline so it doesn't play automatically
       timeline.pause();
 
-      /* Show the nodes setting up the timeline, though they will not actually
-      be visible yet because of the initial transition */
-      nodes.forEach((node) => node.visible(true));
+      // Show the nodes that are visible from the start
+      nodes.forEach((node) => node.visible(node.opacity() > 0));
     }
     setupTimeline();
   }, [canvasTree, layerRef, stageRef, timeline, updateTimelineDuration]);

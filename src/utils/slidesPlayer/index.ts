@@ -162,17 +162,25 @@ function createTween({
   if (animationStates.from && animationStates.to) {
     return gsap.fromTo(
       target,
-      { ...animationStates.from, duration },
-      { ...animationStates.to, duration }
+      { ...animationStates.from, duration, ease: 'power2.out' },
+      { ...animationStates.to, duration, ease: 'power2.out' }
     );
   }
 
   if (animationStates.from) {
-    return gsap.from(target, { ...animationStates.from, duration });
+    return gsap.from(target, {
+      ...animationStates.from,
+      duration,
+      ease: 'power2.out',
+    });
   }
 
   if (animationStates.to) {
-    return gsap.to(target, { ...animationStates.to, duration });
+    return gsap.to(target, {
+      ...animationStates.to,
+      duration,
+      ease: 'power2.out',
+    });
   }
 
   throw new Error(

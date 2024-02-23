@@ -5,15 +5,35 @@ import { setSharedIdsForReusedShapes } from './setReusedShapes';
 import { setElementsEnterDelays } from './setAnimationDelays';
 import { setTextContainers } from './setTextContainers';
 import {
-  type Animation,
-  type AnimationStates,
-  createEnterExitAnimations,
-  createRectMorphAnimations,
+  setEnterAnimation,
+  setExitAnimation,
+  setRectMorphAnimations,
 } from './createAnimations';
+import type {
+  Animation,
+  AnimationStates,
+  CanvasElementWithAnimations,
+  CanvasElementWithSharedId,
+} from './sharedTypes';
 import { StageVirtualSize } from '@/utils/konva';
-import { findLastIndex } from '@/utils/array';
 import { pipe } from '@/utils/pipe';
 import type { CanvasElementOfType, Slide } from '@/utils/types';
+
+/**
+ * @returns A boolean representing if an element from the next slide will morph
+ * from the provided element (i.e. will be "reused" in the next slide).
+ */
+function getElementWillBeReusedInNextSlide<
+  TElement extends CanvasElementWithAnimations<CanvasElementWithSharedId>
+>(element: TElement, nextSlide: { canvasElements: TElement[] } | undefined) {
+  if (element.attributes.sharedId === undefined || !nextSlide) return false;
+
+  return nextSlide.canvasElements.some((elementFromNextSlide) => {
+    return (
+      elementFromNextSlide.attributes.sharedId === element.attributes.sharedId
+    );
+  });
+}
 
 /** Combines slides by adding animations to transition between them. */
 export function combineSlides(slides: Slide[]) {
@@ -29,97 +49,81 @@ export function combineSlides(slides: Slide[]) {
     setTextContainers,
     setElementsEnterDelays
   );
-  const combinedSlides: {
-    canvasElement: (typeof parsedSlides)[number]['canvasElements'][number];
-    slideIndex: number;
-    animations?: Animation[];
-  }[] = [];
 
-  // Setup rect morph animations
-  for (const [slideIndex, slide] of parsedSlides.entries()) {
-    for (const canvasElement of slide.canvasElements) {
-      // Getting the index before adding the current canvas element to the array
-      const indexOfElementToTransitionFrom = findLastIndex(
-        combinedSlides,
-        ({ canvasElement: elementFromCombinedSlides }) => {
-          return elementFromCombinedSlides.sharedId === canvasElement.sharedId;
-        }
-      );
+  type ArrayOfCanvasElementsWithAnimations = CanvasElementWithAnimations<
+    (typeof parsedSlides)[number]['canvasElements'][number]
+  >[];
 
-      combinedSlides.push({ canvasElement, slideIndex });
-
-      const hasElementToTransitionFrom =
-        canvasElement.sharedId && indexOfElementToTransitionFrom !== -1;
-      if (!hasElementToTransitionFrom) continue;
-
-      const elementToTransitionFrom =
-        combinedSlides[indexOfElementToTransitionFrom]!;
-      if (
-        canvasElement.type !== 'rect' ||
-        elementToTransitionFrom.canvasElement.type !== 'rect'
-      ) {
-        throw new Error(
-          "Element found with shared ID whose type is not 'rect'."
-        );
-      }
-
-      const currentElement = combinedSlides[combinedSlides.length - 1]!;
-
-      const {
-        animationsOfElementToTransitionFrom,
-        animationsOfCurrentElement,
-      } = createRectMorphAnimations({
-        slides,
-        slideIndex,
-        elementToTransitionFrom: elementToTransitionFrom.canvasElement,
-      });
-
-      // Set the animations of the element to transition from
-      elementToTransitionFrom.animations ??= [];
-      elementToTransitionFrom.animations.push(
-        ...animationsOfElementToTransitionFrom
-      );
-
-      // Set the animations of the current element
-      currentElement.animations = animationsOfCurrentElement;
-    }
-  }
-
-  // Setup enter/exit animations
-  combinedSlides.forEach((item) => {
-    const { enterAnimations, exitAnimations } = createEnterExitAnimations({
-      canvasElement: item.canvasElement,
-      slides,
-      slideIndex: item.slideIndex,
-      enterDelay: item.canvasElement.enterDelay,
-    });
-
-    /* Currently the length of `item.animations` will never be 0, but it's being
-    checked just to be safe */
-    if (!item.animations || item.animations.length === 0) {
-      item.animations = [...enterAnimations, ...exitAnimations];
-      return;
-    }
-
-    const firstAnimation = item.animations[0]!;
-    const firstAnimationIsAppearAnimation = firstAnimation.type === 'appear';
-
-    // Add enter animations if the element doesn't have yet
-    if (!firstAnimationIsAppearAnimation) {
-      item.animations.unshift(...enterAnimations);
-    }
-
-    const lastAnimation = item.animations[item.animations.length - 1]!;
-    const lastAnimationIsDisappearAnimation =
-      lastAnimation.type === 'disappear';
-
-    // Add exit animations if the element doesn't have yet
-    if (!lastAnimationIsDisappearAnimation) {
-      item.animations.push(...exitAnimations);
-    }
+  const slidesWithElementAnimations: {
+    canvasElements: ArrayOfCanvasElementsWithAnimations;
+    duration: number;
+  }[] = parsedSlides.map((slide) => {
+    return {
+      canvasElements: slide.canvasElements.map((canvasElement) => {
+        return { attributes: canvasElement };
+      }),
+      duration: slide.duration,
+    };
   });
 
-  return combinedSlides;
+  let currentTime = 0;
+  for (const [slideIndex, slide] of slidesWithElementAnimations.entries()) {
+    const nextSlide = slidesWithElementAnimations[slideIndex + 1];
+
+    // Set enter animations
+    let enterDuration = 0;
+    for (const element of slide.canvasElements) {
+      const animationDuration = setEnterAnimation({
+        element,
+        slide,
+        currentTime,
+      });
+      enterDuration = Math.max(animationDuration, enterDuration);
+    }
+    // Add the duration of the enter animations
+    currentTime += enterDuration;
+    // Add the duration of the slide
+    currentTime += slide.duration;
+
+    // Set exit animations
+    let exitDuration = 0;
+    for (const element of slide.canvasElements) {
+      const elementWillBeReusedInNextSlide = getElementWillBeReusedInNextSlide(
+        element,
+        nextSlide
+      );
+      if (elementWillBeReusedInNextSlide) continue;
+
+      const animationDuration = setExitAnimation({
+        element,
+        slide,
+        currentTime,
+      });
+      exitDuration = Math.max(animationDuration, exitDuration);
+    }
+    // Add the duration of the exit animations
+    currentTime += exitDuration;
+
+    if (!nextSlide) continue;
+
+    // Set rect morph animations
+    let rectMorphDuration = 0;
+    for (const element of slide.canvasElements) {
+      const animationDuration = setRectMorphAnimations({
+        element,
+        nextSlide,
+        currentTime,
+      });
+      rectMorphDuration = Math.max(animationDuration, rectMorphDuration);
+    }
+    // Add the duration of the rect morph animations
+    currentTime += rectMorphDuration;
+  }
+
+  return slidesWithElementAnimations.reduce<ArrayOfCanvasElementsWithAnimations>(
+    (accumulator, slide) => accumulator.concat(slide.canvasElements),
+    []
+  );
 }
 
 /** Generates a random slide with three squares for testing purposes. */

@@ -1079,7 +1079,9 @@ export function AnimationPlayer() {
     // Load canvas elements
     const combinedSlides = combineSlides(slides);
     combinedSlidesRef.current = combinedSlides;
-    loadCanvasTree(combinedSlides.map(({ canvasElement }) => canvasElement));
+    loadCanvasTree(
+      combinedSlides.map(({ attributes: canvasElement }) => canvasElement)
+    );
   }, [loadCanvasTree, stageRef]);
 
   useEffect(() => {

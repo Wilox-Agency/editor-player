@@ -1,6 +1,7 @@
 import { ENTER_EXIT_ELEMENT_TRANSITION_DURATION } from './createAnimations';
 import { getCanvasElementRect } from './sizes';
 import type {
+  AddEnterDelay,
   AddTextContainerId,
   CanvasElementWithSharedId,
 } from './sharedTypes';
@@ -11,8 +12,9 @@ const BASE_ENTER_DELAY = 0.1;
 export function setElementsEnterDelays<
   TElement extends CanvasElementWithSharedId
 >(slides: Slide<TElement>[]) {
-  type CanvasElementWithTextContainerIdAndEnterDelay =
-    AddTextContainerId<TElement> & { enterDelay?: number };
+  type CanvasElementWithTextContainerIdAndEnterDelay = AddEnterDelay<
+    AddTextContainerId<TElement>
+  >;
 
   const slidesCopy = slides.map((slide) => {
     return {

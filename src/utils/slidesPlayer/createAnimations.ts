@@ -85,6 +85,13 @@ function getSideToAnimateEnterExitAnimationsFrom<
   return sideToAnimateFrom;
 }
 
+/**
+ * Both `clipWidth` and `clipHeight` attributes of `Konva.Group` are ignored if
+ * any of their values are exactly 0, therefore a decimal close to 0 is used
+ * instead.
+ */
+const ALMOST_ZERO_CLIP_SIZE = 0.001;
+
 function getEnterExitAnimationVars<
   TElement extends CanvasElementWithAnimations<
     AddTextContainerId<CanvasElement>
@@ -109,19 +116,22 @@ function getEnterExitAnimationVars<
   const elementRect = getCanvasElementRect(element.attributes);
   const animationsVarsByDirection = {
     left: {
-      invisible: { clipWidth: 0 },
+      invisible: { clipWidth: ALMOST_ZERO_CLIP_SIZE },
       visible: { clipWidth: elementRect.width },
     },
     right: {
-      invisible: { clipX: elementRect.width, clipWidth: 0 },
+      invisible: { clipX: elementRect.width, clipWidth: ALMOST_ZERO_CLIP_SIZE },
       visible: { clipX: 0, clipWidth: elementRect.width },
     },
     top: {
-      invisible: { clipHeight: 0 },
+      invisible: { clipHeight: ALMOST_ZERO_CLIP_SIZE },
       visible: { clipHeight: elementRect.height },
     },
     bottom: {
-      invisible: { clipY: elementRect.height, clipHeight: 0 },
+      invisible: {
+        clipY: elementRect.height,
+        clipHeight: ALMOST_ZERO_CLIP_SIZE,
+      },
       visible: { clipY: 0, clipHeight: elementRect.height },
     },
   } satisfies Record<

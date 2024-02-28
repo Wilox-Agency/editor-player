@@ -173,7 +173,6 @@ export function combineSlides(slides: Slide[]) {
     setAnimationTimings
   );
 
-  console.log(parsedSlides)
   return parsedSlides.reduce<CanvasElementWithAnimations[]>(
     (accumulator, slide) => accumulator.concat(slide.canvasElements),
     []

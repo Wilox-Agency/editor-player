@@ -5,34 +5,155 @@ import { setSharedIdsForReusedShapes } from './setReusedShapes';
 import { setElementsEnterDelays } from './setAnimationDelays';
 import { setTextContainers } from './setTextContainers';
 import {
-  setEnterAnimation,
-  setExitAnimation,
-  setRectMorphAnimations,
-} from './createAnimations';
+  setEnterAnimationWithoutTimings,
+  setExitAnimationWithoutTimings,
+  setRectMorphAnimationsWithoutTimings,
+} from './setAnimationsWithoutTimings';
+import {
+  ENTER_EXIT_ELEMENT_TRANSITION_DURATION,
+  MORPH_ELEMENT_TRANSITION_DURATION,
+  setEnterAnimationTimings,
+  setExitAnimationTimings,
+  setRectMorphAnimationTimings,
+} from './setAnimationTimings';
 import type {
   Animation,
   AnimationStates,
   CanvasElementWithAnimations,
-  CanvasElementWithSharedId,
+  CanvasElementWithAnimationsWithoutTimings,
 } from './sharedTypes';
 import { StageVirtualSize } from '@/utils/konva';
 import { pipe } from '@/utils/pipe';
 import type { CanvasElementOfType, Slide } from '@/utils/types';
 
 /**
- * @returns A boolean representing if an element from the next slide will morph
- * from the provided element (i.e. will be "reused" in the next slide).
+ * Set slide transition animations for all elements in the provided slides.
+ *
+ * This function **mutates** the elements in the array and returns a reference
+ * to the same array (but with a different type which includes the animations).
  */
-function getElementWillBeReusedInNextSlide<
-  TElement extends CanvasElementWithAnimations<CanvasElementWithSharedId>
->(element: TElement, nextSlide: { canvasElements: TElement[] } | undefined) {
-  if (element.attributes.sharedId === undefined || !nextSlide) return false;
+function setAnimationsWithoutTimings(
+  slides: Slide<CanvasElementWithAnimationsWithoutTimings>[]
+) {
+  for (const [slideIndex, slide] of slides.entries()) {
+    const previousSlide = slides[slideIndex - 1];
+    const nextSlide = slides[slideIndex + 1];
 
-  return nextSlide.canvasElements.some((elementFromNextSlide) => {
-    return (
-      elementFromNextSlide.attributes.sharedId === element.attributes.sharedId
-    );
-  });
+    for (const element of slide.canvasElements) {
+      setEnterAnimationWithoutTimings({ element, slide, previousSlide });
+      setExitAnimationWithoutTimings({ element, slide, nextSlide });
+      if (nextSlide) {
+        setRectMorphAnimationsWithoutTimings({ element, nextSlide });
+      }
+    }
+  }
+
+  return slides;
+}
+
+function getWhichTransitionsSlideHas(
+  slide: Slide<CanvasElementWithAnimationsWithoutTimings>
+) {
+  let slideHasEnterAnimation = false;
+  let slideHasExitAnimation = false;
+  let slideHasMorphAnimation = false;
+
+  for (const element of slide.canvasElements) {
+    const allAnimationTypesArePresent =
+      slideHasEnterAnimation && slideHasExitAnimation && slideHasMorphAnimation;
+    /* It's not necessary to keep checking the remaining elements if it's
+    already known that all animation types are present */
+    if (allAnimationTypesArePresent) break;
+
+    for (const animation of element.animations || []) {
+      if (animation.type === 'enter') {
+        slideHasEnterAnimation = true;
+        continue;
+      }
+      if (animation.type === 'exit') {
+        slideHasExitAnimation = true;
+        continue;
+      }
+      if (animation.type === 'morph') {
+        slideHasMorphAnimation = true;
+      }
+    }
+  }
+
+  return {
+    slideHasEnterAnimation,
+    slideHasExitAnimation,
+    slideHasMorphAnimation,
+  };
+}
+
+/**
+ * Set the animation timings (duration and start time) for all elements in the
+ * provided slides.
+ *
+ * This function **mutates** the elements in the array and returns a reference
+ * to the same array (but with a different type which includes the animation
+ * timings).
+ */
+function setAnimationTimings(
+  slides: Slide<CanvasElementWithAnimationsWithoutTimings>[]
+) {
+  let currentTime = 0;
+  currentTime = 0;
+
+  for (const slide of slides) {
+    const {
+      slideHasEnterAnimation,
+      slideHasExitAnimation,
+      slideHasMorphAnimation,
+    } = getWhichTransitionsSlideHas(slide);
+
+    // Set rect morph animations
+    for (const element of slide.canvasElements) {
+      setRectMorphAnimationTimings({
+        element: element as CanvasElementWithAnimations,
+        currentTime,
+      });
+    }
+    /* FIXME: This duration should only be added if there's an enter animation
+    with delay that's not relative to another element (which happens when a text
+    has a delay to only enter after its container has entered) */
+    if (slideHasMorphAnimation) {
+      // Add the duration of the rect morph animations
+      currentTime += MORPH_ELEMENT_TRANSITION_DURATION;
+    }
+
+    // Set enter animations
+    for (const element of slide.canvasElements) {
+      setEnterAnimationTimings({
+        element: element as CanvasElementWithAnimations,
+        slideHasMorphAnimation,
+        currentTime,
+      });
+    }
+    if (slideHasEnterAnimation) {
+      // Add the duration of the enter animations
+      currentTime += ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
+    }
+
+    // Add the duration of the slide
+    currentTime += slide.duration;
+
+    // Set exit animations
+    for (const element of slide.canvasElements) {
+      setExitAnimationTimings({
+        element: element as CanvasElementWithAnimations,
+        slideHasExitAnimation,
+        currentTime,
+      });
+    }
+    if (slideHasExitAnimation) {
+      // Add the duration of the exit animations
+      currentTime += ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
+    }
+  }
+
+  return slides as Slide<CanvasElementWithAnimations>[];
 }
 
 /** Combines slides by adding animations to transition between them. */
@@ -47,80 +168,13 @@ export function combineSlides(slides: Slide[]) {
     slides,
     setSharedIdsForReusedShapes,
     setTextContainers,
-    setElementsEnterDelays
+    setElementsEnterDelays,
+    setAnimationsWithoutTimings,
+    setAnimationTimings
   );
 
-  type ArrayOfCanvasElementsWithAnimations = CanvasElementWithAnimations<
-    (typeof parsedSlides)[number]['canvasElements'][number]
-  >[];
-
-  const slidesWithElementAnimations: {
-    canvasElements: ArrayOfCanvasElementsWithAnimations;
-    duration: number;
-  }[] = parsedSlides.map((slide) => {
-    return {
-      canvasElements: slide.canvasElements.map((canvasElement) => {
-        return { attributes: canvasElement };
-      }),
-      duration: slide.duration,
-    };
-  });
-
-  let currentTime = 0;
-  for (const [slideIndex, slide] of slidesWithElementAnimations.entries()) {
-    const nextSlide = slidesWithElementAnimations[slideIndex + 1];
-
-    // Set enter animations
-    let enterDuration = 0;
-    for (const element of slide.canvasElements) {
-      const animationDuration = setEnterAnimation({
-        element,
-        slide,
-        currentTime,
-      });
-      enterDuration = Math.max(animationDuration, enterDuration);
-    }
-    // Add the duration of the enter animations
-    currentTime += enterDuration;
-    // Add the duration of the slide
-    currentTime += slide.duration;
-
-    // Set exit animations
-    let exitDuration = 0;
-    for (const element of slide.canvasElements) {
-      const elementWillBeReusedInNextSlide = getElementWillBeReusedInNextSlide(
-        element,
-        nextSlide
-      );
-      if (elementWillBeReusedInNextSlide) continue;
-
-      const animationDuration = setExitAnimation({
-        element,
-        slide,
-        currentTime,
-      });
-      exitDuration = Math.max(animationDuration, exitDuration);
-    }
-    // Add the duration of the exit animations
-    currentTime += exitDuration;
-
-    if (!nextSlide) continue;
-
-    // Set rect morph animations
-    let rectMorphDuration = 0;
-    for (const element of slide.canvasElements) {
-      const animationDuration = setRectMorphAnimations({
-        element,
-        nextSlide,
-        currentTime,
-      });
-      rectMorphDuration = Math.max(animationDuration, rectMorphDuration);
-    }
-    // Add the duration of the rect morph animations
-    currentTime += rectMorphDuration;
-  }
-
-  return slidesWithElementAnimations.reduce<ArrayOfCanvasElementsWithAnimations>(
+  console.log(parsedSlides)
+  return parsedSlides.reduce<CanvasElementWithAnimations[]>(
     (accumulator, slide) => accumulator.concat(slide.canvasElements),
     []
   );
@@ -166,8 +220,10 @@ function createTween({
   duration: number;
 }) {
   const listeners =
-    // On 'appear' and 'disappear' animations...
-    animationType === 'appear' || animationType === 'disappear'
+    // On 'appear', 'morphAppear' and 'disappear' animations...
+    animationType === 'appear' ||
+    animationType === 'morphAppear' ||
+    animationType === 'disappear'
       ? {
           /* ...show or hide the element depending on the opacity, so the
           element doesn't have to be rendered, improving performance */

@@ -1,32 +1,22 @@
-import { ENTER_EXIT_ELEMENT_TRANSITION_DURATION } from './createAnimations';
+import { ENTER_EXIT_ELEMENT_TRANSITION_DURATION } from './setAnimationTimings';
 import { getCanvasElementRect } from './sizes';
-import type {
-  AddEnterDelay,
-  AddTextContainerId,
-  CanvasElementWithSharedId,
-} from './sharedTypes';
+import type { CanvasElementWithAnimationAttributes } from './sharedTypes';
 import type { Slide } from '@/utils/types';
+import { assertType } from './assert';
 
 const BASE_ENTER_DELAY = 0.1;
 
-export function setElementsEnterDelays<
-  TElement extends CanvasElementWithSharedId
->(slides: Slide<TElement>[]) {
-  type CanvasElementWithTextContainerIdAndEnterDelay = AddEnterDelay<
-    AddTextContainerId<TElement>
-  >;
-
-  const slidesCopy = slides.map((slide) => {
-    return {
-      ...slide,
-      canvasElements: slide.canvasElements.map((canvasElement) => ({
-        ...canvasElement,
-      })),
-    };
-  }) as Slide<CanvasElementWithTextContainerIdAndEnterDelay>[];
-
-  slidesCopy.forEach((slide, slideIndex) => {
-    const previousSlide = slidesCopy[slideIndex - 1];
+/**
+ * Sets a delay for each element to be used with the enter animation.
+ *
+ * This function **mutates** the elements in the array and returns a reference
+ * to the same array.
+ */
+export function setElementsEnterDelays(
+  slides: Slide<CanvasElementWithAnimationAttributes>[]
+) {
+  slides.forEach((slide, slideIndex) => {
+    const previousSlide = slides[slideIndex - 1];
 
     // Set the animation delay for every element possible
     slide.canvasElements
@@ -35,12 +25,12 @@ export function setElementsEnterDelays<
         /* If an element from the previous slide has the same shared ID, it
         means the current element will morph from it */
         const elementWillMorphFromOtherElement =
-          canvasElement.sharedId &&
+          canvasElement.animationAttributes.sharedId &&
           previousSlide?.canvasElements.some(
             (canvasElementFromPreviousSlide) => {
               return (
-                canvasElementFromPreviousSlide.sharedId ===
-                canvasElement.sharedId
+                canvasElementFromPreviousSlide.animationAttributes.sharedId ===
+                canvasElement.animationAttributes.sharedId
               );
             }
           );
@@ -52,8 +42,8 @@ export function setElementsEnterDelays<
       })
       // Sort from largest to smallest area
       .sort((elementA, elementB) => {
-        const rectOfElementA = getCanvasElementRect(elementA);
-        const rectOfElementB = getCanvasElementRect(elementB);
+        const rectOfElementA = getCanvasElementRect(elementA.attributes);
+        const rectOfElementB = getCanvasElementRect(elementB.attributes);
 
         const areaOfElementA = rectOfElementA.width * rectOfElementA.height;
         const areaOfElementB = rectOfElementB.width * rectOfElementB.height;
@@ -63,24 +53,34 @@ export function setElementsEnterDelays<
       /* Set the enter delay based on the index (the smaller the element, the
       longer the delay, but scaling with the order, not with the area) */
       .forEach((canvasElement, elementIndex) => {
-        canvasElement.enterDelay = BASE_ENTER_DELAY * elementIndex;
+        canvasElement.animationAttributes.enterDelay =
+          BASE_ENTER_DELAY * elementIndex;
       });
 
     /* For text elements that are somewhat contained within another element, set
     a delay based on the containing element */
     slide.canvasElements.forEach((canvasElement) => {
-      if (canvasElement.type !== 'text' || !canvasElement.containerId) return;
+      const isTextElementWithContainer =
+        canvasElement.attributes.type === 'text' &&
+        !!canvasElement.animationAttributes.containerId;
 
-      const textContainer = slide.canvasElements.find(
-        (otherElement) => otherElement.id === canvasElement.containerId
-      );
+      if (!isTextElementWithContainer) return;
+      assertType(canvasElement, 'text');
 
-      if (textContainer?.enterDelay === undefined) return;
+      const textContainer = slide.canvasElements.find((otherElement) => {
+        return (
+          otherElement.attributes.id ===
+          canvasElement.animationAttributes.containerId
+        );
+      });
 
-      canvasElement.enterDelay =
-        textContainer.enterDelay + ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
+      if (textContainer?.animationAttributes.enterDelay === undefined) return;
+
+      canvasElement.animationAttributes.enterDelay =
+        textContainer.animationAttributes.enterDelay +
+        ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
     });
   });
 
-  return slidesCopy;
+  return slides;
 }

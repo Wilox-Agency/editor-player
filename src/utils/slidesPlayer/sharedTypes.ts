@@ -1,30 +1,58 @@
-import type { CanvasElement } from '@/utils/types';
+import type { MergeDeep } from 'type-fest';
+
+import type {
+  AddMissingKeysAsOptionalUndefined,
+  CanvasElement,
+  DistributiveKeyOf,
+} from '@/utils/types';
 
 export type AnimationStates = Partial<{
   from: Record<string, string | number>;
   to: Record<string, string | number>;
 }>;
 
-export type Animation = {
-  type: 'morph' | 'enter' | 'exit' | 'appear' | 'disappear';
-  duration: number;
-  startTime: number;
+export type AnimationWithoutTimings = {
+  type: 'morph' | 'enter' | 'exit' | 'morphAppear' | 'appear' | 'disappear';
   groupAnimation?: AnimationStates;
   nodeAnimation?: AnimationStates;
 };
 
-export type CanvasElementWithSharedId = CanvasElement & { sharedId?: string };
-
-export type AddTextContainerId<TElement extends CanvasElement> =
-  TElement extends { type: 'text' }
-    ? TElement & { containerId?: string }
-    : TElement;
-
-export type AddEnterDelay<TElement extends CanvasElement> = TElement & {
-  enterDelay?: number;
+export type Animation = AnimationWithoutTimings & {
+  duration: number;
+  startTime: number;
 };
 
-export type CanvasElementWithAnimations<TElement extends CanvasElement> = {
-  attributes: TElement;
-  animations?: Animation[];
-};
+type AnimationAttributesByElementType = MergeDeep<
+  { [TType in CanvasElement['type']]: { enterDelay?: number } },
+  {
+    rect: { sharedId?: string };
+    text: { containerId?: string };
+  }
+>;
+
+type AnimationAttributeKey = DistributiveKeyOf<
+  AnimationAttributesByElementType[keyof AnimationAttributesByElementType]
+>;
+
+export type CanvasElementWithAnimationAttributes<
+  T extends CanvasElement = CanvasElement
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+> = T extends any
+  ? {
+      attributes: T;
+      animationAttributes: AddMissingKeysAsOptionalUndefined<
+        AnimationAttributesByElementType[T['type']],
+        AnimationAttributeKey
+      >;
+    }
+  : never;
+
+export type CanvasElementWithAnimationsWithoutTimings =
+  CanvasElementWithAnimationAttributes & {
+    animations?: AnimationWithoutTimings[];
+  };
+
+export type CanvasElementWithAnimations =
+  CanvasElementWithAnimationAttributes & {
+    animations?: Animation[];
+  };

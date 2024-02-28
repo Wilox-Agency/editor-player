@@ -38,6 +38,25 @@ export type DistributiveOmit<T, TOmitted extends PropertyKey> = T extends any
   : never;
 
 /**
+ * `keyof` alternative that works with unions
+ *
+ * @example
+ * type Union = { foo: string } | { bar: string };
+ *
+ * type A = keyof Union;
+ * //   ^? type A = never
+ * type B = DistributiveKeyOf<Union>;
+ * //   ^? type B = "foo" | "bar"
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type DistributiveKeyOf<T> = T extends any ? keyof T : never;
+
+export type AddMissingKeysAsOptionalUndefined<
+  TObj,
+  TKeys extends PropertyKey
+> = Prettify<TObj & { [TKey in Exclude<TKeys, keyof TObj>]?: undefined }>;
+
+/**
  * Sets all the properties of an object to optional and `undefined`.
  *
  * @example
@@ -167,7 +186,7 @@ export type JsUnion<A, B> =
   | (A & UndefinedProperites<Omit<B, keyof A>>)
   | (B & UndefinedProperites<Omit<A, keyof B>>);
 
-export type Slide<TElement extends CanvasElement = CanvasElement> = {
+export type Slide<TElement = CanvasElement> = {
   canvasElements: TElement[];
   duration: number;
 };

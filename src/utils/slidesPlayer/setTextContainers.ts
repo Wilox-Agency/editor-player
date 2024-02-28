@@ -1,5 +1,6 @@
 import { getCanvasElementRect, getIntersectionRect } from './sizes';
-import type { AddTextContainerId } from './sharedTypes';
+import type { CanvasElementWithAnimationAttributes } from './sharedTypes';
+import { assertType } from './assert';
 import { findLast } from '@/utils/array';
 import type { CanvasElement, CanvasElementOfType, Slide } from '@/utils/types';
 
@@ -37,31 +38,32 @@ function getElementThatContainsText<TElement extends CanvasElement>({
   return elementThatContainsText;
 }
 
-export function setTextContainers<TElement extends CanvasElement>(
-  slides: Slide<TElement>[]
+/**
+ * Sets a container ID for each text element that is contained within another
+ * element.
+ *
+ * This function **mutates** the elements in the array and returns a reference
+ * to the same array.
+ */
+export function setTextContainers(
+  slides: Slide<CanvasElementWithAnimationAttributes>[]
 ) {
-  type CanvasElementWithTextContainerId = AddTextContainerId<TElement>;
+  slides.forEach((slide) => {
+    slide.canvasElements.forEach((canvasElement, canvasElementIndex) => {
+      if (canvasElement.attributes.type !== 'text') return;
+      assertType(canvasElement, 'text');
 
-  return slides.map((slide) => {
-    const mapped = slide.canvasElements.map(
-      (canvasElement, canvasElementIndex) => {
-        if (canvasElement.type !== 'text') return canvasElement;
+      const elementThatContainsText = getElementThatContainsText({
+        slideElementsBeforeText: slide.canvasElements
+          .map(({ attributes }) => attributes)
+          .slice(0, canvasElementIndex),
+        canvasTextElement: canvasElement.attributes,
+      });
 
-        const elementThatContainsText = getElementThatContainsText({
-          slideElementsBeforeText: slide.canvasElements.slice(
-            0,
-            canvasElementIndex
-          ),
-          canvasTextElement: canvasElement,
-        });
-
-        return {
-          ...canvasElement,
-          containerId: elementThatContainsText?.id,
-        };
-      }
-    ) as CanvasElementWithTextContainerId[];
-
-    return { ...slide, canvasElements: mapped };
+      canvasElement.animationAttributes.containerId =
+        elementThatContainsText?.id;
+    });
   });
+
+  return slides;
 }

@@ -206,3 +206,26 @@ export function saveCanvas() {
 
   toast.success('Canvas saved successfully!');
 }
+
+/**
+ * Gets the minimum text width for the current text format (i.e. without
+ * creating any new lines or changing the position of any word). Optionally pass
+ * a font size to get the minimum width for a font size different from the
+ * current one.
+ */
+export function getMinTextWidthForCurrentTextFormat(
+  textNode: Konva.Text,
+  fontSize = textNode.fontSize()
+) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d')!;
+  ctx.font = `${textNode.fontStyle()} ${fontSize}px ${textNode.fontFamily()}`;
+
+  const minWidth = Math.max(
+    ...textNode.textArr.map((textLine) => ctx.measureText(textLine.text).width)
+  );
+
+  canvas.remove();
+
+  return minWidth;
+}

@@ -15,7 +15,10 @@ import styles from './Text.module.css';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { useNodeBeingEditedStore } from '@/hooks/useNodeBeingEditedStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
-import { convertScale } from '@/utils/konva';
+import {
+  convertScale,
+  getMinTextWidthForCurrentTextFormat,
+} from '@/utils/konva';
 import { TextSizes } from '@/utils/validation';
 import { MouseButton } from '@/utils/input';
 import { mergeRefs } from '@/utils/mergeRefs';
@@ -104,10 +107,15 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         text.fontSize() * text.scaleY(),
         TextSizes.minFontSize
       );
+      const newWidth = Math.max(
+        text.width() * text.scaleX(),
+        getMinTextWidthForCurrentTextFormat(text, newFontSize),
+        newFontSize
+      );
       /* Updating the font size and the width according to the scale, while also
       resetting the scale */
       text.setAttrs({
-        width: Math.max(text.width() * text.scaleX(), newFontSize),
+        width: newWidth,
         fontSize: newFontSize,
         scaleX: 1,
         scaleY: 1,

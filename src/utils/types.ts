@@ -76,6 +76,9 @@ export type UnionToIntersection<U> =
     ? I
     : never;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type NoInfer<T> = [T][T extends any ? 0 : never];
+
 export type KonvaComponentProps<T> = T extends KonvaNodeComponent<
   infer _TNode,
   infer TProps

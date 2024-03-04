@@ -1,6 +1,5 @@
 import { getCanvasElementRect, getIntersectionRect } from './sizes';
 import type { CanvasElementWithAnimationAttributes } from './sharedTypes';
-import { assertType } from './assert';
 import { findLast } from '@/utils/array';
 import type { CanvasElement, CanvasElementOfType, Slide } from '@/utils/types';
 
@@ -49,19 +48,17 @@ export function setTextContainers(
   slides: Slide<CanvasElementWithAnimationAttributes>[]
 ) {
   slides.forEach((slide) => {
-    slide.canvasElements.forEach((canvasElement, canvasElementIndex) => {
-      if (canvasElement.attributes.type !== 'text') return;
-      assertType(canvasElement, 'text');
+    slide.canvasElements.forEach((element, elementIndex) => {
+      if (element.attributes.type !== 'text') return;
 
       const elementThatContainsText = getElementThatContainsText({
         slideElementsBeforeText: slide.canvasElements
           .map(({ attributes }) => attributes)
-          .slice(0, canvasElementIndex),
-        canvasTextElement: canvasElement.attributes,
+          .slice(0, elementIndex),
+        canvasTextElement: element.attributes,
       });
 
-      canvasElement.animationAttributes.containerId =
-        elementThatContainsText?.id;
+      element.animationAttributes.containerId = elementThatContainsText?.id;
     });
   });
 

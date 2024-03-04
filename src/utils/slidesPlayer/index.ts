@@ -1,9 +1,13 @@
 import type Konva from 'konva';
 import gsap from 'gsap';
 
-import { setSharedIdsForReusedShapes } from './setReusedShapes';
+import {
+  setSharedIdsForReusedElements,
+  setSharedIdsForReusedRectsThatShouldMorph,
+} from './setReusedShapes';
 import { setElementsEnterDelays } from './setAnimationDelays';
 import { setTextContainers } from './setTextContainers';
+import { createDummyElementsForSharedElementSlideInAnimation } from './createDummyElementsForSharedElementSlideInAnimation';
 import {
   setEnterAnimationWithoutTimings,
   setExitAnimationWithoutTimings,
@@ -19,12 +23,29 @@ import {
 import type {
   Animation,
   AnimationStates,
+  CanvasElementWithAnimationAttributes,
   CanvasElementWithAnimations,
   CanvasElementWithAnimationsWithoutTimings,
 } from './sharedTypes';
 import { StageVirtualSize } from '@/utils/konva';
 import { pipe } from '@/utils/pipe';
 import type { CanvasElementOfType, Slide } from '@/utils/types';
+
+function setEmptyAnimationAttributes(
+  slides: Slide[]
+): Slide<CanvasElementWithAnimationAttributes>[] {
+  return slides.map((slide) => {
+    return {
+      ...slide,
+      canvasElements: slide.canvasElements.map((canvasElement) => {
+        return {
+          attributes: { ...canvasElement },
+          animationAttributes: {},
+        } as CanvasElementWithAnimationAttributes;
+      }),
+    };
+  });
+}
 
 /**
  * Set slide transition animations for all elements in the provided slides.
@@ -36,15 +57,14 @@ function setAnimationsWithoutTimings(
   slides: Slide<CanvasElementWithAnimationsWithoutTimings>[]
 ) {
   for (const [slideIndex, slide] of slides.entries()) {
-    const previousSlide = slides[slideIndex - 1];
     const nextSlide = slides[slideIndex + 1];
 
     for (const element of slide.canvasElements) {
-      setEnterAnimationWithoutTimings({ element, slide, previousSlide });
-      setExitAnimationWithoutTimings({ element, slide, nextSlide });
       if (nextSlide) {
         setRectMorphAnimationsWithoutTimings({ element, nextSlide });
       }
+      setEnterAnimationWithoutTimings({ element, slide });
+      setExitAnimationWithoutTimings({ element, slide });
     }
   }
 
@@ -145,6 +165,7 @@ function setAnimationTimings(
         element: element as CanvasElementWithAnimations,
         slideHasExitAnimation,
         currentTime,
+        slideDuration: slide.duration,
       });
     }
     if (slideHasExitAnimation) {
@@ -166,8 +187,12 @@ export function combineSlides(slides: Slide[]) {
   slide duration -> 1s last transition (exit) */
   const parsedSlides = pipe(
     slides,
-    setSharedIdsForReusedShapes,
+    setEmptyAnimationAttributes,
+    setSharedIdsForReusedElements,
+    setSharedIdsForReusedRectsThatShouldMorph,
     setTextContainers,
+    createDummyElementsForSharedElementSlideInAnimation,
+    // TODO: Move this to after the animations without timings
     setElementsEnterDelays,
     setAnimationsWithoutTimings,
     setAnimationTimings

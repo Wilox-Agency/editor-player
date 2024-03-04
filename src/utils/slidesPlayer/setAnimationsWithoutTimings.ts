@@ -1,6 +1,4 @@
 import type { IRect } from 'konva/lib/types';
-import deepEqual from 'fast-deep-equal';
-import { excludeKeys } from 'filter-obj';
 
 import { getCanvasElementRect } from './sizes';
 import type {
@@ -10,7 +8,7 @@ import type {
 } from './sharedTypes';
 import { StageVirtualSize, defaultElementAttributes } from '@/utils/konva';
 import { pipe } from '@/utils/pipe';
-import { assertType } from './assert';
+import { checkProperty } from '@/utils/validation';
 
 function getElementSideClosestToStageEdge(elementRect: IRect) {
   const sideDistances = {
@@ -123,64 +121,21 @@ function getEnterExitAnimationVars({
   return animationVars;
 }
 
-function compareElements(
-  elementA: Record<PropertyKey, unknown>,
-  elementB: Record<PropertyKey, unknown>
-) {
-  return deepEqual(
-    excludeKeys(elementA, ['id']),
-    excludeKeys(elementB, ['id'])
-  );
-}
-
-/**
- * @returns A boolean representing if a rect element from the next slide will
- * morph from the provided element (i.e. will be "reused" in the next slide).
- */
-function getRectElementWillBeReusedInNextSlide(
-  element: CanvasElementWithAnimationsWithoutTimings,
-  nextSlide:
-    | { canvasElements: CanvasElementWithAnimationsWithoutTimings[] }
-    | undefined
-) {
-  if (element.animationAttributes.sharedId === undefined || !nextSlide) {
-    return false;
-  }
-
-  return nextSlide.canvasElements.some((elementFromNextSlide) => {
-    return (
-      elementFromNextSlide.animationAttributes.sharedId ===
-      element.animationAttributes.sharedId
-    );
-  });
-}
-
 export function setEnterAnimationWithoutTimings({
   element,
   slide,
-  previousSlide,
 }: {
   element: CanvasElementWithAnimationsWithoutTimings;
   slide: { canvasElements: CanvasElementWithAnimationsWithoutTimings[] };
-  previousSlide:
-    | { canvasElements: CanvasElementWithAnimationsWithoutTimings[] }
-    | undefined;
 }) {
   element.animations ??= [];
 
   /* If the element already has an appear animation, do not add an enter
   animation */
-  const alreadyHasAppearAnimation = element.animations.some(
-    (animation) => animation.type === 'morphAppear'
-  );
+  const alreadyHasAppearAnimation = element.animations.some((animation) => {
+    return animation.type === 'appear' || animation.type === 'morphAppear';
+  });
   if (alreadyHasAppearAnimation) return;
-
-  const previousSlideHasExactlyEqualElement =
-    previousSlide?.canvasElements.some(
-      ({ attributes: elementFromPreviousSlide }) => {
-        return compareElements(element.attributes, elementFromPreviousSlide);
-      }
-    );
 
   const animationVars = getEnterExitAnimationVars({ element, slide });
 
@@ -191,9 +146,15 @@ export function setEnterAnimationWithoutTimings({
     },
   ];
 
-  /* Only add enter animation if there's no element in the previous slide that
-  is exactly equal to the current element */
-  if (!previousSlideHasExactlyEqualElement) {
+  /* Only add enter animation if the element is not a dummy element and is not
+  shared with the previous slide or it is shared but should have the slide-in
+  animation */
+  const shouldHaveEnterAnimation =
+    !element.animationAttributes.isDummyElementForSlideInAnimation &&
+    (element.animationAttributes.sharedWithPreviousSlide === undefined ||
+      element.animationAttributes.sharedWithPreviousSlide.animationType ===
+        'slideIn');
+  if (shouldHaveEnterAnimation) {
     animations.push({
       type: 'enter',
       groupAnimation: {
@@ -209,21 +170,11 @@ export function setEnterAnimationWithoutTimings({
 export function setExitAnimationWithoutTimings({
   element,
   slide,
-  nextSlide,
 }: {
   element: CanvasElementWithAnimationsWithoutTimings;
   slide: { canvasElements: CanvasElementWithAnimationsWithoutTimings[] };
-  nextSlide:
-    | { canvasElements: CanvasElementWithAnimationsWithoutTimings[] }
-    | undefined;
 }) {
   element.animations ??= [];
-
-  const elementWillBeReusedInNextSlide = getRectElementWillBeReusedInNextSlide(
-    element,
-    nextSlide
-  );
-  if (elementWillBeReusedInNextSlide) return;
 
   /* If the element already has an disappear animation, do not add an enter
   animation */
@@ -231,12 +182,6 @@ export function setExitAnimationWithoutTimings({
     (animation) => animation.type === 'disappear'
   );
   if (alreadyHasDisappearAnimation) return;
-
-  const nextSlideHasExactlyEqualElement = nextSlide?.canvasElements.some(
-    ({ attributes: elementFromNextSlide }) => {
-      return compareElements(element.attributes, elementFromNextSlide);
-    }
-  );
 
   const animationVars = getEnterExitAnimationVars({ element, slide });
 
@@ -246,9 +191,13 @@ export function setExitAnimationWithoutTimings({
       groupAnimation: { to: { opacity: 0 } },
     },
   ];
-  /* Only add exit animation if there's no element in the next slide that
-  is exactly equal to the current element */
-  if (!nextSlideHasExactlyEqualElement) {
+
+  /* Only add exit animation if the element is not a dummy element and is not
+  shared with the next slide */
+  const shouldHaveExitAnimation =
+    !element.animationAttributes.isDummyElementForSlideInAnimation &&
+    element.animationAttributes.sharedWithNextSlide === undefined;
+  if (shouldHaveExitAnimation) {
     animations.push({
       type: 'exit',
       groupAnimation: {
@@ -268,31 +217,28 @@ export function setRectMorphAnimationsWithoutTimings({
   element: CanvasElementWithAnimationsWithoutTimings;
   nextSlide: { canvasElements: CanvasElementWithAnimationsWithoutTimings[] };
 }) {
-  const isRectElementWithSharedId =
-    element.attributes.type === 'rect' &&
-    !!element.animationAttributes.sharedId;
+  const isSharedRectElementWithMorphAnimation =
+    checkProperty(element, 'attributes.type', 'rect') &&
+    checkProperty(
+      element,
+      'animationAttributes.sharedWithNextSlide.animationType',
+      'morph'
+    );
+  if (!isSharedRectElementWithMorphAnimation) return;
 
-  if (!isRectElementWithSharedId) return;
-  assertType(element, 'rect');
-
-  const elementThatWillMorphFromCurrentOne =
-    element.animationAttributes.sharedId === undefined
-      ? undefined
-      : nextSlide.canvasElements.find((elementFromNextSlide) => {
-          return (
-            elementFromNextSlide.animationAttributes.sharedId ===
-            element.animationAttributes.sharedId
-          );
-        });
+  const elementThatWillMorphFromCurrentOne = nextSlide.canvasElements.find(
+    (elementFromNextSlide) => {
+      return (
+        elementFromNextSlide.animationAttributes.sharedWithPreviousSlide
+          ?.sharedId ===
+        element.animationAttributes.sharedWithNextSlide.sharedId
+      );
+    }
+  );
 
   /* The element that will morph from the current one also needs to be a
   rectangle */
   if (elementThatWillMorphFromCurrentOne?.attributes.type !== 'rect') return;
-
-  const areElementsWithSameSharedIdExactlyEqual = compareElements(
-    element.attributes,
-    elementThatWillMorphFromCurrentOne.attributes
-  );
 
   // Create animation for the current element to disappear
   const animationsOfCurrentElement: AnimationWithoutTimings[] = [
@@ -314,27 +260,25 @@ export function setRectMorphAnimationsWithoutTimings({
 
   /* Only add morph animation if the elements with same shared ID are not
   exactly equal */
-  if (!areElementsWithSameSharedIdExactlyEqual) {
-    animationsOfElementToTransitionTo.push({
-      type: 'morph',
-      groupAnimation: {
-        from: {
-          x: elementRect.x,
-          y: elementRect.y,
-          clipWidth: elementRect.width,
-          clipHeight: elementRect.height,
-        },
+  animationsOfElementToTransitionTo.push({
+    type: 'morph',
+    groupAnimation: {
+      from: {
+        x: elementRect.x,
+        y: elementRect.y,
+        clipWidth: elementRect.width,
+        clipHeight: elementRect.height,
       },
-      nodeAnimation: {
-        from: {
-          width: elementRect.width,
-          height: elementRect.height,
-          fill: element.attributes.fill || defaultElementAttributes.rect.fill,
-          // TODO: Include other animatable attributes
-        },
+    },
+    nodeAnimation: {
+      from: {
+        width: elementRect.width,
+        height: elementRect.height,
+        fill: element.attributes.fill || defaultElementAttributes.rect.fill,
+        // TODO: Include other animatable attributes
       },
-    });
-  }
+    },
+  });
 
   // Set the animations of the current element
   element.animations ??= [];

@@ -1,5 +1,54 @@
 import { type } from 'arktype';
 
+import type {
+  AssignableOrNever,
+  CreateObjectWithNestedProperties,
+  PathsToFields,
+  StringSplit,
+} from '@/utils/types';
+
+/**
+ * Checks if the an object property has a certain value.
+ * @param object The object which may contain the property to be checked.
+ * @param propertyPath The path to the property to be checked as a string
+ * @param propertyValue The desired value of the property, which will be
+ * compared with the actual value of in the object.
+ * @returns A boolean that tells if the the property has the desired value.
+ */
+export function checkProperty<
+  const TObj extends object,
+  const TPropPath extends PathsToFields<TObj>,
+  const TPropValue,
+  TPropArray extends string[] = StringSplit<TPropPath, '.'>,
+  TResult = AssignableOrNever<
+    TObj,
+    CreateObjectWithNestedProperties<TPropArray, TPropValue>
+  >
+>(
+  object: TObj,
+  propertyPath: TPropPath,
+  propertyValue: TPropValue
+  // @ts-expect-error The TS server cannot tell that `TResult` will always
+  // extend `TObj` before actually computing the result, so it shows an error
+): object is TResult {
+  const properties = propertyPath.split('.') as TPropArray;
+
+  let current: unknown = object;
+  for (const property of properties) {
+    if (
+      typeof current !== 'object' ||
+      current === null ||
+      !(property in current)
+    ) {
+      return false;
+    }
+
+    current = current[property as keyof typeof current];
+  }
+
+  return current === propertyValue;
+}
+
 export function validateUrl(string: string) {
   try {
     new URL(string);

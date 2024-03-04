@@ -23,11 +23,23 @@ export type Animation = AnimationWithoutTimings & {
 };
 
 type AnimationAttributesByElementType = MergeDeep<
-  { [TType in CanvasElement['type']]: { enterDelay?: number } },
   {
-    rect: { sharedId?: string };
-    text: { containerId?: string };
-  }
+    // Common attributes
+    [TType in CanvasElement['type']]: {
+      enterDelay?: number;
+      sharedWithPreviousSlide?: {
+        sharedId: string;
+        animationType: 'morph' | 'slideIn' | 'none';
+      };
+      sharedWithNextSlide?: {
+        sharedId: string;
+        animationType: 'morph' | 'slideIn' | 'none';
+      };
+      isDummyElementForSlideInAnimation?: boolean;
+    };
+  },
+  // Attributes specific to each element type
+  { text: { containerId?: string } }
 >;
 
 type AnimationAttributeKey = DistributiveKeyOf<

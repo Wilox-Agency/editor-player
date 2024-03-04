@@ -1,8 +1,8 @@
 import { ENTER_EXIT_ELEMENT_TRANSITION_DURATION } from './setAnimationTimings';
 import { getCanvasElementRect } from './sizes';
+import { assertType } from './assert';
 import type { CanvasElementWithAnimationAttributes } from './sharedTypes';
 import type { Slide } from '@/utils/types';
-import { assertType } from './assert';
 
 const BASE_ENTER_DELAY = 0.1;
 
@@ -23,20 +23,22 @@ export function setElementsEnterDelays(
       // Get only the elements that will have an entering animation
       .filter((canvasElement) => {
         /* If an element from the previous slide has the same shared ID, it
-        means the current element will morph from it */
-        const elementWillMorphFromOtherElement =
-          canvasElement.animationAttributes.sharedId &&
+        means the current element will not have an enter animation */
+        const elementIsSharedWithPreviousSlide =
+          canvasElement.animationAttributes.sharedWithPreviousSlide &&
           previousSlide?.canvasElements.some(
             (canvasElementFromPreviousSlide) => {
               return (
-                canvasElementFromPreviousSlide.animationAttributes.sharedId ===
-                canvasElement.animationAttributes.sharedId
+                canvasElementFromPreviousSlide.animationAttributes
+                  .sharedWithNextSlide?.sharedId ===
+                canvasElement.animationAttributes.sharedWithPreviousSlide
+                  ?.sharedId
               );
             }
           );
 
         const elementWillHaveEnteringAnimation =
-          !elementWillMorphFromOtherElement;
+          !elementIsSharedWithPreviousSlide;
 
         return elementWillHaveEnteringAnimation;
       })

@@ -1,5 +1,6 @@
 import type Konva from 'konva';
 import type { KonvaNodeComponent, KonvaNodeEvents } from 'react-konva';
+import type { IsNever, OptionalKeysOf, RequiredKeysOf } from 'type-fest';
 
 import type { ImageProps, VideoProps } from '@/components/konva/Image';
 import type { TextProps } from '@/components/konva/Text';
@@ -79,6 +80,130 @@ export type UnionToIntersection<U> =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type NoInfer<T> = [T][T extends any ? 0 : never];
 
+/** @see https://stackoverflow.com/questions/70831365/can-i-slice-literal-type-in-typescript */
+export type StringSplit<S extends string, D extends string> = string extends S
+  ? string[]
+  : S extends ''
+  ? []
+  : S extends `${infer T}${D}${infer U}`
+  ? [T, ...StringSplit<U, D>]
+  : [S];
+
+export type AccessPropertyFromString<
+  TValue,
+  TPropertiesArray extends string[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+> = TValue extends any
+  ? TPropertiesArray extends [infer TProperty, ...infer TTail]
+    ? TProperty extends keyof TValue
+      ? TTail extends string[]
+        ? AccessPropertyFromString<TValue[TProperty], TTail>
+        : never
+      : never
+    : TValue
+  : never;
+
+type StringOrNever<T> = T extends string ? T : never;
+
+export type CreateObjectWithNestedProperties<
+  TPropertiesArray extends string[],
+  TValueOfMostNestedProperty
+> = TPropertiesArray extends [infer TProperty]
+  ? { [K in StringOrNever<TProperty>]: TValueOfMostNestedProperty }
+  : TPropertiesArray extends [infer TProperty, ...infer TRest]
+  ? TRest extends string[]
+    ? {
+        [K in StringOrNever<TProperty>]: CreateObjectWithNestedProperties<
+          TRest,
+          TValueOfMostNestedProperty
+        >;
+      }
+    : never
+  : never;
+
+declare const neverSymbol: unique symbol;
+type NeverSymbol = typeof neverSymbol;
+
+type AllOrNothingNeverInner<T> = IsNever<T> extends true
+  ? NeverSymbol
+  : T extends object
+  ? { [K in keyof T]: AllOrNothingNeverInner<T[K]> }[keyof T]
+  : T;
+
+type AllOrNothingNever<T> = NeverSymbol extends AllOrNothingNeverInner<T>
+  ? never
+  : T;
+
+type AssignableOrNeverCommonKeys<
+  TObj,
+  TObjAssign,
+  TKey extends keyof TObj
+> = TKey extends keyof TObjAssign
+  ? NonNullable<TObjAssign[TKey]> extends object
+    ? NonNullable<TObj[TKey]> extends object
+      ? AssignableOrNever<
+          NonNullable<TObj[TKey]>,
+          NonNullable<TObjAssign[TKey]>
+        >
+      : never // Type is not assignable
+    : // If at least one of properties is not an object, check assignability directly
+    TObjAssign[TKey] extends TObj[TKey]
+    ? TObjAssign[TKey]
+    : never // Type is not assignable
+  : TObj[TKey];
+
+export type AssignableOrNever<
+  TObj extends object,
+  TObjAssign extends object
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+> = TObj extends any
+  ? keyof TObjAssign extends keyof TObj
+    ? AllOrNothingNever<
+        Prettify<
+          {
+            // All required keys that are exclusive to TObj
+            [TKey in Exclude<
+              RequiredKeysOf<TObj>,
+              keyof TObjAssign
+            >]: TObj[TKey];
+          } & {
+            // All optional keys that are exclusive to TObj
+            [TKey in Exclude<
+              OptionalKeysOf<TObj>,
+              keyof TObjAssign
+            >]?: TObj[TKey];
+          } & {
+            // All common keys that are required in TObjAssign
+            [TKey in Extract<
+              keyof TObj,
+              RequiredKeysOf<TObjAssign>
+            >]: AssignableOrNeverCommonKeys<TObj, TObjAssign, TKey>;
+          } & {
+            // All common keys that are optional in TObjAssign
+            [TKey in Extract<
+              keyof TObj,
+              OptionalKeysOf<TObjAssign>
+            >]?: TKey extends OptionalKeysOf<TObj>
+              ? AssignableOrNeverCommonKeys<TObj, TObjAssign, TKey>
+              : never; // Property is optional in `TObjAssign` but not in `TObj`
+          }
+        >
+      >
+    : never
+  : never;
+
+type Dot<T extends string, U extends string> = '' extends U ? T : `${T}.${U}`;
+type StopFields = string | number | boolean | symbol;
+/** @see https://stackoverflow.com/questions/76384345/how-to-implement-a-typescript-generic-type-for-nested-properties-that-resolves-t */
+export type PathsToFields<T> = T extends StopFields
+  ? ''
+  : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends any[]
+  ? '' // Prevent showing any array methods
+  : {
+      [K in Extract<keyof T, string>]: K | Dot<K, PathsToFields<T[K]>>;
+    }[Extract<keyof T, string>];
+
 export type KonvaComponentProps<T> = T extends KonvaNodeComponent<
   infer _TNode,
   infer TProps
@@ -114,6 +239,8 @@ export type CanvasElement = DistributiveOmit<
   ) & { id: string },
   'saveAttrs' | 'remove'
 >;
+
+export type CanvasElementAttribute = DistributiveKeyOf<CanvasElement>;
 
 export type CanvasElementWithActions<
   TElement extends CanvasElement = CanvasElement

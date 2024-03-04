@@ -23,12 +23,8 @@ export function setEnterAnimationTimings({
 }) {
   for (const animation of element.animations || []) {
     if (animation.type === 'appear') {
-      /* When the element has an 'appear' animation but doesn't have an 'enter'
-      one, then the element is equal to some element in the previous slide and
-      is being "reused" */
-      const isEqualToSomeElementInPreviousSlide = !element.animations?.some(
-        (animation) => animation.type === 'enter'
-      );
+      const isElementSharedWithPreviousSlide =
+        element.animationAttributes.sharedWithPreviousSlide !== undefined;
 
       let startTime = currentTime;
       /* TODO: Only set the `enterDelay` animation attribute if the element is
@@ -38,13 +34,13 @@ export function setEnterAnimationTimings({
       timings) */
       /* Only add enter delay when the element will have enter animation (i.e.
       is not equal to some element in the previous slide) */
-      if (!isEqualToSomeElementInPreviousSlide) {
+      if (!isElementSharedWithPreviousSlide) {
         startTime += element.animationAttributes.enterDelay || 0;
       }
 
       /* Make the element appear when the morph transition starts if it will not
       have an enter animation and the slide has a morph animation */
-      if (isEqualToSomeElementInPreviousSlide && slideHasMorphAnimation) {
+      if (isElementSharedWithPreviousSlide && slideHasMorphAnimation) {
         startTime -= MORPH_ELEMENT_TRANSITION_DURATION;
       }
 
@@ -66,18 +62,31 @@ export function setExitAnimationTimings({
   element,
   slideHasExitAnimation,
   currentTime,
+  slideDuration,
 }: {
   element: CanvasElementWithAnimations;
   slideHasExitAnimation: boolean;
   currentTime: number;
+  slideDuration: number;
 }) {
   for (const animation of element.animations || []) {
     if (animation.type === 'disappear') {
-      const exitDuration = slideHasExitAnimation
-        ? ENTER_EXIT_ELEMENT_TRANSITION_DURATION
-        : 0;
       animation.duration = ALMOST_ZERO_DURATION;
-      animation.startTime = currentTime + exitDuration;
+
+      // Dummy elements should disappear right after the enter animations
+      if (element.animationAttributes.isDummyElementForSlideInAnimation) {
+        animation.startTime =
+          /* The current time will is after the current slide duration, so it's
+          necessary to subtract it from the animation start time */
+          currentTime - slideDuration + ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
+        continue;
+      }
+
+      animation.startTime = currentTime;
+
+      if (slideHasExitAnimation) {
+        animation.startTime += ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
+      }
       continue;
     }
 

@@ -569,7 +569,6 @@ const slidesWithValuesAsPercentages = [
       //   height: 43,
       //   fill: '#bdbabb',
       // },
-
       {
         id: crypto.randomUUID(),
         type: 'text',

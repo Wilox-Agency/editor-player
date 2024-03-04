@@ -100,7 +100,7 @@ export function setElementsEnterDelays(
       enter animation duration */
       element.animationAttributes.enterDelay =
         (textContainer.animationAttributes.enterDelay || 0) +
-        ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
+        ENTER_EXIT_ELEMENT_TRANSITION_DURATION / 2;
     }
   }
 

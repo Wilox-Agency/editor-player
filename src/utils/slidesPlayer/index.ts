@@ -192,9 +192,8 @@ export function combineSlides(slides: Slide[]) {
     setSharedIdsForReusedRectsThatShouldMorph,
     setTextContainers,
     createDummyElementsForSharedElementSlideInAnimation,
-    // TODO: Move this to after the animations without timings
-    setElementsEnterDelays,
     setAnimationsWithoutTimings,
+    setElementsEnterDelays,
     setAnimationTimings
   );
 

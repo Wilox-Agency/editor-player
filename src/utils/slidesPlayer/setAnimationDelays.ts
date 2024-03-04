@@ -1,7 +1,7 @@
 import { ENTER_EXIT_ELEMENT_TRANSITION_DURATION } from './setAnimationTimings';
 import { getCanvasElementRect } from './sizes';
-import { assertType } from './assert';
-import type { CanvasElementWithAnimationAttributes } from './sharedTypes';
+import type { CanvasElementWithAnimationsWithoutTimings } from './sharedTypes';
+import { checkProperty } from '@/utils/validation';
 import type { Slide } from '@/utils/types';
 
 const BASE_ENTER_DELAY = 0.1;
@@ -13,37 +13,47 @@ const BASE_ENTER_DELAY = 0.1;
  * to the same array.
  */
 export function setElementsEnterDelays(
-  slides: Slide<CanvasElementWithAnimationAttributes>[]
+  slides: Slide<CanvasElementWithAnimationsWithoutTimings>[]
 ) {
-  slides.forEach((slide, slideIndex) => {
-    const previousSlide = slides[slideIndex - 1];
+  for (const slide of slides) {
+    const elementsThatAreNotSharedWithPreviousSlides =
+      slide.canvasElements.filter((element) => {
+        /* All the elements that are not shared with the previous slide will
+        have enter animation (even though some elements that are shared will
+        have enter animation, but they should not have an enter delay) */
+        return (
+          element.animationAttributes.sharedWithPreviousSlide === undefined
+        );
+      });
 
-    // Set the animation delay for every element possible
-    slide.canvasElements
-      // Get only the elements that will have an entering animation
-      .filter((canvasElement) => {
-        /* If an element from the previous slide has the same shared ID, it
-        means the current element will not have an enter animation */
-        const elementIsSharedWithPreviousSlide =
-          canvasElement.animationAttributes.sharedWithPreviousSlide &&
-          previousSlide?.canvasElements.some(
-            (canvasElementFromPreviousSlide) => {
-              return (
-                canvasElementFromPreviousSlide.animationAttributes
-                  .sharedWithNextSlide?.sharedId ===
-                canvasElement.animationAttributes.sharedWithPreviousSlide
-                  ?.sharedId
-              );
-            }
+    const withoutTextElementsWithDelayRelativeToContainer =
+      elementsThatAreNotSharedWithPreviousSlides.filter((element) => {
+        /* Always include elements that are not text elements or that are text
+        elements but without a container */
+        if (
+          element.attributes.type !== 'text' ||
+          element.animationAttributes.containerId === undefined
+        ) {
+          return true;
+        }
+
+        const textContainer = slide.canvasElements.find((otherElement) => {
+          return (
+            otherElement.attributes.id ===
+            element.animationAttributes.containerId
           );
+        });
+        const containerHasEnterAnimation = textContainer?.animations?.some(
+          (animation) => animation.type === 'enter'
+        );
 
-        const elementWillHaveEnteringAnimation =
-          !elementIsSharedWithPreviousSlide;
+        // Only include text elements whose container has no enter animation
+        return !containerHasEnterAnimation;
+      });
 
-        return elementWillHaveEnteringAnimation;
-      })
-      // Sort from largest to smallest area
-      .sort((elementA, elementB) => {
+    // Sort from largest to smallest area
+    withoutTextElementsWithDelayRelativeToContainer.sort(
+      (elementA, elementB) => {
         const rectOfElementA = getCanvasElementRect(elementA.attributes);
         const rectOfElementB = getCanvasElementRect(elementB.attributes);
 
@@ -51,38 +61,48 @@ export function setElementsEnterDelays(
         const areaOfElementB = rectOfElementB.width * rectOfElementB.height;
 
         return areaOfElementB - areaOfElementA;
-      })
-      /* Set the enter delay based on the index (the smaller the element, the
-      longer the delay, but scaling with the order, not with the area) */
-      .forEach((canvasElement, elementIndex) => {
-        canvasElement.animationAttributes.enterDelay =
-          BASE_ENTER_DELAY * elementIndex;
-      });
+      }
+    );
 
-    /* For text elements that are somewhat contained within another element, set
-    a delay based on the containing element */
-    slide.canvasElements.forEach((canvasElement) => {
+    /* Set the enter delay based on the index (the smaller the element, the
+    longer the delay, but scaling with the order, not with the area) */
+    for (const [
+      elementIndex,
+      element,
+    ] of withoutTextElementsWithDelayRelativeToContainer.entries()) {
+      element.animationAttributes.enterDelay = BASE_ENTER_DELAY * elementIndex;
+    }
+  }
+
+  /* For text elements that are somewhat contained within another element, set a
+  delay based on the containing element */
+  for (const slide of slides) {
+    for (const element of slide.canvasElements) {
       const isTextElementWithContainer =
-        canvasElement.attributes.type === 'text' &&
-        !!canvasElement.animationAttributes.containerId;
-
-      if (!isTextElementWithContainer) return;
-      assertType(canvasElement, 'text');
+        checkProperty(element, 'attributes.type', 'text') &&
+        !!element.animationAttributes.containerId;
+      if (!isTextElementWithContainer) continue;
 
       const textContainer = slide.canvasElements.find((otherElement) => {
         return (
-          otherElement.attributes.id ===
-          canvasElement.animationAttributes.containerId
+          otherElement.attributes.id === element.animationAttributes.containerId
         );
       });
 
-      if (textContainer?.animationAttributes.enterDelay === undefined) return;
+      /* Only add a delay based on the container if the container has an enter
+      animation */
+      const containerHasEnterAnimation = textContainer?.animations?.some(
+        (animation) => animation.type === 'enter'
+      );
+      if (!textContainer || !containerHasEnterAnimation) continue;
 
-      canvasElement.animationAttributes.enterDelay =
-        textContainer.animationAttributes.enterDelay +
+      /* Set the text enter delay to be its container enter delay + half the
+      enter animation duration */
+      element.animationAttributes.enterDelay =
+        (textContainer.animationAttributes.enterDelay || 0) +
         ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
-    });
-  });
+    }
+  }
 
   return slides;
 }

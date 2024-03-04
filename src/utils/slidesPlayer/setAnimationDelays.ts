@@ -18,11 +18,11 @@ export function setElementsEnterDelays(
   for (const slide of slides) {
     const elementsThatAreNotSharedWithPreviousSlides =
       slide.canvasElements.filter((element) => {
-        /* All the elements that are not shared with the previous slide will
-        have enter animation (even though some elements that are shared will
-        have enter animation, but they should not have an enter delay) */
+        /* Only get elements that are not shared with the previous slide and
+        have an enter animation */
         return (
-          element.animationAttributes.sharedWithPreviousSlide === undefined
+          element.animationAttributes.sharedWithPreviousSlide === undefined &&
+          element.animations?.some((animation) => animation.type === 'enter')
         );
       });
 

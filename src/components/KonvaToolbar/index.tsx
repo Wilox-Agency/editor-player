@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
-import type Konva from 'konva';
+import { useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import * as Toolbar from '@radix-ui/react-toolbar';
 import * as Popover from '@radix-ui/react-popover';
@@ -415,6 +414,12 @@ function TextColorButton({ node, canvasElement }: KonvaNodeAndElement<'text'>) {
     canvasElement.saveAttrs({ fill: cssColor });
   }
 
+  // Update the color state when the selected node changes
+  useEffect(() => {
+    const newColor = parseColor(node.fill()).toFormat('hsb');
+    setColor(newColor);
+  }, [node]);
+
   return (
     <Popover.Root>
       <Tooltip content="Text color" side="right" sideOffset={tooltipOffset}>
@@ -449,28 +454,22 @@ function TextFormattingToggleGroup({
   node,
   canvasElement,
 }: KonvaNodeAndElement<'text'>) {
-  /* This is just the initial value of the text formatting, so it's using
-  `useMemo` with an empty dependency array to just compute it once */
-  const initialTextFormatting = useMemo(
-    () => {
-      const textFormatting = [];
-      // Get the saved font style
-      if (canvasElement.fontStyle) {
-        // `fontStyle` is a string of space separated values (e.g. 'italic bold')
-        canvasElement.fontStyle
-          .split(' ')
-          .forEach((style) => textFormatting.push(style));
-      }
-      // Get the saved text decoration
-      if (canvasElement.textDecoration) {
-        textFormatting.push(canvasElement.textDecoration);
-      }
+  const currentTextFormatting = (() => {
+    const textFormatting = [];
+    // Get the saved font style
+    if (canvasElement.fontStyle) {
+      // `fontStyle` is a string of space separated values (e.g. 'italic bold')
+      canvasElement.fontStyle
+        .split(' ')
+        .forEach((style) => textFormatting.push(style));
+    }
+    // Get the saved text decoration
+    if (canvasElement.textDecoration) {
+      textFormatting.push(canvasElement.textDecoration);
+    }
 
-      return textFormatting;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+    return textFormatting;
+  })();
 
   function handleChangeTextFormatting(value: string[]) {
     // Set font style
@@ -495,7 +494,7 @@ function TextFormattingToggleGroup({
       className={styles.toggleGroup}
       type="multiple"
       orientation="vertical"
-      defaultValue={initialTextFormatting}
+      value={currentTextFormatting}
       aria-label="Text formatting"
       onValueChange={handleChangeTextFormatting}
     >
@@ -536,6 +535,12 @@ function RectColorButton({ node, canvasElement }: KonvaNodeAndElement<'rect'>) {
     node.fill(cssColor);
     canvasElement.saveAttrs({ fill: cssColor });
   }
+
+  // Update the color state when the selected node changes
+  useEffect(() => {
+    const newColor = parseColor(node.fill()).toFormat('hsb');
+    setColor(newColor);
+  }, [node]);
 
   return (
     <Popover.Root>

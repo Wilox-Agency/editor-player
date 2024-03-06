@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   useCallback,
+  useMemo,
 } from 'react';
 import Konva from 'konva';
 import { Text as KonvaText } from 'react-konva';
@@ -133,13 +134,12 @@ export const Text = forwardRef<Konva.Text, TextProps>(
     function handleTextAreaChange(
       event: React.ChangeEvent<HTMLTextAreaElement>
     ) {
-      const newTextAreaValue = event.target.value;
+      const textArea = event.target;
+      const newTextAreaValue = textArea.value;
 
       setTextAreaValue(newTextAreaValue);
       // Updating the height to fit the text
-      setTextAreaStyles((currentValue) => {
-        return { ...currentValue, height: event.target.scrollHeight };
-      });
+      setTextAreaHeight(textArea);
 
       const text = textRef.current!;
 
@@ -193,13 +193,6 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       // Hiding the text node
       text.visible(false);
 
-      let textHeight = text.height();
-
-      if (text.textDecoration().includes('underline')) {
-        // Text decoration thickness
-        textHeight += text.fontSize() * 0.07;
-      }
-
       // TODO: Explaing why I need to use this scale
       const stageContainerScale =
         useStageScaleStore.getState().stageContainerScale;
@@ -217,7 +210,6 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         top: stageBox.top + textPosition.y * stageContainerScale,
         left: stageBox.left + textPosition.x * stageContainerScale,
         width: text.width() * stageContainerScale,
-        height: textHeight * stageContainerScale,
         transformOrigin: 'left top',
         transform: `rotate(${text.rotation()}deg)`,
       };
@@ -261,6 +253,20 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       // Clearing the node being edited
       setNodeBeingEdited({ textBeingEdited: undefined });
     }, [saveAttrs, setNodeBeingEdited]);
+
+    // Resize the text area after adding the text area to the DOM
+    const textAreaRefCallback = useCallback(
+      (textArea: HTMLTextAreaElement | null) => {
+        if (!textArea) return;
+        setTextAreaHeight(textArea);
+      },
+      []
+    );
+
+    const mergedTextAreaRefs = useMemo(
+      () => mergeRefs(textAreaRef, textAreaRefCallback),
+      [textAreaRefCallback]
+    );
 
     // Set the initial attributes only on the first render
     useEffect(() => {
@@ -374,7 +380,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
               value={textAreaValue}
               onChange={handleTextAreaChange}
               onKeyDown={handleTextAreaKeyDown}
-              ref={textAreaRef}
+              ref={mergedTextAreaRefs}
             />
           </Html>
         )}
@@ -382,3 +388,19 @@ export const Text = forwardRef<Konva.Text, TextProps>(
     );
   }
 );
+
+function setTextAreaHeight(textArea: HTMLTextAreaElement) {
+  /* Setting the styles imperatively so they're set syncronously, which is
+  required to get the appropriate height through the scroll height */
+
+  /* When the text area needs more height to fit the text, the scroll height
+  increases, but when the text area needs less height to fit the text, the
+  scroll height keeps its last value (because of the element's height). Setting
+  the height of the text area to 0px ensures that the scroll height is the the
+  minimum height to fit the text */
+  textArea.style.height = '0px';
+  /* For some reason, in Firefox this value is not calculated properly the first
+  time I call it, only from the second time onwards */
+  textArea.scrollHeight;
+  textArea.style.height = `${textArea.scrollHeight}px`;
+}

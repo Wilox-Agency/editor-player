@@ -136,19 +136,13 @@ export const Text = forwardRef<Konva.Text, TextProps>(
     ) {
       const textArea = event.target;
       const newTextAreaValue = textArea.value;
-
-      setTextAreaValue(newTextAreaValue);
-      // Updating the height to fit the text
-      setTextAreaHeight(textArea);
-
       const text = textRef.current!;
 
-      /* When the text node width was unchanged when adding/removing text, the
-      width automatically adapts to fit the text, to prevent this, the text node
-      width is set to the width it had before updating the text */
-      const widthBeforeUdpate = text.width();
+      // Set text value
       text.text(newTextAreaValue);
-      text.width(widthBeforeUdpate);
+      setTextAreaValue(newTextAreaValue);
+      // Set text area size
+      setTextAreaSize(textArea, text);
     }
 
     function handleTextAreaKeyDown(event: React.KeyboardEvent) {
@@ -257,8 +251,10 @@ export const Text = forwardRef<Konva.Text, TextProps>(
     // Resize the text area after adding the text area to the DOM
     const textAreaRefCallback = useCallback(
       (textArea: HTMLTextAreaElement | null) => {
-        if (!textArea) return;
-        setTextAreaHeight(textArea);
+        const text = textRef.current;
+        if (!textArea || !text) return;
+
+        setTextAreaSize(textArea, text);
       },
       []
     );
@@ -389,10 +385,12 @@ export const Text = forwardRef<Konva.Text, TextProps>(
   }
 );
 
-function setTextAreaHeight(textArea: HTMLTextAreaElement) {
+function setTextAreaSize(textArea: HTMLTextAreaElement, text: Konva.Text) {
+  const stageContainerScale = useStageScaleStore.getState().stageContainerScale;
+
   /* Setting the styles imperatively so they're set syncronously, which is
   required to get the appropriate height through the scroll height */
-
+  textArea.style.width = `${text.width() * stageContainerScale}px`;
   /* When the text area needs more height to fit the text, the scroll height
   increases, but when the text area needs less height to fit the text, the
   scroll height keeps its last value (because of the element's height). Setting

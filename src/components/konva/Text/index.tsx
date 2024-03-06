@@ -108,11 +108,19 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         text.fontSize() * text.scaleY(),
         TextSizes.minFontSize
       );
-      const newWidth = Math.max(
-        text.width() * text.scaleX(),
-        getMinTextWidthForCurrentTextFormat(text, newFontSize),
-        newFontSize
-      );
+
+      const isAutoWidth =
+        text.attrs.width === undefined || text.attrs.width === 'auto';
+      let newWidth;
+      if (isAutoWidth) {
+        newWidth = 'auto' as const;
+      } else {
+        newWidth = Math.max(
+          text.width() * text.scaleX(),
+          getMinTextWidthForCurrentTextFormat(text, newFontSize),
+          newFontSize
+        );
+      }
       /* Updating the font size and the width according to the scale, while also
       resetting the scale */
       text.setAttrs({

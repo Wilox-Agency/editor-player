@@ -18,9 +18,14 @@ type State = Prettify<
   NodeBeingEdited | UnionToIntersection<UndefinedProperites<NodeBeingEdited>>
 >;
 
+type SetNodeBeingEditedParam<
+  TKeys extends keyof NodeBeingEdited = keyof NodeBeingEdited
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+> = TKeys extends any ? { [TKey in TKeys]: NodeBeingEdited[TKey] } : never;
+
 type NodeBeingEditedStore = State & {
   getNodeBeingEdited: () => Konva.Node | undefined;
-  setNodeBeingEdited: (nodeBeingEdited: State) => void;
+  setNodeBeingEdited: (nodeBeingEdited: SetNodeBeingEditedParam) => void;
 };
 
 export const useNodeBeingEditedStore = create<NodeBeingEditedStore>(

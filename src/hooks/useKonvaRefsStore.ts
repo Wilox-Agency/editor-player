@@ -8,4 +8,5 @@ export const useKonvaRefsStore = create(() => ({
   transformerRef: createRef<Konva.Transformer>(),
   selectionRectRef: createRef<Konva.Rect>(),
   hoverBorderTransformerRef: createRef<Konva.Transformer>(),
+  textBeingEditedBorderTransformerRef: createRef<Konva.Transformer>(),
 }));

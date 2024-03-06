@@ -1,6 +1,7 @@
 import type Konva from 'konva';
 import { create } from 'zustand';
 
+import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import type {
   JsUnion,
   Prettify,
@@ -31,6 +32,33 @@ export const useNodeBeingEditedStore = create<NodeBeingEditedStore>(
     },
     setNodeBeingEdited: (nodeBeingEdited) => {
       set(nodeBeingEdited);
+
+      const textBeingEditedBorderTransformer =
+        getTextBeingEditedBorderTransformer();
+
+      const isSettingTextBeingEdited =
+        'textBeingEdited' in nodeBeingEdited &&
+        nodeBeingEdited.textBeingEdited !== undefined;
+      if (!isSettingTextBeingEdited) {
+        textBeingEditedBorderTransformer.nodes([]);
+        return;
+      }
+
+      textBeingEditedBorderTransformer.nodes([
+        nodeBeingEdited.textBeingEdited!,
+      ]);
     },
   })
 );
+
+function getTextBeingEditedBorderTransformer() {
+  const transformer =
+    useKonvaRefsStore.getState().textBeingEditedBorderTransformerRef.current;
+  if (!transformer) {
+    throw new Error(
+      'Tried to use `textBeingEditedBorderTransformerRef` before it was assigned a value'
+    );
+  }
+
+  return transformer;
+}

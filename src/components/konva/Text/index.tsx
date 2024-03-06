@@ -60,6 +60,9 @@ export const Text = forwardRef<Konva.Text, TextProps>(
     const getSelectedNodes = useTransformerSelectionStore(
       (state) => state.getSelectedNodes
     );
+    const selectNodes = useTransformerSelectionStore(
+      (state) => state.selectNodes
+    );
     const isTextBeingEdited = useNodeBeingEditedStore(
       (state) => state.textBeingEdited?.id() === id
     );
@@ -160,6 +163,8 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         (event.key === 'Enter' && !event.shiftKey) ||
         event.key === 'Escape'
       ) {
+        // Prevent leaving fullscreen
+        event.preventDefault();
         closeTextArea();
 
         /* Focus the canvas container so the user can interact with the canvas
@@ -235,9 +240,10 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       // Setting the value and styles of the textarea
       setTextAreaValue(text.text());
       setTextAreaStyles(textAreaStyles);
-      // Setting the node as the one being edited
+      // Deselecting the text and setting it as the one being edited
+      selectNodes([]);
       setNodeBeingEdited({ textBeingEdited: text });
-    }, [setNodeBeingEdited, stageRef]);
+    }, [selectNodes, setNodeBeingEdited, stageRef]);
 
     const closeTextArea = useCallback(() => {
       const text = textRef.current;
@@ -251,6 +257,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       // Hiding the textarea
       setTextAreaStyles(undefined);
       // Saving the new text and width
+      // TODO: Do not save text width if text width is auto
       saveAttrs({ text: text.text(), width: text.width() });
       // Clearing the node being edited
       setNodeBeingEdited({ textBeingEdited: undefined });

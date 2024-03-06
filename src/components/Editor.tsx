@@ -117,6 +117,7 @@ export function Editor() {
     transformerRef,
     selectionRectRef,
     hoverBorderTransformerRef,
+    textBeingEditedBorderTransformerRef,
   } = useKonvaRefsStore();
   const cropTransformerRef = useRef<Konva.Transformer>(null);
   const cropRectRef = useRef<Konva.Rect>(null);
@@ -235,6 +236,13 @@ export function Editor() {
             />
             {/* Borders of selected nodes (and nodes inside selection rect) */}
             <BordersOfSelectedNodes />
+            {/* Text being edited border transformer */}
+            <Transformer
+              resizeEnabled={false}
+              rotateEnabled={false}
+              keepRatio={false}
+              ref={textBeingEditedBorderTransformerRef}
+            />
             {/* Resize transformer */}
             <Transformer
               flipEnabled={false}

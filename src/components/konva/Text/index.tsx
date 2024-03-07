@@ -135,7 +135,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       saveAttrs({
         x: text.x(),
         y: text.y(),
-        width: text.width(),
+        width: isAutoWidth ? undefined : text.width(),
         rotation: text.rotation(),
         fontSize: text.fontSize(),
       } satisfies Konva.TextConfig);
@@ -255,9 +255,8 @@ export const Text = forwardRef<Konva.Text, TextProps>(
       text.visible(true);
       // Hiding the textarea
       setTextAreaStyles(undefined);
-      // Saving the new text and width
-      // TODO: Do not save text width if text width is auto
-      saveAttrs({ text: text.text(), width: text.width() });
+      // Saving the new text
+      saveAttrs({ text: text.text() });
       // Clearing the node being edited
       setNodeBeingEdited({ textBeingEdited: undefined });
     }, [saveAttrs, setNodeBeingEdited]);

@@ -2,17 +2,17 @@ import { useEffect, useRef } from 'react';
 import type Konva from 'konva';
 import { Transformer } from 'react-konva';
 
-import {
-  selectionToNodeArray,
-  useTransformerSelectionStore,
-} from '@/hooks/useTransformerSelectionStore';
+import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 
-export function BordersOfSelectedNodes() {
+export function BordersOfNodesThatAreOrWillBeSelected() {
   const { selection, nodesInsideSelectionRect } =
     useTransformerSelectionStore();
 
+  // Only include the selected nodes if there's node than one node selected
   const nodes = new Set(
-    selectionToNodeArray(selection).concat(nodesInsideSelectionRect)
+    Array.isArray(selection)
+      ? selection.concat(nodesInsideSelectionRect)
+      : nodesInsideSelectionRect
   );
 
   const borderTransformers: JSX.Element[] = [];

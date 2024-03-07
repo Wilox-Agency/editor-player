@@ -31,6 +31,8 @@ import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionSto
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import {
   defaultElementAttributes,
+  getIsAutoTextWidth,
+  getTextWidthChangeMultiplier,
   saveCanvas,
   StageVirtualSize,
   waitUntilKonvaNodeSizeIsCalculated,
@@ -454,6 +456,8 @@ function TextFormattingToggleGroup({
   node,
   canvasElement,
 }: KonvaNodeAndElement<'text'>) {
+  const { transformerRef } = useKonvaRefsStore();
+
   const currentTextFormatting = (() => {
     const textFormatting = [];
     // Get the saved font style
@@ -472,15 +476,34 @@ function TextFormattingToggleGroup({
   })();
 
   function handleChangeTextFormatting(value: string[]) {
-    // Set font style
+    // Get new font style
     const fontStyleArray: string[] = [];
     if (value.includes('italic')) fontStyleArray.push('italic');
     if (value.includes('bold')) fontStyleArray.push('bold');
-    node.fontStyle(fontStyleArray.join(' '));
+    const fontStyle = fontStyleArray.join(' ');
 
-    // Set text decoration
+    // Get new text decoration
     const textDecoration = value.includes('underline') ? 'underline' : '';
+
+    /* The font style can change the width of the text, so calculate a new width
+    to fit the text if the width is not automatic (needs to be calculated before
+    updating the font style) */
+    const isAutoWidth = getIsAutoTextWidth(node);
+    if (!isAutoWidth) {
+      const widthChangeMultiplier = getTextWidthChangeMultiplier(node, {
+        fontStyle,
+      });
+      node.width(node.width() * widthChangeMultiplier);
+    }
+
+    // Set new text formatting
+    node.fontStyle(fontStyle);
     node.textDecoration(textDecoration);
+
+    /* Even if the text size changed with the font style, the transformer only
+    updates if the size of a selected node is changed directly, so it's
+    necessary to force update it */
+    transformerRef.current?.forceUpdate();
 
     // Save the new text formatting
     canvasElement.saveAttrs({

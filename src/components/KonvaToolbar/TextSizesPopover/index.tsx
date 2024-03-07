@@ -3,7 +3,11 @@ import * as Popover from '@radix-ui/react-popover';
 
 import styles from '../KonvaToolbar.module.css';
 
-import { defaultElementAttributes } from '@/utils/konva';
+import {
+  defaultElementAttributes,
+  getIsAutoTextWidth,
+  getTextWidthChangeMultiplier,
+} from '@/utils/konva';
 import {
   TextSizes,
   validateFontSize,
@@ -40,6 +44,17 @@ export function TextSizesPopover({
 
     if (!newFontSize) return;
 
+    /* The font size changes the width of the text, so calculate a new width to
+    fit the text if the width is not automatic (needs to be calculated before
+    updating the font size) */
+    const isAutoWidth = getIsAutoTextWidth(node);
+    if (!isAutoWidth) {
+      const widthChangeMultiplier = getTextWidthChangeMultiplier(node, {
+        fontSize: newFontSize,
+      });
+      node.width(node.width() * widthChangeMultiplier);
+    }
+
     // Set the font size
     node.fontSize(newFontSize);
     // Save the new font size
@@ -63,6 +78,17 @@ export function TextSizesPopover({
     const newLetterSpacing = validation.data;
 
     if (newLetterSpacing === undefined) return;
+
+    /* The letter spacing changes the width of the text, so calculate a new
+    width to fit the text if the width is not automatic (needs to be calculated
+    before updating the letter spacing) */
+    const isAutoWidth = getIsAutoTextWidth(node);
+    if (!isAutoWidth) {
+      const widthChangeMultiplier = getTextWidthChangeMultiplier(node, {
+        letterSpacing: newLetterSpacing,
+      });
+      node.width(node.width() * widthChangeMultiplier);
+    }
 
     // Set the letter spacing
     node.letterSpacing(newLetterSpacing);

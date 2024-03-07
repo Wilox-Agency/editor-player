@@ -208,18 +208,24 @@ export function saveCanvas() {
 }
 
 /**
- * Gets the minimum text width for the current text format (i.e. without
+ * Gets the minimum text node width for the current text format (i.e. without
  * creating any new lines or changing the position of any word). Optionally pass
- * a font size to get the minimum width for a font size different from the
- * current one.
+ * different text attributes to get the minimum width for a text with different
+ * attributes than the current one.
  */
-export function getMinTextWidthForCurrentTextFormat(
+export function getMinTextNodeWidthForCurrentTextFormat(
   textNode: Konva.Text,
-  fontSize = textNode.fontSize()
+  {
+    fontFamily = textNode.fontFamily(),
+    fontSize = textNode.fontSize(),
+    letterSpacing = textNode.letterSpacing(),
+    fontStyle = textNode.fontStyle(),
+  } = {}
 ) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d')!;
-  ctx.font = `${textNode.fontStyle()} ${fontSize}px ${textNode.fontFamily()}`;
+  ctx.font = `${fontStyle} ${fontSize}px ${fontFamily}`;
+  ctx.letterSpacing = `${letterSpacing}px`;
 
   const minWidth = Math.max(
     ...textNode.textArr.map((textLine) => ctx.measureText(textLine.text).width)
@@ -228,4 +234,36 @@ export function getMinTextWidthForCurrentTextFormat(
   canvas.remove();
 
   return minWidth;
+}
+
+/**
+ * Gets the multiplier of how much the text width will change when changing some
+ * of the attributes of a given text node.
+ */
+export function getTextWidthChangeMultiplier(
+  textNode: Konva.Text,
+  {
+    fontFamily = textNode.fontFamily(),
+    fontSize = textNode.fontSize(),
+    letterSpacing = textNode.letterSpacing(),
+    fontStyle = textNode.fontStyle(),
+  }
+) {
+  const currentMinTextWidth = getMinTextNodeWidthForCurrentTextFormat(textNode);
+  const newMinTextWidth = getMinTextNodeWidthForCurrentTextFormat(textNode, {
+    fontSize,
+    letterSpacing,
+    fontStyle,
+    fontFamily,
+  });
+
+  return newMinTextWidth / currentMinTextWidth;
+}
+
+/**
+ * Returns a boolean that tells if a given text node is using automatic width
+ * (which makes the width fit the text).
+ */
+export function getIsAutoTextWidth(textNode: Konva.Text) {
+  return textNode.attrs.width === undefined || textNode.attrs.width === 'auto';
 }

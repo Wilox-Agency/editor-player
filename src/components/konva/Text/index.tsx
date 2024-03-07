@@ -112,15 +112,14 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         TextSizes.minFontSize
       );
 
-      const isAutoWidth =
-        text.attrs.width === undefined || text.attrs.width === 'auto';
+      const isAutoWidth = getIsAutoTextWidth(text);
       let newWidth;
-      if (isAutoWidth) {
-        newWidth = 'auto' as const;
-      } else {
+      if (!isAutoWidth) {
         newWidth = Math.max(
           text.width() * text.scaleX(),
-          getMinTextWidthForCurrentTextFormat(text, newFontSize),
+          getMinTextNodeWidthForCurrentTextFormat(text, {
+            fontSize: newFontSize,
+          }),
           newFontSize
         );
       }

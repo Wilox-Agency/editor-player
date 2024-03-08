@@ -113,7 +113,15 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         text.fontSize() * text.scaleY(),
         TextSizes.minFontSize
       );
+      /* Scale letter spacing with font size (Konva uses letter spacing as a
+      value in pixels instead of a multiplier as with line height, so it needs
+      to be scaled manually) */
+      const newLetterSpacing =
+        text.letterSpacing() * (newFontSize / text.fontSize());
 
+      /* The font size and letter spacing change the width of the text, so
+      calculate a new width to fit the text if the width is not automatic (needs
+      to be calculated before updating the font size and letter spacing) */
       const isAutoWidth = getIsAutoTextWidth(text);
       let newWidth;
       if (!isAutoWidth) {
@@ -121,15 +129,18 @@ export const Text = forwardRef<Konva.Text, TextProps>(
           text.width() * text.scaleX(),
           getMinTextNodeWidthForCurrentTextFormat(text, {
             fontSize: newFontSize,
+            letterSpacing: newLetterSpacing,
           }),
           newFontSize
         );
       }
-      /* Updating the font size and the width according to the scale, while also
-      resetting the scale */
+
+      /* Updating the font size, letter spacing and width according to the
+      scale, while also resetting the scale */
       text.setAttrs({
         width: newWidth,
         fontSize: newFontSize,
+        letterSpacing: newLetterSpacing,
         scaleX: 1,
         scaleY: 1,
       });
@@ -140,6 +151,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         width: isAutoWidth ? undefined : text.width(),
         rotation: text.rotation(),
         fontSize: text.fontSize(),
+        letterSpacing: text.letterSpacing(),
       } satisfies Konva.TextConfig);
     }
 

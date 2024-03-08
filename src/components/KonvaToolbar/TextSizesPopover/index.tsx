@@ -1,4 +1,5 @@
 import { type ChangeEvent, useId } from 'react';
+import type Konva from 'konva';
 import * as Popover from '@radix-ui/react-popover';
 
 import styles from '../KonvaToolbar.module.css';
@@ -44,21 +45,34 @@ export function TextSizesPopover({
 
     if (!newFontSize) return;
 
-    /* The font size changes the width of the text, so calculate a new width to
-    fit the text if the width is not automatic (needs to be calculated before
-    updating the font size) */
+    /* Scale letter spacing with font size (Konva uses letter spacing as a value
+    in pixels instead of a multiplier as with line height, so it needs to be
+    scaled manually) */
+    const newLetterSpacing =
+      node.letterSpacing() * (newFontSize / node.fontSize());
+
+    /* The font size and letter spacing change the width of the text, so
+    calculate a new width to fit the text if the width is not automatic (needs
+    to be calculated before updating the font size and letter spacing) */
     const isAutoWidth = getIsAutoTextWidth(node);
     if (!isAutoWidth) {
       const widthChangeMultiplier = getTextWidthChangeMultiplier(node, {
         fontSize: newFontSize,
+        letterSpacing: newLetterSpacing,
       });
       node.width(node.width() * widthChangeMultiplier);
     }
 
-    // Set the font size
-    node.fontSize(newFontSize);
-    // Save the new font size
-    canvasElement.saveAttrs({ fontSize: newFontSize });
+    // Set the font size and letter spacing
+    node.setAttrs({
+      fontSize: newFontSize,
+      letterSpacing: newLetterSpacing,
+    } satisfies Konva.TextConfig);
+    // Save the new font size and letter spacing
+    canvasElement.saveAttrs({
+      fontSize: newFontSize,
+      letterSpacing: newLetterSpacing,
+    });
   }
 
   function handleChangeLineHeight(unvalidatedLineHeight: number) {

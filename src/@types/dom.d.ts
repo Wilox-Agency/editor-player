@@ -1,3 +1,0 @@
-interface CanvasTextDrawingStyles {
-  letterSpacing: string;
-}

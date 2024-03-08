@@ -143,7 +143,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         letterSpacing: newLetterSpacing,
         scaleX: 1,
         scaleY: 1,
-      });
+      } satisfies Konva.TextConfig);
       // Saving the new position, width, rotation and font size
       saveAttrs({
         x: text.x(),
@@ -152,7 +152,7 @@ export const Text = forwardRef<Konva.Text, TextProps>(
         rotation: text.rotation(),
         fontSize: text.fontSize(),
         letterSpacing: text.letterSpacing(),
-      } satisfies Konva.TextConfig);
+      });
     }
 
     function handleTextAreaChange(

@@ -225,10 +225,21 @@ export function getMinTextNodeWidthForCurrentTextFormat(
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d')!;
   ctx.font = `${fontStyle} ${fontSize}px ${fontFamily}`;
-  ctx.letterSpacing = `${letterSpacing}px`;
 
   const minWidth = Math.max(
-    ...textNode.textArr.map((textLine) => ctx.measureText(textLine.text).width)
+    ...textNode.textArr.map((textLine) => {
+      const widthWithoutLetterSpacing = ctx.measureText(textLine.text).width;
+      /* This width does not include the spacing added (or removed, if letter
+      spacing is negative) after the last character of each line, as it doesn't
+      fit the apparent width of the text and doesn't affect the format of the
+      text (only in Konva, that's not true for HTML+CSS) and therefore should
+      not be considered */
+      const letterSpacingWidth =
+        textLine.text.length > 0
+          ? letterSpacing * (textLine.text.length - 1)
+          : 0;
+      return widthWithoutLetterSpacing + letterSpacingWidth;
+    })
   );
 
   canvas.remove();

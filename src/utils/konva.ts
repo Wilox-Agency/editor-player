@@ -237,6 +237,57 @@ export function getMinTextNodeWidthForCurrentTextFormat(
 }
 
 /**
+ * Gets the minimum `textarea` width for the current format of a text node (i.e.
+ * without creating any new lines or changing the position of any word).
+ * Optionally pass different text node attributes to get the minimum width for a
+ * text node with different attributes than the given one.
+ */
+export function getMinTextAreaWidthForCurrentTextFormat(
+  textNode: Konva.Text,
+  {
+    fontFamily = textNode.fontFamily(),
+    fontSize = textNode.fontSize(),
+    letterSpacing = textNode.letterSpacing(),
+    fontStyle = textNode.fontStyle(),
+  } = {}
+) {
+  const textElement = document.createElement('p');
+
+  // Reset all styles
+  textElement.style.all = 'unset';
+  // Make it inaccessible
+  textElement.setAttribute('aria-hidden', 'true');
+  // Prevent it from affecting the layout and vice-versa
+  textElement.style.position = 'absolute';
+  // Make it invisible
+  textElement.style.opacity = '0';
+  textElement.style.clipPath = 'rect(0, 0, 0, 0)';
+
+  // Set the styles used by the text node
+  textElement.style.fontFamily = fontFamily;
+  textElement.style.fontSize = `${fontSize}px`;
+  if (fontStyle.includes('bold')) {
+    textElement.style.fontWeight = 'bold';
+  }
+  if (fontStyle.includes('italic')) {
+    textElement.style.fontStyle = 'italic';
+  }
+  textElement.style.letterSpacing + `${letterSpacing}px`;
+
+  // Get the text width then remove the element
+  document.body.append(textElement);
+  const minWidth = Math.max(
+    ...textNode.textArr.map((textLine) => {
+      textElement.innerText = textLine.text;
+      return textElement.getBoundingClientRect().width;
+    })
+  );
+  textElement.remove();
+
+  return minWidth;
+}
+
+/**
  * Gets the multiplier of how much the text width will change when changing some
  * of the attributes of a given text node.
  */

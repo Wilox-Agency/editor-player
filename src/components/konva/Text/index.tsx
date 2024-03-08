@@ -18,7 +18,9 @@ import { useNodeBeingEditedStore } from '@/hooks/useNodeBeingEditedStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import {
   convertScale,
-  getMinTextWidthForCurrentTextFormat,
+  getIsAutoTextWidth,
+  getMinTextNodeWidthForCurrentTextFormat,
+  getMinTextAreaWidthForCurrentTextFormat,
 } from '@/utils/konva';
 import { TextSizes } from '@/utils/validation';
 import { MouseButton } from '@/utils/input';
@@ -403,7 +405,14 @@ function setTextAreaSize(textArea: HTMLTextAreaElement, text: Konva.Text) {
 
   /* Setting the styles imperatively so they're set syncronously, which is
   required to get the appropriate height through the scroll height */
-  textArea.style.width = `${text.width() * stageContainerScale}px`;
+  const textNodeWidth = text.width();
+  const minTextAreaWidth = getMinTextAreaWidthForCurrentTextFormat(text);
+  /* Sometimes the width of the text node is smaller than the width the textarea
+  should have to accomodate the text with the same format as the text node, so a
+  calculated minimum width is set */
+  textArea.style.width = `${
+    Math.max(textNodeWidth, minTextAreaWidth) * stageContainerScale
+  }px`;
   /* When the text area needs more height to fit the text, the scroll height
   increases, but when the text area needs less height to fit the text, the
   scroll height keeps its last value (because of the element's height). Setting

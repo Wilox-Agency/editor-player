@@ -64,13 +64,13 @@ export function TextSizesPopover({
       newWidth = node.width() * widthChangeMultiplier;
     }
 
-    // Set the font size and letter spacing
+    // Set the width, font size and letter spacing
     node.setAttrs({
       width: newWidth,
       fontSize: newFontSize,
       letterSpacing: newLetterSpacing,
     } satisfies Konva.TextConfig);
-    // Save the new font size and letter spacing
+    // Save the new width, font size and letter spacing
     canvasElement.saveAttrs({
       width: newWidth,
       fontSize: newFontSize,
@@ -100,17 +100,24 @@ export function TextSizesPopover({
     width to fit the text if the width is not automatic (needs to be calculated
     before updating the letter spacing) */
     const isAutoWidth = getIsAutoTextWidth(node);
+    let newWidth;
     if (!isAutoWidth) {
       const widthChangeMultiplier = getTextWidthChangeMultiplier(node, {
         letterSpacing: newLetterSpacing,
       });
-      node.width(node.width() * widthChangeMultiplier);
+      newWidth = node.width() * widthChangeMultiplier;
     }
 
-    // Set the letter spacing
-    node.letterSpacing(newLetterSpacing);
-    // Save the new letter spacing
-    canvasElement.saveAttrs({ letterSpacing: newLetterSpacing });
+    // Set the width and letter spacing
+    node.setAttrs({
+      width: newWidth,
+      letterSpacing: newLetterSpacing,
+    } satisfies Konva.TextConfig);
+    // Save the new width and letter spacing
+    canvasElement.saveAttrs({
+      width: newWidth,
+      letterSpacing: newLetterSpacing,
+    });
   }
 
   return (

@@ -55,21 +55,24 @@ export function TextSizesPopover({
     calculate a new width to fit the text if the width is not automatic (needs
     to be calculated before updating the font size and letter spacing) */
     const isAutoWidth = getIsAutoTextWidth(node);
+    let newWidth;
     if (!isAutoWidth) {
       const widthChangeMultiplier = getTextWidthChangeMultiplier(node, {
         fontSize: newFontSize,
         letterSpacing: newLetterSpacing,
       });
-      node.width(node.width() * widthChangeMultiplier);
+      newWidth = node.width() * widthChangeMultiplier;
     }
 
     // Set the font size and letter spacing
     node.setAttrs({
+      width: newWidth,
       fontSize: newFontSize,
       letterSpacing: newLetterSpacing,
     } satisfies Konva.TextConfig);
     // Save the new font size and letter spacing
     canvasElement.saveAttrs({
+      width: newWidth,
       fontSize: newFontSize,
       letterSpacing: newLetterSpacing,
     });

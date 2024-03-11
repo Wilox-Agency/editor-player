@@ -1,13 +1,24 @@
 import { RefObject, useEffect, useMemo } from 'react';
 import type Konva from 'konva';
 import { create } from 'zustand';
+import { subscribeWithSelector } from 'zustand/middleware';
 import gsap from 'gsap';
 
-export const usePlayerTimelineStore = create(() => ({
-  timelineCurrentTime: 0,
-  timelineDuration: 0,
-  timelineState: 'paused',
-}));
+import { getAllVideoElementsFromNode } from '@/utils/konva';
+
+type PlayerTimelineStore = {
+  timelineCurrentTime: number;
+  timelineDuration: number;
+  timelineState: 'paused' | 'playing' | 'ended';
+};
+
+export const usePlayerTimelineStore = create(
+  subscribeWithSelector<PlayerTimelineStore>(() => ({
+    timelineCurrentTime: 0,
+    timelineDuration: 0,
+    timelineState: 'paused',
+  }))
+);
 
 export function usePlayerTimeline({
   layerRef,
@@ -52,15 +63,39 @@ export function usePlayerTimeline({
     usePlayerTimelineStore.setState({ timelineState: 'paused' });
   }
 
+  // Set timeline event listeners
   useEffect(() => {
     timeline.eventCallback('onUpdate', () => {
+      // Update timeline time
       usePlayerTimelineStore.setState({ timelineCurrentTime: timeline.time() });
+      // Redraw layer
       layerRef.current?.draw();
     });
     timeline.eventCallback('onComplete', () => {
+      // Update timeline state
       usePlayerTimelineStore.setState({ timelineState: 'ended' });
     });
   }, [layerRef, timeline]);
+
+  // Play/pause video elements depending on timeline state
+  useEffect(() => {
+    /* Subscribe to state changes instead of using the state as a `useEffect`
+    dependency to prevent extra re-renders, as this value is not being used to
+    update the UI where this hook is used */
+    const unsubscribe = usePlayerTimelineStore.subscribe(
+      ({ timelineState }) => timelineState,
+      (timelineState) => {
+        const videoElements = getAllVideoElementsFromNode(layerRef.current!);
+
+        if (timelineState === 'playing') {
+          videoElements.forEach((element) => element.play());
+        } else {
+          videoElements.forEach((element) => element.pause());
+        }
+      }
+    );
+    return () => unsubscribe();
+  }, [layerRef]);
 
   return {
     timeline,

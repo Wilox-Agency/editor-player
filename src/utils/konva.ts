@@ -1,5 +1,5 @@
 import type { ElementType } from 'react';
-import type Konva from 'konva';
+import Konva from 'konva';
 import { toast } from 'sonner';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
@@ -188,6 +188,31 @@ export function getCanvasImageIntrinsicSize(imageSource: CanvasImageSource): {
   }
 
   return { width: imageSource.width, height: imageSource.height };
+}
+
+export function getAllVideoElementsFromNode(
+  node: Konva.Node
+): HTMLVideoElement[] {
+  if (node instanceof Konva.Group || node instanceof Konva.Layer) {
+    const children = node
+      .getChildren()
+      .filter((child): child is Konva.Image | Konva.Group => {
+        return child instanceof Konva.Image || child instanceof Konva.Group;
+      })
+      .map((node) => getAllVideoElementsFromNode(node))
+      .flat();
+    return children;
+  }
+
+  if (node instanceof Konva.Image) {
+    const canvasImageSource = node.image();
+    const isVideoElement = canvasImageSource instanceof HTMLVideoElement;
+    if (!isVideoElement) return [];
+
+    return [canvasImageSource];
+  }
+
+  return [];
 }
 
 export function saveCanvas() {

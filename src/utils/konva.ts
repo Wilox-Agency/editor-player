@@ -283,7 +283,7 @@ export function getMinTextAreaWidthForCurrentTextFormat(
   if (fontStyle.includes('italic')) {
     textElement.style.fontStyle = 'italic';
   }
-  textElement.style.letterSpacing + `${letterSpacing}px`;
+  textElement.style.letterSpacing = `${letterSpacing}px`;
 
   // Get the text width then remove the element
   document.body.append(textElement);

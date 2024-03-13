@@ -53,6 +53,7 @@ export function KonvaContextMenu({
     in the future */
     if (Array.isArray(selection)) return;
 
+    // TODO: Remove this as it is unnecessary
     // Moving the node
     selection.node[movement]();
     // Saving the new order
@@ -73,9 +74,9 @@ export function KonvaContextMenu({
         // Swapping the element with the next one
         [
           canvasTreeShallowCopy[elementIndex],
-          canvasTreeShallowCopy[elementIndex - 1],
+          canvasTreeShallowCopy[elementIndex + 1],
         ] = [
-          canvasTreeShallowCopy[elementIndex - 1]!,
+          canvasTreeShallowCopy[elementIndex + 1]!,
           canvasTreeShallowCopy[elementIndex]!,
         ];
       }

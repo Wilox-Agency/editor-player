@@ -54,67 +54,73 @@ export async function generateAssetAttributes({
   const maxMainDimensionSizePercentageBeforeSnappingToFull = 0.8;
   const maxSecondaryDimensionSizePercentage = 0.6;
 
+  /* TODO: Use a better logic to prevent images getting too small (the current
+  one is a bit of a workaround and doesn't work well every time) */
+  const minimumArea = 400_000;
+
   let width;
   let height;
-  if (intrinsicAspectRatio <= stageAspectRatio) {
-    height = gsap.utils.snap(
-      {
-        values: [StageVirtualSize.height],
-        radius:
-          StageVirtualSize.height *
-          (1 - maxMainDimensionSizePercentageBeforeSnappingToFull),
-      },
-      randomIntFromInterval(
-        StageVirtualSize.height * 0.6,
-        StageVirtualSize.height
-      )
-    );
-    width = height * intrinsicAspectRatio;
-
-    const maxWidth =
-      StageVirtualSize.width * maxSecondaryDimensionSizePercentage;
-    if (width > maxWidth) {
-      width = maxWidth;
-      height = width / intrinsicAspectRatio;
-
-      const maxHeight =
-        StageVirtualSize.height *
-        maxMainDimensionSizePercentageBeforeSnappingToFull;
-      if (height > maxHeight) {
-        height = maxHeight;
-        width = height * intrinsicAspectRatio;
-      }
-    }
-  } else {
-    width = gsap.utils.snap(
-      {
-        values: [StageVirtualSize.width],
-        radius:
-          StageVirtualSize.width *
-          (1 - maxMainDimensionSizePercentageBeforeSnappingToFull),
-      },
-      randomIntFromInterval(
-        StageVirtualSize.width * 0.6,
-        StageVirtualSize.width
-      )
-    );
-    height = width / intrinsicAspectRatio;
-
-    const maxHeight =
-      StageVirtualSize.height * maxSecondaryDimensionSizePercentage;
-    if (height > maxHeight) {
-      height = maxHeight;
+  do {
+    if (intrinsicAspectRatio <= stageAspectRatio) {
+      height = gsap.utils.snap(
+        {
+          values: [StageVirtualSize.height],
+          radius:
+            StageVirtualSize.height *
+            (1 - maxMainDimensionSizePercentageBeforeSnappingToFull),
+        },
+        randomIntFromInterval(
+          StageVirtualSize.height * 0.6,
+          StageVirtualSize.height
+        )
+      );
       width = height * intrinsicAspectRatio;
 
       const maxWidth =
-        StageVirtualSize.width *
-        maxMainDimensionSizePercentageBeforeSnappingToFull;
+        StageVirtualSize.width * maxSecondaryDimensionSizePercentage;
       if (width > maxWidth) {
         width = maxWidth;
         height = width / intrinsicAspectRatio;
+
+        const maxHeight =
+          StageVirtualSize.height *
+          maxMainDimensionSizePercentageBeforeSnappingToFull;
+        if (height > maxHeight) {
+          height = maxHeight;
+          width = height * intrinsicAspectRatio;
+        }
+      }
+    } else {
+      width = gsap.utils.snap(
+        {
+          values: [StageVirtualSize.width],
+          radius:
+            StageVirtualSize.width *
+            (1 - maxMainDimensionSizePercentageBeforeSnappingToFull),
+        },
+        randomIntFromInterval(
+          StageVirtualSize.width * 0.6,
+          StageVirtualSize.width
+        )
+      );
+      height = width / intrinsicAspectRatio;
+
+      const maxHeight =
+        StageVirtualSize.height * maxSecondaryDimensionSizePercentage;
+      if (height > maxHeight) {
+        height = maxHeight;
+        width = height * intrinsicAspectRatio;
+
+        const maxWidth =
+          StageVirtualSize.width *
+          maxMainDimensionSizePercentageBeforeSnappingToFull;
+        if (width > maxWidth) {
+          width = maxWidth;
+          height = width / intrinsicAspectRatio;
+        }
       }
     }
-  }
+  } while (width * height < minimumArea);
 
   const x = gsap.utils.random([0, StageVirtualSize.width - width]);
   const y = gsap.utils.random([0, StageVirtualSize.height - height]);

@@ -3,7 +3,6 @@ import { type } from 'arktype';
 import { type AssetType, generateAssetAttributes } from './asset';
 import { generateRects } from './rect';
 import { generateTextAttributes } from './text';
-import { StageVirtualSize } from '@/utils/konva';
 import type { CanvasElementOfType, Slide } from '@/utils/types';
 
 type PresentationContent = {
@@ -50,14 +49,6 @@ export async function generateSlide({
 }) {
   const assetElement = await generateAssetAttributes(asset);
 
-  const isFullWidthAsset = assetElement.width === StageVirtualSize.width;
-  const isFullHeightAsset = assetElement.height === StageVirtualSize.height;
-  if (!isFullWidthAsset && !isFullHeightAsset) {
-    throw new Error(
-      'Only asset elements that are full width or full height are currently supported.'
-    );
-  }
-
   let rectsAndTexts: CanvasElementOfType<'rect' | 'text'>[];
 
   const numberOfParagraphs = paragraphs.length;
@@ -65,7 +56,6 @@ export async function generateSlide({
 
   if (hasLessThan3Paragraphs) {
     const { titleRect, paragraphRects, extraRect } = generateRects({
-      mainDimension: isFullWidthAsset ? 'width' : 'height',
       numberOfParagraphs,
       assetElement,
     });

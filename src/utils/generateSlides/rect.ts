@@ -100,6 +100,76 @@ function generateRectSizes({
   };
 }
 
+function generateRectsForCornerAssetElement({
+  numberOfParagraphs,
+  assetElement,
+}: {
+  numberOfParagraphs: 0 | 1 | 2;
+  assetElement: AssetElement;
+}) {
+  const assetElementHorizontalPosition =
+    assetElement.x === 0 ? 'left' : 'right';
+  const assetElementVerticalPosition = assetElement.y === 0 ? 'top' : 'bottom';
+
+  /* TODO: Maybe, after this condition was met, also add a random condition or a
+  condition depending on the size of the paragraphs to actually make the
+  paragraphs rect occupy the full stage height */
+  const shouldParagraphsRectOccupyFullHeight =
+    numberOfParagraphs === 2 &&
+    assetElementVerticalPosition === 'bottom' &&
+    assetElementHorizontalPosition === 'left';
+
+  // Title rect
+  const titleRect = (() => {
+    if (assetElementVerticalPosition === 'top') {
+      return {
+        x: assetElementHorizontalPosition === 'left' ? assetElement.width : 0,
+        y: 0,
+        width: StageVirtualSize.width - assetElement.width,
+        height: assetElement.height,
+      } satisfies IRect;
+    } else {
+      return {
+        /* The paragraphs rect will only occupy full height when the asset
+        element is at the bottom left side (and therefore the title will be at
+        the top left side), so there's no need to change the X in that case */
+        x: 0,
+        y: 0,
+        width: shouldParagraphsRectOccupyFullHeight
+          ? assetElement.width
+          : StageVirtualSize.width,
+        height: StageVirtualSize.height - assetElement.height,
+      } satisfies IRect;
+    }
+  })();
+
+  // Paragraphs rect
+  const paragraphsRect = (() => {
+    if (assetElementVerticalPosition === 'top') {
+      return {
+        x: 0,
+        y: assetElement.height,
+        width: StageVirtualSize.width,
+        height: StageVirtualSize.height - assetElement.height,
+      } satisfies IRect;
+    } else {
+      return {
+        x: assetElementHorizontalPosition === 'left' ? assetElement.width : 0,
+        y: shouldParagraphsRectOccupyFullHeight ? 0 : assetElement.y,
+        width: StageVirtualSize.width - assetElement.width,
+        height: shouldParagraphsRectOccupyFullHeight
+          ? StageVirtualSize.height
+          : assetElement.height,
+      } satisfies IRect;
+    }
+  })();
+
+  return {
+    titleRect,
+    paragraphsRect,
+  };
+}
+
 function setRectPositions({
   titleRectSize,
   paragraphsRectSize,
@@ -230,8 +300,8 @@ function generateExtraRectPosition({
     if (rectsHaveSameSecondaryDimensionMeasure) {
       positionInAxis = gsap.utils.random(['start', 'end'] as const);
     } else {
-      /* Put on the opposite position in axis relative to where the rect it
-        will be added to is in the stage */
+      /* Put on the opposite position in axis relative to where the rect it will
+      be added to is in the stage */
       positionInAxis =
         rectWhereExtraRectWillBeAdded[coordinate] === 0
           ? ('end' as const)
@@ -478,6 +548,127 @@ function addExtraRect({
   };
 }
 
+/**
+ * This function mutates the `titleRect` or `paragraphsRect` and return
+ * references of both.
+ */
+function addExtraRectForCornerAssetElement({
+  titleRect,
+  paragraphsRect,
+  numberOfParagraphs,
+  assetElement,
+}: {
+  titleRect: IRect;
+  paragraphsRect: IRect;
+  numberOfParagraphs: 0 | 1 | 2;
+  assetElement: AssetElement;
+}) {
+  const willAddExtraRect = gsap.utils.random([true, false]);
+  if (!willAddExtraRect) {
+    return {
+      titleRect,
+      paragraphsRect,
+      extraRect: undefined,
+    };
+  }
+
+  const assetElementVerticalPosition = assetElement.y === 0 ? 'top' : 'bottom';
+
+  let rectWhereExtraRectWillBeAdded;
+  if (numberOfParagraphs === 2) {
+    // Can only add extra rect to the title rect
+    /* TODO: Limit size of extra rect when title is too big, specially if the
+    paragraphs rect is a column with full height */
+    rectWhereExtraRectWillBeAdded = titleRect;
+  } else {
+    /* Can choose between adding the extra rect to the title rect or paragraphs
+    rect */
+    rectWhereExtraRectWillBeAdded = gsap.utils.random([
+      titleRect,
+      paragraphsRect,
+    ]);
+  }
+
+  /* Using the logic that decides the position and size of the rects to get main
+  dimension of the rect where the extra rect will be added to */
+  const mainDimension: Dimension =
+    rectWhereExtraRectWillBeAdded === titleRect
+      ? assetElementVerticalPosition === 'top'
+        ? 'height'
+        : 'width'
+      : assetElementVerticalPosition === 'top'
+      ? 'width'
+      : 'height';
+  const secondaryDimension: Dimension =
+    mainDimension === 'width' ? 'height' : 'width';
+
+  /* Currently using the opposite main dimension as the rect where the extra
+  rect will be added to */
+  // TODO: Enable using the same main dimension for the extra rect
+  const extraRectMainDimension = secondaryDimension;
+  const extraRectSecondaryDimension = mainDimension;
+
+  const extraRectSecondaryDimensionMeasure = randomIntFromInterval(
+    rectWhereExtraRectWillBeAdded[extraRectSecondaryDimension] * 0.05,
+    rectWhereExtraRectWillBeAdded[extraRectSecondaryDimension] * 0.15
+  );
+  const extraRectSize = {
+    [extraRectMainDimension]:
+      rectWhereExtraRectWillBeAdded[extraRectMainDimension],
+    [extraRectSecondaryDimension]: extraRectSecondaryDimensionMeasure,
+  } as Size;
+
+  const positionInAxis = gsap.utils.random(['start', 'end'] as const);
+
+  const extraRectPosition: Position = { x: 0, y: 0 };
+  for (const coordinate of ['x', 'y'] satisfies Coordinate[]) {
+    const isCoordinateInSameAxisAsMainDimension =
+      coordinateToDimension[coordinate] === mainDimension;
+
+    if (!isCoordinateInSameAxisAsMainDimension) {
+      extraRectPosition[coordinate] = rectWhereExtraRectWillBeAdded[coordinate];
+      continue;
+    }
+
+    if (positionInAxis === 'start') {
+      extraRectPosition[coordinate] = rectWhereExtraRectWillBeAdded[coordinate];
+    } else {
+      extraRectPosition[coordinate] =
+        rectWhereExtraRectWillBeAdded[coordinate] +
+        rectWhereExtraRectWillBeAdded[extraRectSecondaryDimension] -
+        extraRectSize[extraRectSecondaryDimension];
+    }
+  }
+
+  const extraRect: IRect = {
+    ...extraRectPosition,
+    ...extraRectSize,
+  };
+
+  const coordinateEquivalentToExtraRectSecondaryDimension =
+    dimensionToCoordinate[extraRectSecondaryDimension];
+
+  // Subtracting the space that the extra rect will occupy
+  rectWhereExtraRectWillBeAdded[extraRectSecondaryDimension] -=
+    extraRectSecondaryDimensionMeasure;
+  // Adjust the position if necessary
+  if (
+    rectWhereExtraRectWillBeAdded[
+      coordinateEquivalentToExtraRectSecondaryDimension
+    ] === extraRect[coordinateEquivalentToExtraRectSecondaryDimension]
+  ) {
+    rectWhereExtraRectWillBeAdded[
+      coordinateEquivalentToExtraRectSecondaryDimension
+    ] += extraRectSecondaryDimensionMeasure;
+  }
+
+  return {
+    titleRect,
+    paragraphsRect,
+    extraRect,
+  };
+}
+
 /** Should only be used when there's 2 paragraphs in the slide. */
 function separateParagraphsRect({
   paragraphsRect,
@@ -522,53 +713,168 @@ function separateParagraphsRect({
   ] satisfies IRect[];
 }
 
+/** Should only be used when there's 2 paragraphs in the slide. */
+function separateParagraphsRectForCornerAssetElement({
+  paragraphsRect,
+  assetElement,
+}: {
+  paragraphsRect: IRect;
+  assetElement: AssetElement;
+}) {
+  const assetElementVerticalPosition = assetElement.y === 0 ? 'top' : 'bottom';
+
+  /* Using the logic that decides the paragraph position and size to get its
+  main dimension */
+  const mainDimension: Dimension =
+    assetElementVerticalPosition === 'top' ? 'width' : 'height';
+  const secondaryDimension: Dimension =
+    mainDimension === 'width' ? 'height' : 'width';
+
+  const coordinateEquivalentToMainDimension =
+    dimensionToCoordinate[mainDimension];
+  const coordinateEquivalentToSecondaryDimension =
+    dimensionToCoordinate[secondaryDimension];
+
+  const firstParagraphRectMainDimensionMeasure = randomIntFromInterval(
+    paragraphsRect[mainDimension] * 0.45,
+    paragraphsRect[mainDimension] * 0.55
+  );
+  const secondParagraphRectMainDimensionMeasure =
+    paragraphsRect[mainDimension] - firstParagraphRectMainDimensionMeasure;
+
+  return [
+    {
+      [coordinateEquivalentToMainDimension]:
+        paragraphsRect[coordinateEquivalentToMainDimension],
+      [coordinateEquivalentToSecondaryDimension]:
+        paragraphsRect[coordinateEquivalentToSecondaryDimension],
+      [mainDimension]: firstParagraphRectMainDimensionMeasure,
+      [secondaryDimension]: paragraphsRect[secondaryDimension],
+    } as unknown as IRect,
+    {
+      [coordinateEquivalentToMainDimension]:
+        paragraphsRect[coordinateEquivalentToMainDimension] +
+        firstParagraphRectMainDimensionMeasure,
+      [coordinateEquivalentToSecondaryDimension]:
+        paragraphsRect[coordinateEquivalentToSecondaryDimension],
+      [mainDimension]: secondParagraphRectMainDimensionMeasure,
+      [secondaryDimension]: paragraphsRect[secondaryDimension],
+    } as unknown as IRect,
+  ] satisfies IRect[];
+}
+
 export function generateRects({
-  mainDimension,
   numberOfParagraphs,
   assetElement,
 }: {
-  mainDimension: Dimension;
   numberOfParagraphs: 0 | 1 | 2;
   assetElement: AssetElement;
 }) {
-  const { titleRectSize, paragraphsRectSize } = generateRectSizes({
-    mainDimension,
-    numberOfParagraphs,
-    assetElement,
-  });
-  const { titleRect, paragraphsRect } = setRectPositions({
-    titleRectSize,
-    paragraphsRectSize,
-    numberOfParagraphs,
-    assetElement,
-  });
+  const isFullWidthAssetElement = assetElement.width === StageVirtualSize.width;
+  const isFullHeightAssetElement =
+    assetElement.height === StageVirtualSize.height;
 
   let rectsWithoutColor: {
     titleRect: IRect;
     paragraphRects: IRect[];
     extraRect?: IRect;
   };
-  if (numberOfParagraphs === 2) {
-    const paragraphRects = separateParagraphsRect({
+  if (isFullWidthAssetElement || isFullHeightAssetElement) {
+    const mainDimension = isFullWidthAssetElement ? 'width' : 'height';
+
+    const { titleRectSize, paragraphsRectSize } = generateRectSizes({
       mainDimension,
-      paragraphsRect,
-    });
-    rectsWithoutColor = {
-      titleRect,
-      paragraphRects,
-    };
-  } else {
-    const { extraRect } = addExtraRect({
-      titleRect,
-      paragraphsRect,
-      mainDimension,
+      numberOfParagraphs,
       assetElement,
     });
-    rectsWithoutColor = {
+    const { titleRect, paragraphsRect } = setRectPositions({
+      titleRectSize,
+      paragraphsRectSize,
+      numberOfParagraphs,
+      assetElement,
+    });
+
+    if (numberOfParagraphs === 2) {
+      const paragraphRects = separateParagraphsRect({
+        mainDimension,
+        paragraphsRect,
+      });
+      rectsWithoutColor = {
+        titleRect,
+        paragraphRects,
+      };
+    } else {
+      const { extraRect } = addExtraRect({
+        titleRect,
+        paragraphsRect,
+        mainDimension,
+        assetElement,
+      });
+      rectsWithoutColor = {
+        titleRect,
+        paragraphRects: [paragraphsRect],
+        extraRect,
+      };
+    }
+  } else {
+    const { titleRect, paragraphsRect } = generateRectsForCornerAssetElement({
+      numberOfParagraphs,
+      assetElement,
+    });
+    const { extraRect } = addExtraRectForCornerAssetElement({
       titleRect,
-      paragraphRects: [paragraphsRect],
-      extraRect,
-    };
+      paragraphsRect,
+      numberOfParagraphs,
+      assetElement,
+    });
+
+    if (numberOfParagraphs === 2) {
+      const paragraphRects = separateParagraphsRectForCornerAssetElement({
+        paragraphsRect,
+        assetElement,
+      });
+      rectsWithoutColor = {
+        titleRect,
+        paragraphRects,
+        extraRect,
+      };
+    } else {
+      rectsWithoutColor = {
+        titleRect,
+        paragraphRects: [paragraphsRect],
+        extraRect,
+      };
+    }
+
+    /* When there's no paragraph, get the rect with greatest area to be the
+    title rect */
+    if (numberOfParagraphs === 0) {
+      const rectsWithArea = [
+        { rect: titleRect, area: titleRect.width * titleRect.height },
+        ...rectsWithoutColor.paragraphRects.map((paragraphRect) => ({
+          rect: paragraphRect,
+          area: paragraphRect.width * paragraphRect.height,
+        })),
+      ] as const satisfies { rect: IRect; area: number }[];
+
+      let rectWithGreatestArea = rectsWithArea[0];
+      for (const rectWithArea of rectsWithArea) {
+        if (rectWithArea.area > rectWithGreatestArea.area) {
+          rectWithGreatestArea = rectWithArea;
+        }
+      }
+
+      if (rectWithGreatestArea.rect !== titleRect) {
+        const paragraphRectIndex = rectsWithoutColor.paragraphRects.findIndex(
+          (paragraphRect) => paragraphRect === rectWithGreatestArea.rect
+        );
+        if (paragraphRectIndex !== -1) {
+          // Switching the rects
+          rectsWithoutColor.titleRect = rectWithGreatestArea.rect;
+          rectsWithoutColor.paragraphRects[paragraphRectIndex] = titleRect;
+        }
+      }
+    }
   }
 
   const rectColors = gsap.utils.shuffle([...rectColorPalette]);

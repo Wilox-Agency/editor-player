@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import Konva from 'konva';
 import { Group, Layer, Stage, Transformer } from 'react-konva';
 import { Pause, Play } from 'lucide-react';
@@ -1053,6 +1054,8 @@ const slides = slidesWithValuesAsPercentages.map((slide) => {
 });
 
 export function AnimationPlayer() {
+  const { state: slidesFromHomePage } = useLocation();
+
   const { canvasTree, loadCanvasTree } = useCanvasTreeStore();
   const { stageRef, layerRef } = useKonvaRefsStore();
   const { stageWrapperId } = useResponsiveStage({
@@ -1076,12 +1079,12 @@ export function AnimationPlayer() {
     if (!stage) return;
 
     // Load canvas elements
-    const combinedSlides = combineSlides(slides);
+    const combinedSlides = combineSlides(slidesFromHomePage || slides);
     combinedSlidesRef.current = combinedSlides;
     loadCanvasTree(
       combinedSlides.map(({ attributes: canvasElement }) => canvasElement)
     );
-  }, [loadCanvasTree, stageRef]);
+  }, [loadCanvasTree, stageRef, slidesFromHomePage]);
 
   useEffect(() => {
     // Setup the GSAP timeline
@@ -1143,6 +1146,14 @@ export function AnimationPlayer() {
     }
     setupTimeline();
   }, [canvasTree, layerRef, stageRef, timeline, updateTimelineDuration]);
+
+  // Clear canvas tree and reset timeline when the component is destroyed
+  useEffect(() => {
+    return () => {
+      useCanvasTreeStore.getState().loadCanvasTree([]);
+      usePlayerTimelineStore.getState().reset();
+    };
+  }, []);
 
   return (
     <main>

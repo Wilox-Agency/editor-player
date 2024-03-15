@@ -200,7 +200,7 @@ export async function generateSlide({
 
 export async function generateSlides(presentationContent: PresentationContent) {
   // The only piece of text in the first slide will be the presentation title
-  const firstSlide = await generateSlide({
+  const firstSlide: Slide = await generateSlide({
     title: presentationContent.title,
     asset: presentationContent.asset,
   });

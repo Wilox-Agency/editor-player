@@ -10,13 +10,21 @@ type PlayerTimelineStore = {
   timelineCurrentTime: number;
   timelineDuration: number;
   timelineState: 'paused' | 'playing' | 'ended';
+  reset: () => void;
 };
 
 export const usePlayerTimelineStore = create(
-  subscribeWithSelector<PlayerTimelineStore>(() => ({
+  subscribeWithSelector<PlayerTimelineStore>((set) => ({
     timelineCurrentTime: 0,
     timelineDuration: 0,
     timelineState: 'paused',
+    reset: () => {
+      set({
+        timelineCurrentTime: 0,
+        timelineDuration: 0,
+        timelineState: 'paused',
+      });
+    },
   }))
 );
 
@@ -96,6 +104,13 @@ export function usePlayerTimeline({
     );
     return () => unsubscribe();
   }, [layerRef]);
+
+  // Clear timeline when the component that uses this hook is destroyed
+  useEffect(() => {
+    return () => {
+      timeline.clear();
+    };
+  }, [timeline]);
 
   return {
     timeline,

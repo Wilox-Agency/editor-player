@@ -1,0 +1,47 @@
+.main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  min-height: 100vh;
+}
+
+.form {
+  --_horizontal-padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 30rem;
+  max-width: calc(100% - var(--_horizontal-padding * 2));
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.textArea {
+  background-color: var(--clr-neutral-background);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    'Liberation Mono', 'Courier New', monospace;
+  min-height: 25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.errorMessage {
+  color: var(--clr-danger);
+}
+
+.submitButton {
+  background-color: var(--clr-primary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+  transition-property: background-color, box-shadow, outline;
+}
+.submitButton:not(:disabled):is(:hover, :focus-visible) {
+  background-color: var(--clr-primary-highlight);
+}
+.submitButton:disabled {
+  opacity: 0.6;
+}

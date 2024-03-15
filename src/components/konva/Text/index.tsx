@@ -31,6 +31,7 @@ import type {
 } from '@/utils/types';
 import { useStageScaleStore } from '@/hooks/useStageScaleStore';
 
+// TODO: Add `fontFamily` prop
 export type TextProps = Pick<
   RemoveIndex<Konva.TextConfig>,
   | 'id'

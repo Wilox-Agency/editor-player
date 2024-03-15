@@ -3,7 +3,8 @@ import type { CanvasElementWithAnimationAttributes } from './sharedTypes';
 import { findLast } from '@/utils/array';
 import type { CanvasElement, CanvasElementOfType, Slide } from '@/utils/types';
 
-function getElementThatContainsText<TElement extends CanvasElement>({
+// TODO: Move this function to 'utils/konva'
+export function getElementThatContainsText<TElement extends CanvasElement>({
   slideElementsBeforeText,
   canvasTextElement,
 }: {

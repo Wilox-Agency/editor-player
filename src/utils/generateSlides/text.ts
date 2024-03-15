@@ -35,7 +35,7 @@ function getTextWidth(
   return width;
 }
 
-function fitTextIntoRect(
+export function fitTextIntoRect(
   text: string,
   textAttributes: {
     fontFamily: string;
@@ -189,16 +189,16 @@ export function generateTextAttributes(
       ? {
           fontFamily: 'Arial',
           fontSize: 80,
-          fontStyle: 'bold',
-          letterSpacing: -4,
           lineHeight: 1,
+          letterSpacing: -4,
+          fontStyle: 'bold',
         }
       : {
           fontFamily: 'Arial',
           fontSize: 32,
-          fontStyle: '',
-          letterSpacing: 0,
           lineHeight: 1,
+          letterSpacing: 0,
+          fontStyle: '',
         };
   const { width, height, fontSize } = fitTextIntoRect(
     text.value,

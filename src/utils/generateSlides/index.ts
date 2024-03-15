@@ -127,6 +127,9 @@ async function generateSlideWithSubSlides(
       y: textContainer.y! + textContainer.height! / 2 - height / 2,
       width,
       fontSize,
+      fill: chooseTextColor(
+        textContainer.fill as (typeof rectColorPalette)[number]
+      ),
     } satisfies CanvasElementOfType<'text'>;
     // Set the new text attributes
     Object.assign(textElement, textAttributes);

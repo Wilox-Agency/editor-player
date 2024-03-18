@@ -1,5 +1,6 @@
 import gsap from 'gsap';
 
+import type { Dimension, Size } from './sharedTypes';
 import { StageVirtualSize, getCanvasImageIntrinsicSize } from '@/utils/konva';
 import { randomFloatFromInterval, randomIntFromInterval } from '@/utils/random';
 import type { CanvasElementOfType, DistributiveOmit } from '@/utils/types';
@@ -36,8 +37,87 @@ function getAssetDimensions(type: AssetType, url: string) {
   });
 }
 
-/* TODO: Create a different handling for images that have a really small or
-really big aspect ratio */
+/** Represents the max percentage the main dimension of the element (width or
+ * height) can have compared to the stage before snapping to 100% */
+const maxMainDimensionSizePercentageBeforeSnappingToFull = 0.8;
+const maxSecondaryDimensionSizePercentage = 0.6;
+
+function getMinAndMaxAssetSizes(
+  instrinsicAspectRatio: number,
+  mainDimension: Dimension,
+  secondaryDimension: Dimension
+) {
+  const greatestDimension: Dimension =
+    instrinsicAspectRatio >= 1 ? 'width' : 'height';
+  const smallestDimension: Dimension =
+    greatestDimension === 'width' ? 'height' : 'width';
+
+  // Calculate max size
+  const maxSize: Size = { width: 0, height: 0 };
+
+  const maxGreatestDimensionMeasure =
+    greatestDimension === secondaryDimension
+      ? StageVirtualSize[greatestDimension] *
+        maxSecondaryDimensionSizePercentage
+      : StageVirtualSize[greatestDimension];
+  const maxSmallestDimensionMeasure =
+    smallestDimension === secondaryDimension
+      ? StageVirtualSize[smallestDimension] *
+        maxSecondaryDimensionSizePercentage
+      : StageVirtualSize[smallestDimension];
+
+  maxSize[greatestDimension] = maxGreatestDimensionMeasure;
+  maxSize[smallestDimension] =
+    greatestDimension === 'width'
+      ? maxSize[greatestDimension] / instrinsicAspectRatio
+      : maxSize[greatestDimension] * instrinsicAspectRatio;
+
+  if (maxSize[smallestDimension] > maxSmallestDimensionMeasure) {
+    maxSize[smallestDimension] = maxSmallestDimensionMeasure;
+    maxSize[greatestDimension] =
+      smallestDimension === 'width'
+        ? maxSize[smallestDimension] / instrinsicAspectRatio
+        : maxSize[smallestDimension] * instrinsicAspectRatio;
+  }
+
+  // Calculate min size
+  const minSize: Size = { width: 0, height: 0 };
+
+  const minMeasure = 500;
+  const minGreatestDimensionMeasure =
+    greatestDimension === mainDimension
+      ? StageVirtualSize[greatestDimension] * 0.6
+      : minMeasure;
+  const minSmallestDimensionMeasure =
+    smallestDimension === mainDimension
+      ? StageVirtualSize[smallestDimension] * 0.6
+      : minMeasure;
+
+  minSize[smallestDimension] = minSmallestDimensionMeasure;
+  minSize[greatestDimension] =
+    smallestDimension === 'width'
+      ? minSize[smallestDimension] / instrinsicAspectRatio
+      : minSize[smallestDimension] * instrinsicAspectRatio;
+
+  if (minSize[greatestDimension] < minGreatestDimensionMeasure) {
+    minSize[greatestDimension] = minGreatestDimensionMeasure;
+    minSize[smallestDimension] =
+      greatestDimension === 'width'
+        ? minSize[greatestDimension] / instrinsicAspectRatio
+        : minSize[greatestDimension] * instrinsicAspectRatio;
+  }
+
+  if (minSize[greatestDimension] > maxSize[greatestDimension]) {
+    minSize[greatestDimension] = maxSize[greatestDimension];
+    minSize[smallestDimension] =
+      greatestDimension === 'width'
+        ? minSize[greatestDimension] / instrinsicAspectRatio
+        : minSize[greatestDimension] * instrinsicAspectRatio;
+  }
+
+  return { minSize, maxSize };
+}
+
 export async function generateAssetAttributes({
   type,
   url,
@@ -49,86 +129,39 @@ export async function generateAssetAttributes({
   const intrinsicAspectRatio = intrinsicSize.width / intrinsicSize.height;
 
   const stageAspectRatio = StageVirtualSize.width / StageVirtualSize.height;
-  /** Represents the max percentage the main dimension of the element (width or
-   * height) can have compared to the stage before snapping to 100% */
-  const maxMainDimensionSizePercentageBeforeSnappingToFull = 0.8;
-  const maxSecondaryDimensionSizePercentage = 0.6;
 
-  /* TODO: Use a better logic to prevent images getting too small (the current
-  one is a bit of a workaround and doesn't work well every time) */
-  const minimumArea = 400_000;
+  const size: Size = { width: 0, height: 0 };
+  const mainDimension: Dimension =
+    intrinsicAspectRatio <= stageAspectRatio ? 'height' : 'width';
+  const secondaryDimension: Dimension =
+    mainDimension === 'width' ? 'height' : 'width';
 
-  let width;
-  let height;
-  do {
-    if (intrinsicAspectRatio <= stageAspectRatio) {
-      height = gsap.utils.snap(
-        {
-          values: [StageVirtualSize.height],
-          radius:
-            StageVirtualSize.height *
-            (1 - maxMainDimensionSizePercentageBeforeSnappingToFull),
-        },
-        randomIntFromInterval(
-          StageVirtualSize.height * 0.6,
-          StageVirtualSize.height
-        )
-      );
-      width = height * intrinsicAspectRatio;
+  const { minSize, maxSize } = getMinAndMaxAssetSizes(
+    intrinsicAspectRatio,
+    mainDimension,
+    secondaryDimension
+  );
+  size[mainDimension] = gsap.utils.snap(
+    {
+      values: [StageVirtualSize[mainDimension]],
+      radius:
+        StageVirtualSize[mainDimension] *
+        (1 - maxMainDimensionSizePercentageBeforeSnappingToFull),
+    },
+    randomIntFromInterval(minSize[mainDimension], maxSize[mainDimension])
+  );
+  size[secondaryDimension] =
+    mainDimension === 'width'
+      ? size[mainDimension] / intrinsicAspectRatio
+      : size[mainDimension] * intrinsicAspectRatio;
 
-      const maxWidth =
-        StageVirtualSize.width * maxSecondaryDimensionSizePercentage;
-      if (width > maxWidth) {
-        width = maxWidth;
-        height = width / intrinsicAspectRatio;
-
-        const maxHeight =
-          StageVirtualSize.height *
-          maxMainDimensionSizePercentageBeforeSnappingToFull;
-        if (height > maxHeight) {
-          height = maxHeight;
-          width = height * intrinsicAspectRatio;
-        }
-      }
-    } else {
-      width = gsap.utils.snap(
-        {
-          values: [StageVirtualSize.width],
-          radius:
-            StageVirtualSize.width *
-            (1 - maxMainDimensionSizePercentageBeforeSnappingToFull),
-        },
-        randomIntFromInterval(
-          StageVirtualSize.width * 0.6,
-          StageVirtualSize.width
-        )
-      );
-      height = width / intrinsicAspectRatio;
-
-      const maxHeight =
-        StageVirtualSize.height * maxSecondaryDimensionSizePercentage;
-      if (height > maxHeight) {
-        height = maxHeight;
-        width = height * intrinsicAspectRatio;
-
-        const maxWidth =
-          StageVirtualSize.width *
-          maxMainDimensionSizePercentageBeforeSnappingToFull;
-        if (width > maxWidth) {
-          width = maxWidth;
-          height = width / intrinsicAspectRatio;
-        }
-      }
-    }
-  } while (width * height < minimumArea);
-
-  const x = gsap.utils.random([0, StageVirtualSize.width - width]);
-  const y = gsap.utils.random([0, StageVirtualSize.height - height]);
+  const x = gsap.utils.random([0, StageVirtualSize.width - size.width]);
+  const y = gsap.utils.random([0, StageVirtualSize.height - size.height]);
 
   const baseAttributes = {
     id: crypto.randomUUID(),
-    width,
-    height,
+    width: size.width,
+    height: size.height,
     x,
     y,
   } as const;
@@ -136,16 +169,8 @@ export async function generateAssetAttributes({
   return {
     ...baseAttributes,
     ...(type === 'image'
-      ? {
-          type: 'image',
-          imageUrl: url,
-        }
-      : {
-          type: 'video',
-          videoUrl: url,
-          autoPlay: true,
-          loop: true,
-        }),
+      ? { type: 'image', imageUrl: url }
+      : { type: 'video', videoUrl: url, autoPlay: true, loop: true }),
   } satisfies DistributiveOmit<CanvasElementOfType<'image' | 'video'>, 'id'>;
 }
 

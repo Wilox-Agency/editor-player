@@ -3,14 +3,10 @@ import type { IRect } from 'konva/lib/types';
 
 import { rectColorPalette } from './index';
 import { type AssetElement } from './asset';
+import type { Coordinate, Dimension, Position, Size } from './sharedTypes';
 import { StageVirtualSize } from '@/utils/konva';
 import { randomIntFromInterval } from '@/utils/random';
 import type { CanvasElementOfType } from '@/utils/types';
-
-type Dimension = 'width' | 'height';
-type Size = Record<Dimension, number>;
-type Coordinate = 'x' | 'y';
-type Position = Record<Coordinate, number>;
 
 const coordinateToDimension = {
   x: 'width',

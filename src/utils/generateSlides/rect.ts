@@ -114,10 +114,19 @@ function generateRectsForCornerAssetElement({
   /* TODO: Maybe, after this condition was met, also add a random condition or a
   condition depending on the size of the paragraphs to actually make the
   paragraphs rect occupy the full stage height */
-  const shouldParagraphsRectOccupyFullHeight =
-    numberOfParagraphs === 2 &&
-    assetElementVerticalPosition === 'bottom' &&
-    assetElementHorizontalPosition === 'left';
+  const shouldParagraphsRectOccupyFullHeight = (() => {
+    const willParagraphsRectBeAtBottomRight =
+      assetElementVerticalPosition === 'bottom' &&
+      assetElementHorizontalPosition === 'left';
+    const paragraphsRectWidth = StageVirtualSize.width - assetElement.width;
+    const maxWidthToAllowFullHeight = StageVirtualSize.width * 0.4;
+
+    return (
+      numberOfParagraphs === 2 &&
+      willParagraphsRectBeAtBottomRight &&
+      paragraphsRectWidth <= maxWidthToAllowFullHeight
+    );
+  })();
 
   // Title rect
   const titleRect = (() => {

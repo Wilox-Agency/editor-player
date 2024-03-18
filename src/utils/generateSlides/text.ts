@@ -78,7 +78,7 @@ export function fitTextIntoRect(
       return tryAgainWithSmallerFontSize();
     }
 
-    let lineWidth = getTextWidth(text, textAttributes);
+    let lineWidth = getTextWidth(line, textAttributes);
     // If line doesn't fit entirely, break the line into mutiple fitting ones
     if (lineWidth > rect.width) {
       while (line.length > 0) {

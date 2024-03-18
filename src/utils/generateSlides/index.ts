@@ -1,3 +1,4 @@
+import gsap from 'gsap';
 import { type } from 'arktype';
 
 import { type AssetType, generateAssetAttributes } from './asset';
@@ -5,7 +6,7 @@ import { generateRects } from './rect';
 import { fitTextIntoRect, generateTextAttributes } from './text';
 import { getElementThatContainsText } from '@/utils/slidesPlayer/setTextContainers';
 import { findLast } from '@/utils/array';
-import type { CanvasElementOfType, Slide } from '@/utils/types';
+import type { CanvasElement, CanvasElementOfType, Slide } from '@/utils/types';
 
 type PresentationContent = {
   title: string;
@@ -40,6 +41,22 @@ function chooseTextColor(
   return ColorPalette.black;
 }
 
+function getUnusedRectColorsFromSlide(canvasElements: CanvasElement[]) {
+  const rectElements = canvasElements.filter(
+    (element): element is CanvasElementOfType<'rect'> => {
+      return element.type === 'rect';
+    }
+  );
+  const rectColors = rectElements.map((rect) => rect.fill);
+  const unusedRectColors = rectColorPalette.filter(
+    (color) => !rectColors.includes(color)
+  );
+  // Shuffle the colors to add some randomness
+  gsap.utils.shuffle(unusedRectColors);
+
+  return unusedRectColors;
+}
+
 async function generateSlideWithSubSlides(
   slideContent: PresentationContent['slides'][number]
 ) {
@@ -50,20 +67,21 @@ async function generateSlideWithSubSlides(
     asset: slideContent.asset,
   });
 
+  const subSlides: Slide[] = [];
+
   // Then generate sub-slides based on the main one
-  const subSlides = slideContent.paragraphs.slice(1).map((paragraph) => {
-    // Create a copy of the main slide with new IDs for the elements
+  for (const paragraph of slideContent.paragraphs.slice(1)) {
+    const previousSlide = subSlides[subSlides.length - 1] || mainSlide;
+    // Create a copy of the previous slide with new IDs for the elements
     const subSlide: Slide = {
-      canvasElements: [
-        ...mainSlide.canvasElements.map((element) => ({
-          ...element,
-          id: crypto.randomUUID(),
-        })),
-      ],
-      duration: mainSlide.duration,
+      canvasElements: previousSlide.canvasElements.map((element) => ({
+        ...element,
+        id: crypto.randomUUID(),
+      })),
+      duration: previousSlide.duration,
     };
 
-    const textElement = findLast(mainSlide.canvasElements, (element) => {
+    const textElement = findLast(subSlide.canvasElements, (element) => {
       return element.type === 'text';
     }) as CanvasElementOfType<'text'> | undefined;
 
@@ -74,7 +92,7 @@ async function generateSlideWithSubSlides(
     const textContainer = getElementThatContainsText({
       /* The paragraph element will always be the last one, so it's not even
       necessary to separate the elements before the text */
-      slideElementsBeforeText: mainSlide.canvasElements,
+      slideElementsBeforeText: subSlide.canvasElements,
       canvasTextElement: textElement,
     });
 
@@ -84,18 +102,11 @@ async function generateSlideWithSubSlides(
 
     /* Change the color of the text container if there's one that's not being
     used already by another rect */
-    const colorsNotBeingUsed = rectColorPalette.filter((color) => {
-      const rectElements = subSlide.canvasElements.filter(
-        (element): element is CanvasElementOfType<'rect'> =>
-          element.type === 'rect'
-      );
-      const isSomeRectUsingCurrentColor = rectElements.some(
-        (rectElement) => rectElement.fill === color
-      );
-      return !isSomeRectUsingCurrentColor;
-    });
-    if (colorsNotBeingUsed[0]) {
-      textContainer.fill = colorsNotBeingUsed[0];
+    const unusedRectColors = getUnusedRectColorsFromSlide(
+      subSlide.canvasElements
+    );
+    if (unusedRectColors[0]) {
+      textContainer.fill = unusedRectColors[0];
     }
 
     /* TODO: Export the base attributes from 'utils/generateSlides/text' and
@@ -134,8 +145,8 @@ async function generateSlideWithSubSlides(
     // Set the new text attributes
     Object.assign(textElement, textAttributes);
 
-    return subSlide;
-  });
+    subSlides.push(subSlide);
+  }
 
   return [mainSlide, ...subSlides];
 }

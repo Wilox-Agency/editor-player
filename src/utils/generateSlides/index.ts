@@ -165,6 +165,7 @@ export async function generateSlide({
   const { titleRect, paragraphRects, extraRect } = generateRects({
     numberOfParagraphs: numberOfParagraphs,
     assetElement,
+    paragraphs,
   });
 
   rectsAndTexts = [

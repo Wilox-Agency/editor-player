@@ -1,8 +1,10 @@
-import gsap from 'gsap';
 import type { IRect } from 'konva/lib/types';
+import gsap from 'gsap';
+import { type } from 'arktype';
 
 import { rectColorPalette } from './index';
 import { type AssetElement } from './asset';
+import { baseAttributesByTextType, fitTextIntoRect } from './text';
 import type { Coordinate, Dimension, Position, Size } from './sharedTypes';
 import { StageVirtualSize } from '@/utils/konva';
 import { randomIntFromInterval } from '@/utils/random';
@@ -674,13 +676,181 @@ function addExtraRectForCornerAssetElement({
   };
 }
 
+function getParagraphRectEmptyArea(
+  paragraphRectSize: Size,
+  paragraphTextSize: Size
+) {
+  return (
+    paragraphRectSize.width * paragraphRectSize.height -
+    paragraphTextSize.width * paragraphTextSize.height
+  );
+}
+
+function calculateParagraphRectsEmptyAreas({
+  firstParagraphRect,
+  firstParagraph,
+  secondParagraphRect,
+  secondParagraph,
+}: {
+  firstParagraphRect: Size;
+  firstParagraph: string;
+  secondParagraphRect: Size;
+  secondParagraph: string;
+}) {
+  const firstParagraphRectEmptyArea = getParagraphRectEmptyArea(
+    firstParagraphRect,
+    fitTextIntoRect(firstParagraph, baseAttributesByTextType.paragraph, {
+      width: firstParagraphRect.width - 40 * 2,
+      height: firstParagraphRect.height - 40 * 2,
+    })
+  );
+  const secondParagraphRectEmptyArea = getParagraphRectEmptyArea(
+    secondParagraphRect,
+    fitTextIntoRect(secondParagraph, baseAttributesByTextType.paragraph, {
+      width: secondParagraphRect.width - 40 * 2,
+      height: secondParagraphRect.height - 40 * 2,
+    })
+  );
+  const emptyAreaDifference = Math.abs(
+    firstParagraphRectEmptyArea - secondParagraphRectEmptyArea
+  );
+
+  return {
+    firstParagraphRectEmptyArea,
+    secondParagraphRectEmptyArea,
+    emptyAreaDifference,
+  };
+}
+
+/**
+ * Makes the empty area of the paragraph rects as close as possible.
+ *
+ * This function mutates the rects inside the `paragraphRects` array.
+ */
+function balanceParagraphRectsEmptyArea({
+  paragraphRects,
+  paragraphs,
+  separationDimension,
+}: {
+  paragraphRects: [IRect, IRect];
+  paragraphs: string[];
+  /** Dimension where the paragraphs rect is separated in two */
+  separationDimension: Dimension;
+}) {
+  const coordinateEquivalentToSeparationDimension =
+    dimensionToCoordinate[separationDimension];
+
+  const [firstParagraph, secondParagraph] = type(['string', 'string']).assert(
+    paragraphs
+  );
+  const [firstParagraphRect, secondParagraphRect] = paragraphRects;
+
+  const {
+    firstParagraphRectEmptyArea,
+    secondParagraphRectEmptyArea,
+    emptyAreaDifference,
+  } = calculateParagraphRectsEmptyAreas({
+    firstParagraphRect,
+    firstParagraph,
+    secondParagraphRect,
+    secondParagraph,
+  });
+  if (emptyAreaDifference > 0) {
+    recursiveClosure({
+      firstParagraphRectEmptyArea,
+      secondParagraphRectEmptyArea,
+    });
+  }
+
+  function recursiveClosure({
+    firstParagraphRectEmptyArea,
+    secondParagraphRectEmptyArea,
+  }: {
+    firstParagraphRectEmptyArea: number;
+    secondParagraphRectEmptyArea: number;
+  }) {
+    const decrementStep = 10;
+    const rectWithGreaterEmptyArea =
+      firstParagraphRectEmptyArea > secondParagraphRectEmptyArea
+        ? firstParagraphRect
+        : secondParagraphRect;
+
+    /* Instead of mutating the paragraph rects right away, create copies with
+    the changes and then check if the changes are satisfactory before applying
+    them */
+    const firstParagraphRectWithChanges = {
+      ...firstParagraphRect,
+      [separationDimension]:
+        rectWithGreaterEmptyArea === firstParagraphRect
+          ? firstParagraphRect[separationDimension] - decrementStep
+          : firstParagraphRect[separationDimension] + decrementStep,
+    };
+    const secondParagraphRectWithChanges = {
+      ...secondParagraphRect,
+      ...(rectWithGreaterEmptyArea === secondParagraphRect
+        ? {
+            [separationDimension]:
+              secondParagraphRect[separationDimension] - decrementStep,
+            /* If the second paragraph is decreasing in size, it needs to be
+            pushed forward */
+            [coordinateEquivalentToSeparationDimension]:
+              secondParagraphRect[coordinateEquivalentToSeparationDimension] +
+              decrementStep,
+          }
+        : {
+            [separationDimension]:
+              secondParagraphRect[separationDimension] + decrementStep,
+            /* If the second paragraph is increasing in size, it needs to be
+            pulled back */
+            [coordinateEquivalentToSeparationDimension]:
+              secondParagraphRect[coordinateEquivalentToSeparationDimension] -
+              decrementStep,
+          }),
+    };
+
+    const newEmptyAreas = calculateParagraphRectsEmptyAreas({
+      firstParagraphRect: firstParagraphRectWithChanges,
+      firstParagraph,
+      secondParagraphRect: secondParagraphRectWithChanges,
+      secondParagraph,
+    });
+
+    const isSameRectWithGreaterEmptyArea =
+      (firstParagraphRectEmptyArea > secondParagraphRectEmptyArea &&
+        newEmptyAreas.firstParagraphRectEmptyArea >
+          newEmptyAreas.secondParagraphRectEmptyArea) ||
+      (firstParagraphRectEmptyArea < secondParagraphRectEmptyArea &&
+        newEmptyAreas.firstParagraphRectEmptyArea <
+          newEmptyAreas.secondParagraphRectEmptyArea);
+    /* If the rect that had the greater empty area now would have the smaller
+    area, then stop (using this as the condition to stop the recursive loop
+    because a condition of having a difference of 0 between the empty areas is
+    almost impossible to be met, so this condition prevents an infinite loop) */
+    if (!isSameRectWithGreaterEmptyArea) return;
+
+    /* If the rect that had the greater empty area still has the greater empty
+    area, then commit the changes */
+    firstParagraphRect[separationDimension] =
+      firstParagraphRectWithChanges[separationDimension];
+    secondParagraphRect[separationDimension] =
+      secondParagraphRectWithChanges[separationDimension];
+    secondParagraphRect[coordinateEquivalentToSeparationDimension] =
+      secondParagraphRectWithChanges[coordinateEquivalentToSeparationDimension];
+
+    // Continue the loop
+    recursiveClosure(newEmptyAreas);
+  }
+}
+
 /** Should only be used when there's 2 paragraphs in the slide. */
 function separateParagraphsRect({
   paragraphsRect,
   mainDimension,
+  paragraphs,
 }: {
   paragraphsRect: IRect;
   mainDimension: Dimension;
+  paragraphs: string[];
 }) {
   const secondaryDimension: Dimension =
     mainDimension === 'width' ? 'height' : 'width';
@@ -697,7 +867,7 @@ function separateParagraphsRect({
     paragraphsRect[secondaryDimension] -
     firstParagraphRectSecondaryDimensionMeasure;
 
-  return [
+  const paragraphRects = [
     {
       [coordinateEquivalentToMainDimension]:
         paragraphsRect[coordinateEquivalentToMainDimension],
@@ -715,16 +885,26 @@ function separateParagraphsRect({
       [mainDimension]: paragraphsRect[mainDimension],
       [secondaryDimension]: secondParagraphRectSecondaryDimensionMeasure,
     } as unknown as IRect,
-  ] satisfies IRect[];
+  ] as const satisfies IRect[];
+
+  balanceParagraphRectsEmptyArea({
+    paragraphRects,
+    paragraphs,
+    separationDimension: secondaryDimension,
+  });
+
+  return paragraphRects;
 }
 
 /** Should only be used when there's 2 paragraphs in the slide. */
 function separateParagraphsRectForCornerAssetElement({
   paragraphsRect,
   assetElement,
+  paragraphs,
 }: {
   paragraphsRect: IRect;
   assetElement: AssetElement;
+  paragraphs: string[];
 }) {
   const assetElementVerticalPosition = assetElement.y === 0 ? 'top' : 'bottom';
 
@@ -747,7 +927,7 @@ function separateParagraphsRectForCornerAssetElement({
   const secondParagraphRectMainDimensionMeasure =
     paragraphsRect[mainDimension] - firstParagraphRectMainDimensionMeasure;
 
-  return [
+  const paragraphRects = [
     {
       [coordinateEquivalentToMainDimension]:
         paragraphsRect[coordinateEquivalentToMainDimension],
@@ -765,14 +945,24 @@ function separateParagraphsRectForCornerAssetElement({
       [mainDimension]: secondParagraphRectMainDimensionMeasure,
       [secondaryDimension]: paragraphsRect[secondaryDimension],
     } as unknown as IRect,
-  ] satisfies IRect[];
+  ] as const satisfies IRect[];
+
+  balanceParagraphRectsEmptyArea({
+    paragraphRects,
+    paragraphs,
+    separationDimension: mainDimension,
+  });
+
+  return paragraphRects;
 }
 
 export function generateRects({
   numberOfParagraphs,
+  paragraphs,
   assetElement,
 }: {
   numberOfParagraphs: 0 | 1 | 2;
+  paragraphs: string[];
   assetElement: AssetElement;
 }) {
   const isFullWidthAssetElement = assetElement.width === StageVirtualSize.width;
@@ -803,6 +993,7 @@ export function generateRects({
       const paragraphRects = separateParagraphsRect({
         mainDimension,
         paragraphsRect,
+        paragraphs,
       });
       rectsWithoutColor = {
         titleRect,
@@ -837,6 +1028,7 @@ export function generateRects({
       const paragraphRects = separateParagraphsRectForCornerAssetElement({
         paragraphsRect,
         assetElement,
+        paragraphs,
       });
       rectsWithoutColor = {
         titleRect,

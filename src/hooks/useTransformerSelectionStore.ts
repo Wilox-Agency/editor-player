@@ -4,7 +4,8 @@ import { create } from 'zustand';
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { TextSizes } from '@/utils/validation';
-import { CustomKonvaAttributes, convertScale } from '@/utils/konva';
+import { CustomKonvaAttributes } from '@/utils/konva';
+import { convertScale } from '@/utils/konva/scale';
 import type { KonvaNodeWithType } from '@/utils/types';
 
 type TransformerSelection = KonvaNodeWithType | Konva.Node[] | undefined;

@@ -3,8 +3,12 @@ import { type } from 'arktype';
 
 import { type AssetType, generateAssetAttributes } from './asset';
 import { generateRects } from './rect';
-import { fitTextIntoRect, generateTextAttributes } from './text';
-import { getElementThatContainsText } from '@/utils/slidesPlayer/setTextContainers';
+import {
+  baseAttributesByTextType,
+  fitTextIntoRect,
+  generateTextAttributes,
+} from './text';
+import { getElementThatContainsText } from '@/utils/konva/text';
 import { findLast } from '@/utils/array';
 import type { CanvasElement, CanvasElementOfType, Slide } from '@/utils/types';
 
@@ -109,15 +113,7 @@ async function generateSlideWithSubSlides(
       textContainer.fill = unusedRectColors[0];
     }
 
-    /* TODO: Export the base attributes from 'utils/generateSlides/text' and
-    import here */
-    const baseAttributes = {
-      fontFamily: 'Arial',
-      fontSize: 32,
-      lineHeight: 1,
-      letterSpacing: 0,
-      fontStyle: '',
-    };
+    const baseAttributes = baseAttributesByTextType.paragraph;
     // Get the new font size, width and height
     const padding = 40;
     const { fontSize, width, height } = fitTextIntoRect(

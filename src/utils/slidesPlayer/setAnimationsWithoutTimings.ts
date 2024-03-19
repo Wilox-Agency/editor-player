@@ -1,12 +1,12 @@
 import type { IRect } from 'konva/lib/types';
 
-import { getCanvasElementRect } from './sizes';
 import type {
   AnimationWithoutTimings,
   CanvasElementWithAnimationAttributes,
   CanvasElementWithAnimationsWithoutTimings,
 } from './sharedTypes';
 import { StageVirtualSize, defaultElementAttributes } from '@/utils/konva';
+import { getCanvasElementRect } from '@/utils/konva/rect';
 import { pipe } from '@/utils/pipe';
 import { checkProperty } from '@/utils/validation';
 

@@ -4,11 +4,11 @@ import * as Popover from '@radix-ui/react-popover';
 
 import styles from '../KonvaToolbar.module.css';
 
+import { defaultElementAttributes } from '@/utils/konva';
 import {
-  defaultElementAttributes,
   getIsAutoTextWidth,
   getTextWidthChangeMultiplier,
-} from '@/utils/konva';
+} from '@/utils/konva/text';
 import {
   TextSizes,
   validateFontSize,

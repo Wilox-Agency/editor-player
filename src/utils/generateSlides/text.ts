@@ -3,6 +3,25 @@ import type { IRect } from 'konva/lib/types';
 import { TextSizes } from '@/utils/validation';
 import type { CanvasElementOfType } from '@/utils/types';
 
+type TextType = 'title' | 'paragraph';
+
+export const baseAttributesByTextType = {
+  title: {
+    fontFamily: 'Arial',
+    fontSize: 80,
+    lineHeight: 1,
+    letterSpacing: -4,
+    fontStyle: 'bold',
+  },
+  paragraph: {
+    fontFamily: 'Arial',
+    fontSize: 32,
+    lineHeight: 1,
+    letterSpacing: 0,
+    fontStyle: '',
+  },
+} satisfies Record<TextType, Parameters<typeof fitTextIntoRect>[1]>;
+
 function getTextWidth(
   text: string,
   {
@@ -180,26 +199,11 @@ export function fitTextIntoRect(
 }
 
 export function generateTextAttributes(
-  text: { type: 'title' | 'paragraph'; value: string },
+  text: { type: TextType; value: string },
   containingRect: IRect
 ) {
   const padding = 40;
-  const baseAttributes =
-    text.type === 'title'
-      ? {
-          fontFamily: 'Arial',
-          fontSize: 80,
-          lineHeight: 1,
-          letterSpacing: -4,
-          fontStyle: 'bold',
-        }
-      : {
-          fontFamily: 'Arial',
-          fontSize: 32,
-          lineHeight: 1,
-          letterSpacing: 0,
-          fontStyle: '',
-        };
+  const baseAttributes = baseAttributesByTextType[text.type];
   const { width, height, fontSize } = fitTextIntoRect(
     text.value,
     baseAttributes,

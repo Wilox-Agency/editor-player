@@ -5,16 +5,14 @@ import useImage from 'use-image';
 
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import { useVideo } from '@/hooks/useVideo';
+import { getCanvasImageIntrinsicSize } from '@/utils/konva/asset';
+import { waitUntilKonvaNodeSizeIsCalculated } from '@/utils/konva/misc';
 import { mergeRefs } from '@/utils/mergeRefs';
 import type {
   CanvasElementOfTypeWithActions,
   RemoveIndex,
   UncroppedImageRect,
 } from '@/utils/types';
-import {
-  getCanvasImageIntrinsicSize,
-  waitUntilKonvaNodeSizeIsCalculated,
-} from '@/utils/konva';
 
 type PrimitiveImageProps = Pick<
   RemoveIndex<Konva.ImageConfig>,

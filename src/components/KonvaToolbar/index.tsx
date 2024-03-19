@@ -31,12 +31,14 @@ import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionSto
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
 import {
   defaultElementAttributes,
-  getIsAutoTextWidth,
-  getTextWidthChangeMultiplier,
   saveCanvas,
   StageVirtualSize,
-  waitUntilKonvaNodeSizeIsCalculated,
 } from '@/utils/konva';
+import {
+  getIsAutoTextWidth,
+  getTextWidthChangeMultiplier,
+} from '@/utils/konva/text';
+import { waitUntilKonvaNodeSizeIsCalculated } from '@/utils/konva/misc';
 import type {
   CanvasElement,
   CanvasElementOfType,

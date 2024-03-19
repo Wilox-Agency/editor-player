@@ -13,13 +13,10 @@ import {
   usePlayerTimeline,
   usePlayerTimelineStore,
 } from '@/hooks/usePlayerTimeline';
-import {
-  CanvasComponentByType,
-  StageVirtualSize,
-  waitUntilKonvaNodeSizeIsCalculated,
-} from '@/utils/konva';
+import { CanvasComponentByType, StageVirtualSize } from '@/utils/konva';
+import { getCanvasElementRect } from '@/utils/konva/rect';
+import { waitUntilKonvaNodeSizeIsCalculated } from '@/utils/konva/misc';
 import { combineSlides, createTweens } from '@/utils/slidesPlayer';
-import { getCanvasElementRect } from '@/utils/slidesPlayer/sizes';
 import type { Slide } from '@/utils/types';
 
 import { Slider } from '@/components/Slider';

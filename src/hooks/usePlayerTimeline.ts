@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import gsap from 'gsap';
 
-import { getAllVideoElementsFromNode } from '@/utils/konva';
+import { getAllVideoElementsFromNode } from '@/utils/konva/misc';
 
 type PlayerTimelineStore = {
   timelineCurrentTime: number;

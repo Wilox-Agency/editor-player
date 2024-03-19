@@ -7,11 +7,9 @@ import {
   useTransformerSelectionStore,
 } from '@/hooks/useTransformerSelectionStore';
 import { useNodeBeingEditedStore } from '@/hooks/useNodeBeingEditedStore';
-import {
-  CustomKonvaAttributes,
-  convertScale,
-  getCanvasImageIntrinsicSize,
-} from '@/utils/konva';
+import { CustomKonvaAttributes } from '@/utils/konva';
+import { getCanvasImageIntrinsicSize } from '@/utils/konva/asset';
+import { convertScale } from '@/utils/konva/scale';
 import { MouseButton } from '@/utils/input';
 import type { CanvasElementOfTypeWithActions } from '@/utils/types';
 

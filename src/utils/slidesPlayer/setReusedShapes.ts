@@ -2,9 +2,9 @@ import deepEqual from 'fast-deep-equal';
 import { excludeKeys, includeKeys } from 'filter-obj';
 
 import { getRectMorphScore } from './rectMorphScore';
-import { getCanvasElementRect } from './sizes';
 import { assertType } from './assert';
 import type { CanvasElementWithAnimationAttributes } from './sharedTypes';
+import { getCanvasElementRect } from '@/utils/konva/rect';
 import type {
   CanvasElement,
   CanvasElementAttribute,

@@ -16,12 +16,12 @@ import styles from './Text.module.css';
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
 import { useNodeBeingEditedStore } from '@/hooks/useNodeBeingEditedStore';
 import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
+import { convertScale } from '@/utils/konva/scale';
 import {
-  convertScale,
   getIsAutoTextWidth,
   getMinTextNodeWidthForCurrentTextFormat,
   getMinTextAreaWidthForCurrentTextFormat,
-} from '@/utils/konva';
+} from '@/utils/konva/text';
 import { TextSizes } from '@/utils/validation';
 import { MouseButton } from '@/utils/input';
 import { mergeRefs } from '@/utils/mergeRefs';

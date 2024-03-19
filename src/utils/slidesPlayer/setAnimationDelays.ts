@@ -1,6 +1,6 @@
 import { ENTER_EXIT_ELEMENT_TRANSITION_DURATION } from './setAnimationTimings';
-import { getCanvasElementRect } from './sizes';
 import type { CanvasElementWithAnimationsWithoutTimings } from './sharedTypes';
+import { getCanvasElementRect } from '@/utils/konva/rect';
 import { checkProperty } from '@/utils/validation';
 import type { Slide } from '@/utils/types';
 

@@ -1,7 +1,8 @@
 import gsap from 'gsap';
 
 import type { Dimension, Size } from './sharedTypes';
-import { StageVirtualSize, getCanvasImageIntrinsicSize } from '@/utils/konva';
+import { StageVirtualSize } from '@/utils/konva';
+import { getCanvasImageIntrinsicSize } from '@/utils/konva/asset';
 import { randomFloatFromInterval, randomIntFromInterval } from '@/utils/random';
 import type { CanvasElementOfType, DistributiveOmit } from '@/utils/types';
 

@@ -2,7 +2,7 @@ import { type RefObject, useEffect, useRef } from 'react';
 import Konva from 'konva';
 
 import { useTransformerSelectionStore } from '@/hooks/useTransformerSelectionStore';
-import { convertScale } from '@/utils/konva';
+import { convertScale } from '@/utils/konva/scale';
 import { MouseButton } from '@/utils/input';
 
 export function useSelectionRect({

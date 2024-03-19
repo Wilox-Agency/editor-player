@@ -1,6 +1,7 @@
 import type { IRect } from 'konva/lib/types';
 
 import { StageVirtualSize } from '@/utils/konva';
+import { getRectWithAbsolutePosition } from '@/utils/konva/rect';
 
 // function getIntersectionScore(firstShape: IRect, secondShape: IRect) {
 //   const intersectionRect = getIntersectionRect(firstShape, secondShape);
@@ -31,19 +32,44 @@ function getRectSizeScore(firstShape: IRect, secondShape: IRect) {
   return (widthScore + heightScore) / 2;
 }
 
-function getRectPositionScore(firstShape: IRect, secondShape: IRect) {
-  const xDifference = Math.abs(firstShape.x - secondShape.x);
-  const yDifference = Math.abs(firstShape.y - secondShape.y);
+function getRectPositionScore(firstRect: IRect, secondRect: IRect) {
+  const firstRectWithAbsolutePosition = getRectWithAbsolutePosition(firstRect);
+  const secondRectWithAbsolutePosition =
+    getRectWithAbsolutePosition(secondRect);
+
+  /** Represents the smallest of the following: distance between lefts or
+   * distance between rights */
+  const smallestHorizontalPositionDistance = Math.min(
+    Math.abs(
+      firstRectWithAbsolutePosition.left - secondRectWithAbsolutePosition.left
+    ),
+    Math.abs(
+      firstRectWithAbsolutePosition.right - secondRectWithAbsolutePosition.right
+    )
+  );
+  /** Represents the smallest of the following: distance between tops or
+   * distance between bottoms */
+  const smallestVerticalPositionDistance = Math.min(
+    Math.abs(
+      firstRectWithAbsolutePosition.top - secondRectWithAbsolutePosition.top
+    ),
+    Math.abs(
+      firstRectWithAbsolutePosition.bottom -
+        secondRectWithAbsolutePosition.bottom
+    )
+  );
 
   const halfStageWidth = StageVirtualSize.width / 2;
   const halfStageHeight = StageVirtualSize.height / 2;
 
   // Note that these scores can be negative
-  const xScore = 1 - xDifference / halfStageWidth;
-  const yScore = 1 - yDifference / halfStageHeight;
+  const horizontalPositionScore =
+    1 - smallestHorizontalPositionDistance / halfStageWidth;
+  const verticalPositionScore =
+    1 - smallestVerticalPositionDistance / halfStageHeight;
 
   // Calculate the mean of the scores
-  return (xScore + yScore) / 2;
+  return (horizontalPositionScore + verticalPositionScore) / 2;
 }
 
 export function getRectMorphScore(firstShape: IRect, secondShape: IRect) {

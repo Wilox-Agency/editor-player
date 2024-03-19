@@ -1,14 +1,8 @@
 import Konva from 'konva';
 import type { IRect } from 'konva/lib/types';
 
+import { getRectWithAbsolutePosition } from '@/utils/konva/rect';
 import type { CanvasElement, CanvasElementOfType } from '@/utils/types';
-
-type RectWithAbsolutePosition = IRect & {
-  left: number;
-  right: number;
-  top: number;
-  bottom: number;
-};
 
 export function getTextSize(canvasTextElement: CanvasElementOfType<'text'>) {
   const textNode = new Konva.Text(canvasTextElement);
@@ -29,16 +23,6 @@ export function getCanvasElementRect(canvasElement: CanvasElement) {
     y: canvasElement.y || 0,
     ...size,
   };
-}
-
-function getRectWithAbsolutePosition(rect: IRect) {
-  return {
-    ...rect,
-    left: rect.x,
-    right: rect.x + rect.width,
-    top: rect.y,
-    bottom: rect.y + rect.height,
-  } satisfies RectWithAbsolutePosition;
 }
 
 export function getIntersectionRect(firstShape: IRect, secondShape: IRect) {

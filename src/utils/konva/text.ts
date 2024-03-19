@@ -4,6 +4,44 @@ import { getCanvasElementRect, getIntersectionRect } from '@/utils/konva/rect';
 import { findLast } from '@/utils/array';
 import type { CanvasElement, CanvasElementOfType } from '@/utils/types';
 
+export function getCanvasTextWidth(
+  lineOrLines: string | string[],
+  {
+    fontFamily,
+    fontSize,
+    letterSpacing,
+    fontStyle,
+  }: {
+    fontFamily: string;
+    fontSize: number;
+    letterSpacing: number;
+    fontStyle: string;
+  }
+) {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d')!;
+  ctx.font = `${fontStyle} ${fontSize}px ${fontFamily}`;
+
+  const lines = typeof lineOrLines === 'string' ? [lineOrLines] : lineOrLines;
+  const width = Math.max(
+    ...lines.map((line) => {
+      const widthWithoutLetterSpacing = ctx.measureText(line).width;
+      /* This width does not include the spacing added (or removed, if letter
+      spacing is negative) after the last character of each line, as it doesn't
+      fit the apparent width of the text and doesn't affect the format of the
+      text (only in Konva, that's not true for HTML+CSS) and therefore should
+      not be considered */
+      const letterSpacingWidth =
+        lineOrLines.length > 0 ? letterSpacing * (lineOrLines.length - 1) : 0;
+      return widthWithoutLetterSpacing + letterSpacingWidth;
+    })
+  );
+
+  canvas.remove();
+
+  return width;
+}
+
 export function getTextSize(canvasTextElement: CanvasElementOfType<'text'>) {
   const textNode = new Konva.Text(canvasTextElement);
   return textNode.size();
@@ -58,29 +96,13 @@ export function getMinTextNodeWidthForCurrentTextFormat(
     fontStyle = textNode.fontStyle(),
   } = {}
 ) {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d')!;
-  ctx.font = `${fontStyle} ${fontSize}px ${fontFamily}`;
-
-  const minWidth = Math.max(
-    ...textNode.textArr.map((textLine) => {
-      const widthWithoutLetterSpacing = ctx.measureText(textLine.text).width;
-      /* This width does not include the spacing added (or removed, if letter
-      spacing is negative) after the last character of each line, as it doesn't
-      fit the apparent width of the text and doesn't affect the format of the
-      text (only in Konva, that's not true for HTML+CSS) and therefore should
-      not be considered */
-      const letterSpacingWidth =
-        textLine.text.length > 0
-          ? letterSpacing * (textLine.text.length - 1)
-          : 0;
-      return widthWithoutLetterSpacing + letterSpacingWidth;
-    })
-  );
-
-  canvas.remove();
-
-  return minWidth;
+  const lines = textNode.textArr.map((line) => line.text);
+  return getCanvasTextWidth(lines, {
+    fontFamily,
+    fontSize,
+    fontStyle,
+    letterSpacing,
+  });
 }
 
 /**

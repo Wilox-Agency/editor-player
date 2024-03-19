@@ -1,5 +1,6 @@
 import type { IRect } from 'konva/lib/types';
 
+import { getCanvasTextWidth } from '@/utils/konva/text';
 import { TextSizes } from '@/utils/validation';
 import type { CanvasElementOfType } from '@/utils/types';
 
@@ -21,38 +22,6 @@ export const baseAttributesByTextType = {
     fontStyle: '',
   },
 } satisfies Record<TextType, Parameters<typeof fitTextIntoRect>[1]>;
-
-function getTextWidth(
-  text: string,
-  {
-    fontFamily,
-    fontSize,
-    letterSpacing,
-    fontStyle,
-  }: {
-    fontFamily: string;
-    fontSize: number;
-    letterSpacing: number;
-    fontStyle: string;
-  }
-) {
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d')!;
-  ctx.font = `${fontStyle} ${fontSize}px ${fontFamily}`;
-
-  const widthWithoutLetterSpacing = ctx.measureText(text).width;
-  /* This width does not include the spacing added (or removed, if letter
-  spacing is negative) after the last character of each line, as it doesn't fit
-  the apparent width of the text and doesn't affect the format of the text (only
-  in Konva, that's not true for HTML+CSS) and therefore should not be considered */
-  const letterSpacingWidth =
-    text.length > 0 ? letterSpacing * (text.length - 1) : 0;
-  const width = widthWithoutLetterSpacing + letterSpacingWidth;
-
-  canvas.remove();
-
-  return width;
-}
 
 export function fitTextIntoRect(
   text: string,
@@ -97,7 +66,7 @@ export function fitTextIntoRect(
       return tryAgainWithSmallerFontSize();
     }
 
-    let lineWidth = getTextWidth(line, textAttributes);
+    let lineWidth = getCanvasTextWidth(line, textAttributes);
     // If line doesn't fit entirely, break the line into mutiple fitting ones
     if (lineWidth > rect.width) {
       while (line.length > 0) {
@@ -115,7 +84,7 @@ export function fitTextIntoRect(
         while (low < high) {
           const mid = Math.floor((low + high) / 2);
           const substr = line.slice(0, mid + 1);
-          const substrWidth = getTextWidth(substr, textAttributes);
+          const substrWidth = getCanvasTextWidth(substr, textAttributes);
 
           if (substrWidth <= rect.width) {
             low = mid + 1;
@@ -149,13 +118,13 @@ export function fitTextIntoRect(
           // Re-cut the substring found at the space/dash position
           low = wrapIndex;
           match = match.slice(0, low);
-          matchWidth = getTextWidth(match, textAttributes);
+          matchWidth = getCanvasTextWidth(match, textAttributes);
         }
 
         match = match.trimEnd();
         textArr.push({
           text: match,
-          width: getTextWidth(match, textAttributes),
+          width: getCanvasTextWidth(match, textAttributes),
         });
         currentTextWidth = Math.max(currentTextWidth, matchWidth);
         currentTextHeight += lineHeightInPixels;
@@ -164,7 +133,7 @@ export function fitTextIntoRect(
         line = line.trimStart();
         if (line.length > 0) {
           // Check if the remaining text would fit on one line
-          lineWidth = getTextWidth(line, textAttributes);
+          lineWidth = getCanvasTextWidth(line, textAttributes);
           if (lineWidth <= rect.width) {
             if (currentTextHeight + lineHeightInPixels > rect.height) {
               return tryAgainWithSmallerFontSize();
@@ -173,7 +142,7 @@ export function fitTextIntoRect(
             // If it does, add the line and break out of the loop
             textArr.push({
               text: line,
-              width: getTextWidth(line, textAttributes),
+              width: getCanvasTextWidth(line, textAttributes),
             });
             currentTextHeight += lineHeightInPixels;
             currentTextWidth = Math.max(currentTextWidth, lineWidth);
@@ -184,7 +153,7 @@ export function fitTextIntoRect(
     } else {
       textArr.push({
         text: line,
-        width: getTextWidth(line, textAttributes),
+        width: getCanvasTextWidth(line, textAttributes),
       });
       currentTextHeight += lineHeightInPixels;
       currentTextWidth = Math.max(currentTextWidth, lineWidth);

@@ -8,7 +8,6 @@ import { AnimationPlayer } from '@/components/AnimationPlayer';
 const router = createBrowserRouter([
   {
     path: '/',
-    // TODO: Create home element
     element: <Home />,
   },
   {

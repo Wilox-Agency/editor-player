@@ -17,6 +17,7 @@ import { CanvasComponentByType, StageVirtualSize } from '@/utils/konva';
 import { getCanvasElementRect } from '@/utils/konva/rect';
 import { waitUntilKonvaNodeSizeIsCalculated } from '@/utils/konva/misc';
 import { combineSlides, createTweens } from '@/utils/slidesPlayer';
+import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
 import type { Slide } from '@/utils/types';
 
 import { Slider } from '@/components/Slider';
@@ -1075,12 +1076,16 @@ export function AnimationPlayer() {
     const stage = stageRef.current;
     if (!stage) return;
 
-    // Load canvas elements
+    // Generate animations
     const combinedSlides = combineSlides(slidesFromHomePage || slides);
     combinedSlidesRef.current = combinedSlides;
-    loadCanvasTree(
-      combinedSlides.map(({ attributes: canvasElement }) => canvasElement)
+    // Load canvas tree
+    const canvasElements = combinedSlides.map(
+      ({ attributes: canvasElement }) => canvasElement
     );
+    loadCanvasTree(canvasElements);
+    // Prefetch assets
+    prefetchAssetsFromCanvasElements(canvasElements);
   }, [loadCanvasTree, stageRef, slidesFromHomePage]);
 
   useEffect(() => {

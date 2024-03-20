@@ -13,6 +13,7 @@ import { useTransformer } from '@/hooks/useTransformer';
 import { useSelectionRect } from '@/hooks/useSelectionRect';
 import { useImageCropTransformer } from '@/hooks/useImageCropTransformer';
 import { useHoverBorder } from '@/hooks/useHoverBorder';
+import { useNodeSnapping } from '@/hooks/useNodeSnapping';
 import { useResponsiveStage } from '@/hooks/useResponsiveStage';
 import {
   CanvasComponentByType,
@@ -121,6 +122,7 @@ export function Editor() {
   } = useKonvaRefsStore();
   const cropTransformerRef = useRef<Konva.Transformer>(null);
   const cropRectRef = useRef<Konva.Rect>(null);
+  const snapGuideLinesLayerRef = useRef<Konva.Layer>(null);
 
   const { handleSelectNode } = useTransformer();
   const { handleStartSelectionRect } = useSelectionRect({
@@ -138,6 +140,11 @@ export function Editor() {
   });
   const { handleHoverStart, handleHoverEnd } = useHoverBorder({
     hoverBorderTransformerRef,
+  });
+  const { handleDragMove, handleDragEnd } = useNodeSnapping({
+    shapesLayerRef: layerRef,
+    snapGuideLinesLayerRef,
+    transformerRef,
   });
   const { stageWrapperId } = useResponsiveStage({
     stageVirtualWidth: StageVirtualSize.width,
@@ -213,6 +220,8 @@ export function Editor() {
           onMouseMove={handleHoverStart}
           onMouseOut={handleHoverEnd}
           onContextMenu={handleContextMenu}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
           ref={stageRef}
         >
           <Layer ref={layerRef}>
@@ -264,6 +273,7 @@ export function Editor() {
               ref={selectionRectRef}
             />
           </Layer>
+          <Layer ref={snapGuideLinesLayerRef} />
         </Stage>
       </KonvaContextMenu>
 

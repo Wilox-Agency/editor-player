@@ -26,7 +26,7 @@ function addActionsToElement<TElement extends CanvasElement>(
   return {
     ...initialAttributes,
     saveAttrs: (
-      attributes: Partial<DistributiveOmit<TElement, 'elementId' | 'type'>>
+      attributes: Partial<DistributiveOmit<TElement, 'id' | 'type'>>
     ) => {
       set((state) => ({
         canvasTree: state.canvasTree.map((element) => {

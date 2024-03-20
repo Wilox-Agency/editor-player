@@ -32,11 +32,19 @@ export function fitTextIntoRect(
     letterSpacing: number;
     fontStyle: string;
   },
-  rect: { width: number; height: number }
+  rect: {
+    width: number;
+    height: number;
+    /** @default 40 */
+    padding?: number;
+  }
 ): { width: number; height: number; fontSize: number } {
   const lines = text.split('\n');
   const lineHeightInPixels =
     textAttributes.lineHeight * textAttributes.fontSize;
+  const padding = rect.padding || 40;
+  const maxWidth = rect.width - padding * 2;
+  const maxHeight = rect.height - padding * 2;
   let currentTextWidth = 0;
   let currentTextHeight = 0;
   const textArr: { text: string; width: number }[] = [];
@@ -62,20 +70,20 @@ export function fitTextIntoRect(
   }
 
   for (let line of lines) {
-    if (currentTextHeight + lineHeightInPixels > rect.height) {
+    if (currentTextHeight + lineHeightInPixels > maxHeight) {
       return tryAgainWithSmallerFontSize();
     }
 
     let lineWidth = getCanvasTextWidth(line, textAttributes);
     // If line doesn't fit entirely, break the line into mutiple fitting ones
-    if (lineWidth > rect.width) {
+    if (lineWidth > maxWidth) {
       while (line.length > 0) {
         let low = 0;
         let high = line.length;
         let match = '';
         let matchWidth = 0;
 
-        if (currentTextHeight + lineHeightInPixels > rect.height) {
+        if (currentTextHeight + lineHeightInPixels > maxHeight) {
           return tryAgainWithSmallerFontSize();
         }
 
@@ -86,7 +94,7 @@ export function fitTextIntoRect(
           const substr = line.slice(0, mid + 1);
           const substrWidth = getCanvasTextWidth(substr, textAttributes);
 
-          if (substrWidth <= rect.width) {
+          if (substrWidth <= maxWidth) {
             low = mid + 1;
             match = substr;
             matchWidth = substrWidth;
@@ -108,7 +116,7 @@ export function fitTextIntoRect(
         let wrapIndex;
         const nextChar = line[match.length];
         const nextIsSpaceOrDash = nextChar === ' ' || nextChar === '-';
-        if (nextIsSpaceOrDash && matchWidth <= rect.width) {
+        if (nextIsSpaceOrDash && matchWidth <= maxWidth) {
           wrapIndex = match.length;
         } else {
           wrapIndex =
@@ -134,8 +142,8 @@ export function fitTextIntoRect(
         if (line.length > 0) {
           // Check if the remaining text would fit on one line
           lineWidth = getCanvasTextWidth(line, textAttributes);
-          if (lineWidth <= rect.width) {
-            if (currentTextHeight + lineHeightInPixels > rect.height) {
+          if (lineWidth <= maxWidth) {
+            if (currentTextHeight + lineHeightInPixels > maxHeight) {
               return tryAgainWithSmallerFontSize();
             }
 
@@ -171,15 +179,11 @@ export function generateTextAttributes(
   text: { type: TextType; value: string },
   containingRect: IRect
 ) {
-  const padding = 40;
   const baseAttributes = baseAttributesByTextType[text.type];
   const { width, height, fontSize } = fitTextIntoRect(
     text.value,
     baseAttributes,
-    {
-      width: containingRect.width - padding * 2,
-      height: containingRect.height - padding * 2,
-    }
+    { width: containingRect.width, height: containingRect.height }
   );
 
   const textAttributes = {

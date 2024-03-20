@@ -115,14 +115,10 @@ async function generateSlideWithSubSlides(
 
     const baseAttributes = baseAttributesByTextType.paragraph;
     // Get the new font size, width and height
-    const padding = 40;
     const { fontSize, width, height } = fitTextIntoRect(
       paragraph,
       baseAttributes,
-      {
-        width: textContainer.width! - padding * 2,
-        height: textContainer.height! - padding * 2,
-      }
+      { width: textContainer.width!, height: textContainer.height! }
     );
 
     const textAttributes = {

@@ -700,15 +700,15 @@ function calculateParagraphRectsEmptyAreas({
   const firstParagraphRectEmptyArea = getParagraphRectEmptyArea(
     firstParagraphRect,
     fitTextIntoRect(firstParagraph, baseAttributesByTextType.paragraph, {
-      width: firstParagraphRect.width - 40 * 2,
-      height: firstParagraphRect.height - 40 * 2,
+      width: firstParagraphRect.width,
+      height: firstParagraphRect.height,
     })
   );
   const secondParagraphRectEmptyArea = getParagraphRectEmptyArea(
     secondParagraphRect,
     fitTextIntoRect(secondParagraph, baseAttributesByTextType.paragraph, {
-      width: secondParagraphRect.width - 40 * 2,
-      height: secondParagraphRect.height - 40 * 2,
+      width: secondParagraphRect.width,
+      height: secondParagraphRect.height,
     })
   );
   const emptyAreaDifference = Math.abs(

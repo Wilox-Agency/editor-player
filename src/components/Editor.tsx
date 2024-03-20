@@ -20,6 +20,7 @@ import {
   saveCanvas,
   StageVirtualSize,
 } from '@/utils/konva';
+import { checkCtrlOrMetaModifier } from '@/utils/input';
 import type { CanvasElement } from '@/utils/types';
 
 import { KonvaContextMenu } from '@/components/KonvaContextMenu';
@@ -170,17 +171,8 @@ export function Editor() {
   // Add shortcut for saving the canvas
   useEffect(() => {
     function handleSaveShortcut(event: KeyboardEvent) {
-      /**
-       * @see https://stackoverflow.com/questions/10527983/best-way-to-detect-mac-os-x-or-windows-computers-with-javascript-or-jquery
-       */
-      const platform =
-        'userAgentData' in navigator
-          ? (navigator.userAgentData as { platform: string }).platform
-          : navigator.platform;
-      const isAppleDevice = /(Mac|iPhone|iPod|iPad)/i.test(platform);
-
-      const isMetaPress = isAppleDevice ? event.metaKey : event.ctrlKey;
-      const isSaveShortcut = isMetaPress && event.key === 's';
+      const hasCtrlOrMetaModifier = checkCtrlOrMetaModifier(event);
+      const isSaveShortcut = hasCtrlOrMetaModifier && event.key === 's';
 
       if (isSaveShortcut) {
         event.preventDefault();

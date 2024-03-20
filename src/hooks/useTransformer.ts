@@ -39,11 +39,11 @@ export function useTransformer() {
     const isNodeSelectable = getIsNodeSelectable(event.target);
     if (!isNodeSelectable) return;
 
-    const isMetaPress =
+    const hasModifierKey =
       event.evt.shiftKey || event.evt.ctrlKey || event.evt.metaKey;
 
-    // When it's not meta press, select the clicked node
-    if (!isMetaPress) {
+    // When none of the modifier keys are pressed, select the clicked node
+    if (!hasModifierKey) {
       selectNodes([event.target]);
       return;
     }
@@ -51,7 +51,8 @@ export function useTransformer() {
     const isTargetAlreadySelected =
       getSelectedNodes().indexOf(event.target) >= 0;
 
-    // When it's meta press, add/remove the node from the current selection
+    /* When any of the modifier keys is pressed, add/remove the node from
+    the current selection */
     if (isTargetAlreadySelected) {
       const nodesWithoutTarget = getSelectedNodes().filter(
         (node) => node !== event.target

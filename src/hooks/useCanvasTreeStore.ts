@@ -1,5 +1,7 @@
 import { create, type StoreApi } from 'zustand';
+import { includeKeys } from 'filter-obj';
 
+import { type Change, useUndoRedoStore } from '@/hooks/useUndoRedo';
 import type {
   CanvasElement,
   CanvasElementWithActions,
@@ -33,6 +35,24 @@ function addActionsToElement<TElement extends CanvasElement>(
           if (element.id !== initialAttributes.id) {
             return element;
           }
+
+          /* FIXME: When changing multiple elements at once, the changes are
+          saved separately. Maybe this can be solved by preventing the change
+          from being saved by the components updating their nodes and by adding
+          a global listener (don't know if there's one and where it would be) to
+          save the changes together. */
+          // Add the change to the undo/redo store
+          useUndoRedoStore.getState().addChange({
+            element: {
+              id: element.id,
+              type: element.type,
+            },
+            before: includeKeys(
+              element,
+              Object.keys(attributes) as (keyof typeof element)[]
+            ),
+            after: attributes,
+          } as Change);
 
           return { ...element, ...attributes };
         }),

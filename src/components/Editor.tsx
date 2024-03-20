@@ -14,6 +14,7 @@ import { useSelectionRect } from '@/hooks/useSelectionRect';
 import { useImageCropTransformer } from '@/hooks/useImageCropTransformer';
 import { useHoverBorder } from '@/hooks/useHoverBorder';
 import { useNodeSnapping } from '@/hooks/useNodeSnapping';
+import { useUndoRedoShortcuts } from '@/hooks/useUndoRedo';
 import { useResponsiveStage } from '@/hooks/useResponsiveStage';
 import {
   CanvasComponentByType,
@@ -147,6 +148,7 @@ export function Editor() {
     snapGuideLinesLayerRef,
     transformerRef,
   });
+  useUndoRedoShortcuts();
   const { stageWrapperId } = useResponsiveStage({
     stageVirtualWidth: StageVirtualSize.width,
     stageVirtualHeight: StageVirtualSize.height,

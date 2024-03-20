@@ -8,19 +8,10 @@ import {
   fitTextIntoRect,
   generateTextAttributes,
 } from './text';
+import type { SlideshowContent } from './sharedTypes';
 import { getElementThatContainsText } from '@/utils/konva/text';
 import { findLast } from '@/utils/array';
 import type { CanvasElement, CanvasElementOfType, Slide } from '@/utils/types';
-
-type PresentationContent = {
-  title: string;
-  asset: { type: AssetType; url: string };
-  slides: {
-    title: string;
-    paragraphs: string[];
-    asset: { type: AssetType; url: string };
-  }[];
-};
 
 const ColorPalette = {
   black: '#000000',
@@ -62,7 +53,7 @@ function getUnusedRectColorsFromSlide(canvasElements: CanvasElement[]) {
 }
 
 async function generateSlideWithSubSlides(
-  slideContent: PresentationContent['slides'][number]
+  slideContent: SlideshowContent['slides'][number]
 ) {
   // Generate the main slide
   const mainSlide: Slide = await generateSlide({
@@ -202,7 +193,7 @@ export async function generateSlide({
   } satisfies Slide;
 }
 
-export async function generateSlides(presentationContent: PresentationContent) {
+export async function generateSlides(presentationContent: SlideshowContent) {
   // The only piece of text in the first slide will be the presentation title
   const firstSlide: Slide = await generateSlide({
     title: presentationContent.title,

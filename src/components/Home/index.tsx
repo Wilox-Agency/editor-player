@@ -1,21 +1,33 @@
-import { arrayOf, type } from 'arktype';
+import { useNavigate } from 'react-router-dom';
 import { type FormEvent, useId, useState } from 'react';
+import { toast } from 'sonner';
+import { type } from 'arktype';
 import clsx from 'clsx';
 
 import styles from './Home.module.css';
-import { useNavigate } from 'react-router-dom';
-import { generateSlides } from '@/utils/generateSlides';
-import { toast } from 'sonner';
 
-const validateSlideshow = type({
-  title: 'string',
-  asset: { type: "'image' | 'video'", url: 'string' },
-  slides: arrayOf({
-    title: 'string',
-    paragraphs: 'string[]',
-    asset: { type: "'image' | 'video'", url: 'string' },
-  }),
-});
+import { generateSlides } from '@/utils/generateSlides';
+import {
+  firstItemSchema,
+  parseSlideshowBase,
+  restSchema,
+} from '@/utils/generateSlides/parse';
+
+function validateSlideshow(value: unknown) {
+  const arrayResult = type('unknown[]')(value);
+  if (arrayResult.problems) return arrayResult;
+
+  const firstItemResult = firstItemSchema(arrayResult.data[0]);
+  if (firstItemResult.problems) return firstItemResult;
+
+  const restResult = restSchema(arrayResult.data.slice(1));
+  if (restResult.problems) return restResult;
+
+  return {
+    data: [firstItemResult.data, ...restResult.data] as const,
+    problems: undefined,
+  };
+}
 
 export function Home() {
   const jsonTextAreaId = useId();
@@ -41,10 +53,12 @@ export function Home() {
 
     if (!validationResult?.data) return;
 
-    const slideshow = validationResult.data;
+    const slideshowBase = validationResult.data;
     setIsGeneratingSlide(true);
 
-    toast.promise(generateSlides(slideshow), {
+    const slideshowContent = parseSlideshowBase(slideshowBase);
+
+    toast.promise(generateSlides(slideshowContent), {
       loading: 'Generating slide...',
       success: (slides) => {
         navigate('/player', { state: slides });

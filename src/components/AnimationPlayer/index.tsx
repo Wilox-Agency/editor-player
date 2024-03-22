@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import Konva from 'konva';
 import { Group, Layer, Stage, Transformer } from 'react-konva';
@@ -66,6 +66,38 @@ export function AnimationPlayer() {
     retry: false,
   });
 
+  // Generate slides (or get them from the home page)
+  const { data: slides } = useQuery({
+    queryKey: [slidesFromHomePage, slideshowLesson],
+    queryFn: async () => {
+      if (slidesFromHomePage) {
+        return slidesFromHomePage as Slide[];
+      }
+
+      if (slideshowLesson) {
+        /* TODO: Instead of generating the slides every time, check if there are
+        slides already saved alongside the lesson and generate them if not */
+        // Generate slides from the lesson
+        const slidesPromise = generateSlides(
+          parseSlideshowLesson(slideshowLesson)
+        );
+        toast.promise(slidesPromise, {
+          loading: 'Generating slides...',
+          success: 'Slides generated successfully!',
+          error:
+            'Could not generate slides, please check if there are any broken images in the slideshow lesson.',
+        });
+        return await slidesPromise;
+      }
+    },
+  });
+
+  // Generate animations
+  const combinedSlides = useMemo(() => {
+    if (!slides) return undefined;
+    return combineSlides(slides);
+  }, [slides]);
+
   const { canvasTree, loadCanvasTree } = useCanvasTreeStore();
   const { stageRef, layerRef } = useKonvaRefsStore();
   const { stageWrapperId } = useResponsiveStage({
@@ -80,49 +112,19 @@ export function AnimationPlayer() {
     handleChangeTime,
   } = usePlayerTimeline({ layerRef });
 
-  const combinedSlidesRef = useRef<
-    ReturnType<typeof combineSlides> | undefined
-  >(undefined);
-
-  // Setup slides
+  // Setup player
   useEffect(() => {
-    (async () => {
-      const stage = stageRef.current;
-      if (!stage || !slideshowLesson) return;
+    if (!combinedSlides) return;
 
-      let slides: Slide[];
-      if (slidesFromHomePage) {
-        slides = slidesFromHomePage;
-      } else {
-        /* TODO: Instead of generating the slides every time, check if there are
-        slides already saved alongside the lesson and generate them if not */
-        // Generate slides from the lesson
-        const slidesPromise = generateSlides(
-          parseSlideshowLesson(slideshowLesson)
-        );
-        toast.promise(slidesPromise, {
-          loading: 'Generating slides...',
-          success: 'Slides generated successfully!',
-          error:
-            'Could not generate slides, please check if there are any broken images in the slideshow lesson.',
-        });
-        slides = await slidesPromise;
-      }
+    // Load canvas tree
+    const canvasElements = combinedSlides.map(
+      ({ attributes: canvasElement }) => canvasElement
+    );
+    loadCanvasTree(canvasElements);
 
-      // Generate animations
-      const combinedSlides = combineSlides(slides);
-      combinedSlidesRef.current = combinedSlides;
-
-      // Load canvas tree
-      const canvasElements = combinedSlides.map(
-        ({ attributes: canvasElement }) => canvasElement
-      );
-      loadCanvasTree(canvasElements);
-
-      // Prefetch assets
-      prefetchAssetsFromCanvasElements(canvasElements);
-    })();
-  }, [loadCanvasTree, slidesFromHomePage, slideshowLesson, stageRef]);
+    // Prefetch assets
+    prefetchAssetsFromCanvasElements(canvasElements);
+  }, [combinedSlides, loadCanvasTree]);
 
   // Setup the GSAP timeline
   useEffect(() => {
@@ -130,7 +132,6 @@ export function AnimationPlayer() {
       const stage = stageRef.current;
       const nodes = layerRef.current!.getChildren();
       const firstNode = nodes[0];
-      const combinedSlides = combinedSlidesRef.current;
       if (!stage || !firstNode || !combinedSlides) return;
 
       if (!(firstNode instanceof Konva.Group)) {
@@ -182,7 +183,7 @@ export function AnimationPlayer() {
       // Show the nodes that are visible from the start
       nodes.forEach((node) => node.visible(node.opacity() > 0));
     })();
-  }, [canvasTree, layerRef, stageRef, timeline, updateTimelineDuration]);
+  }, [combinedSlides, layerRef, stageRef, timeline, updateTimelineDuration]);
 
   // Clear canvas tree and reset timeline when the component is destroyed
   useEffect(() => {

@@ -1,33 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import { type FormEvent, useId, useState } from 'react';
 import { toast } from 'sonner';
-import { type } from 'arktype';
 import clsx from 'clsx';
 
 import styles from './Home.module.css';
 
 import { generateSlides } from '@/utils/generateSlides';
 import {
-  firstItemSchema,
-  parseSlideshowBase,
-  restSchema,
+  parseSlideshowLesson,
+  slideshowLessonSchema,
 } from '@/utils/generateSlides/parse';
-
-function validateSlideshow(value: unknown) {
-  const arrayResult = type('unknown[]')(value);
-  if (arrayResult.problems) return arrayResult;
-
-  const firstItemResult = firstItemSchema(arrayResult.data[0]);
-  if (firstItemResult.problems) return firstItemResult;
-
-  const restResult = restSchema(arrayResult.data.slice(1));
-  if (restResult.problems) return restResult;
-
-  return {
-    data: [firstItemResult.data, ...restResult.data] as const,
-    problems: undefined,
-  };
-}
 
 export function Home() {
   const jsonTextAreaId = useId();
@@ -40,7 +22,7 @@ export function Home() {
   const validationResult = (() => {
     try {
       const parsed = JSON.parse(slideshowJson) as unknown;
-      const { data, problems } = validateSlideshow(parsed);
+      const { data, problems } = slideshowLessonSchema(parsed);
       return { data, error: problems?.toString() };
     } catch (error) {
       return { error: 'Could not parse JSON' };
@@ -56,7 +38,7 @@ export function Home() {
     const slideshowBase = validationResult.data;
     setIsGeneratingSlide(true);
 
-    const slideshowContent = parseSlideshowBase(slideshowBase);
+    const slideshowContent = parseSlideshowLesson(slideshowBase);
 
     toast.promise(generateSlides(slideshowContent), {
       loading: 'Generating slide...',
@@ -114,109 +96,367 @@ export function Home() {
 
 const slideshowJsonExample = JSON.stringify(
   {
-    title: 'Redes sociales y Salud mental',
-    asset: {
-      type: 'image',
-      url: 'https://picsum.photos/seed/ce7aadbc-f04b-4dc9-b494-ad8f3e6efd03/1920/446',
+    type: 'Lección Engine',
+    title: 'Presentation',
+    elementCode: '67400928-3c9b-4730-8c60-a21a7f666b6c',
+    elementLesson: {
+      lessonTheme: '1',
+      paragraphs: [
+        {
+          content:
+            'Descubriendo el corazón de los Países Nórdicos: "Descubriendo el corazón de los Países Nórdicos" es una temática fascinante que nos lleva a explorar una región del mundo conocida por su impresionante belleza natural, una calidad de vida excepcional y una cultura rica y distinta.',
+          audioScript:
+            'Descubriendo el corazón de los Países Nórdicos: "Descubriendo el corazón de los Países Nórdicos" es una temática fascinante que nos lleva a explorar una región del mundo conocida por su impresionante belleza natural, una calidad de vida excepcional y una cultura rica y distinta.',
+          audioUrl:
+            'https://sophieassets.blob.core.windows.net/speeches/671cefb4-ee82-4efa-87af-160638a493d7.mp3',
+          titleAI: 'Exploring the Nordic Heartlands',
+          videoData: {
+            thumb: { url: '', width: 0, height: 0 },
+            finalVideo: { url: '', width: 0, height: 0 },
+          },
+          imageData: {
+            image: {},
+            thumb: {},
+            finalImage: {
+              url: 'https://images.pexels.com/photos/12741259/pexels-photo-12741259.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+              width: '',
+              height: '',
+            },
+            imagesIds: [],
+            urlBing: '',
+          },
+          keyPhrases: [
+            'Descubriendo el corazón de los Países Nórdicos',
+            'explorar una región del mundo',
+            'impresionante belleza natural',
+            'calidad de vida excepcional',
+            'cultura rica y distinta',
+          ],
+          alternativePronunciations: [],
+        },
+        {
+          content:
+            'Los Países Nórdicos, compuestos por Dinamarca, Finlandia, Islandia, Noruega y Suecia, ofrecen un mosaico de experiencias y tradiciones que reflejan su profundo respeto por la naturaleza, la igualdad y la innovación.',
+          audioScript:
+            'Los Países Nórdicos, compuestos por Dinamarca, Finlandia, Islandia, Noruega y Suecia, ofrecen un mosaico de experiencias y tradiciones que reflejan su profundo respeto por la naturaleza, la igualdad y la innovación.',
+          audioUrl:
+            'https://sophieassets.blob.core.windows.net/speeches/9dfc0762-a5ed-4761-8689-7509d3d4ef96.mp3',
+          titleAI: "Exploring Nordic Countries' Heart",
+          imageData: {
+            image: {},
+            thumb: {},
+            finalImage: {},
+            imagesIds: '',
+            urlBing: '',
+          },
+          videoData: {
+            thumb: { url: '', width: 0, height: 0 },
+            finalVideo: {
+              url: 'https://player.vimeo.com/progressive_redirect/playback/530634522/rendition/1080p/file.mp4?loc=external&oauth2_token_id=1747418641&signature=2eb9faa6d68a82da3b78d904143d568a567e9b06a47b6ca88bb90fee9566a21f',
+              width: 0,
+              height: 0,
+            },
+          },
+          keyPhrases: [
+            'Los Países Nórdicos',
+            'compuestos por Dinamarca',
+            'Finlandia',
+            'Islandia',
+            'Noruega y Suecia',
+            'ofrecen un mosaico de experiencias y tradiciones',
+            'reflejan su profundo respeto por la naturaleza',
+            'la igualdad y la innovación',
+          ],
+        },
+        {
+          content:
+            'En el corazón de la región nórdica, la naturaleza juega un papel fundamental en la vida cotidiana de sus habitantes. Desde los dramáticos fiordos noruegos hasta los bosques densos de Finlandia, pasando por las llanuras heladas de Islandia y las islas idílicas de Dinamarca y Suecia, el respeto por el medio ambiente es un valor compartido y una fuente de inspiración constante.',
+          audioScript:
+            'En el corazón de la región nórdica, la naturaleza juega un papel fundamental en la vida cotidiana de sus habitantes. Desde los dramáticos fiordos noruegos hasta los bosques densos de Finlandia, pasando por las llanuras heladas de Islandia y las islas idílicas de Dinamarca y Suecia, el respeto por el medio ambiente es un valor compartido y una fuente de inspiración constante.',
+          audioUrl:
+            'https://sophieassets.blob.core.windows.net/speeches/fd5107f6-0e3a-41dc-a4ca-b85ea9ebbe59.mp3',
+          titleAI: '"Nature\'s Heart in Nordic Lands"',
+          videoData: {
+            thumb: { url: '', width: 0, height: 0 },
+            finalVideo: { url: '', width: 0, height: 0 },
+          },
+          imageData: {
+            image: {},
+            thumb: {},
+            finalImage: {
+              url: 'https://images.pexels.com/photos/17384852/pexels-photo-17384852.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+              width: '',
+              height: '',
+            },
+            imagesIds: [],
+            urlBing: '',
+          },
+          keyPhrases: [
+            'En el corazón de la región nórdica',
+            'la naturaleza juega un papel fundamental',
+            'dramáticos fiordos noruegos',
+            'bosques densos de Finlandia',
+            'llanuras heladas de Islandia',
+            'islas idílicas de Dinamarca y Suecia',
+            'respeto por el medio ambiente es un valor compartido',
+          ],
+        },
+        {
+          content:
+            'Este vínculo intrínseco con la naturaleza no solo ha dado forma a la forma de vida nórdica, sino que también se refleja en sus políticas ambientales vanguardistas y su liderazgo global en sostenibilidad.',
+          audioScript:
+            'Este vínculo intrínseco con la naturaleza no solo ha dado forma a la forma de vida nórdica, sino que también se refleja en sus políticas ambientales vanguardistas y su liderazgo global en sostenibilidad.',
+          audioUrl:
+            'https://sophieassets.blob.core.windows.net/speeches/68e8c4d4-0ad6-4c45-9447-e57c6be479a1.mp3',
+          titleAI: 'Nordic Nature and Sustainability Leadership',
+          imageData: {
+            image: {},
+            thumb: {},
+            finalImage: {},
+            imagesIds: '',
+            urlBing: '',
+          },
+          videoData: {
+            thumb: { url: '', width: 0, height: 0 },
+            finalVideo: {
+              url: 'https://player.vimeo.com/progressive_redirect/playback/530655808/rendition/1080p/file.mp4?loc=external&oauth2_token_id=1747418641&signature=5b3f18072a107f3e1f9d7d2e927d8715b29449ef78c5464f14541653d39248c5',
+              width: 0,
+              height: 0,
+            },
+          },
+          keyPhrases: [
+            'Este vínculo intrínseco con la naturaleza',
+            'forma de vida nórdica',
+            'políticas ambientales vanguardistas',
+            'liderazgo global en sostenibilidad',
+          ],
+        },
+        {
+          content:
+            'La calidad de vida en los Países Nórdicos es otra faceta que cautiva a quienes profundizan en su conocimiento. Estas naciones destacan regularmente en los índices globales de felicidad, educación, igualdad de género y bienestar social.',
+          audioScript:
+            'La calidad de vida en los Países Nórdicos es otra faceta que cautiva a quienes profundizan en su conocimiento. Estas naciones destacan regularmente en los índices globales de felicidad, educación, igualdad de género y bienestar social.',
+          audioUrl:
+            'https://sophieassets.blob.core.windows.net/speeches/cd7bd8ee-f89e-40c2-9cb8-71c716d1c629.mp3',
+          titleAI: 'Nordic Quality of Life Highlights',
+          videoData: {
+            thumb: { url: '', width: 0, height: 0 },
+            finalVideo: { url: '', width: 0, height: 0 },
+          },
+          imageData: {
+            image: {},
+            thumb: {},
+            finalImage: {
+              url: 'https://images.pexels.com/photos/17384862/pexels-photo-17384862.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+              width: '',
+              height: '',
+            },
+            imagesIds: [],
+            urlBing: '',
+          },
+          keyPhrases: [
+            'La calidad de vida en los Países Nórdicos',
+            'destacan regularmente en los índices globales',
+            'felicidad',
+            'educación',
+            'igualdad de género y bienestar social',
+          ],
+        },
+        {
+          content:
+            'Este logro es el resultado de un modelo de bienestar social sólido, sistemas educativos inclusivos y un compromiso con la igualdad de derechos y oportunidades para todos sus ciudadanos. La transparencia, la confianza en las instituciones públicas y un alto grado de participación cívica son pilares que sostienen la cohesión social y la satisfacción general en estos países.',
+          audioScript:
+            'Este logro es el resultado de un modelo de bienestar social sólido, sistemas educativos inclusivos y un compromiso con la igualdad de derechos y oportunidades para todos sus ciudadanos. La transparencia, la confianza en las instituciones públicas y un alto grado de participación cívica son pilares que sostienen la cohesión social y la satisfacción general en estos países.',
+          audioUrl:
+            'https://sophieassets.blob.core.windows.net/speeches/9e71da5a-6cdd-4fb8-baca-4a8771fdeddc.mp3',
+          titleAI: 'Nordic Social Welfare Success',
+          imageData: {
+            image: {},
+            thumb: {},
+            finalImage: {},
+            imagesIds: '',
+            urlBing: '',
+          },
+          videoData: {
+            thumb: { url: '', width: 0, height: 0 },
+            finalVideo: {
+              url: 'https://player.vimeo.com/progressive_redirect/playback/530656871/rendition/1080p/file.mp4?loc=external&oauth2_token_id=1747418641&signature=150b24b2b8343156df76a2c48c941eacddf963cdf87ba61ed48a07a75f477d27',
+              width: 0,
+              height: 0,
+            },
+          },
+          keyPhrases: [
+            'modelo de bienestar social sólido',
+            'sistemas educativos inclusivos',
+            'compromiso con la igualdad de derechos y oportunidades',
+            'transparencia',
+            'confianza en las instituciones públicas',
+            'alto grado de participación cívica',
+            'cohesión social y la satisfacción general',
+          ],
+        },
+        {
+          content:
+            'La cultura nórdica, con su profunda veneración por las tradiciones y al mismo tiempo una apertura a la innovación y a nuevas ideas, ofrece un espectro rico y variado. Desde la literatura robusta, la cual incluye sagas épicas y obras contemporáneas que han ganado reconocimiento internacional, hasta movimientos artísticos y de diseño que han influenciado significativamente las tendencias globales.',
+          audioScript:
+            'La cultura nórdica, con su profunda veneración por las tradiciones y al mismo tiempo una apertura a la innovación y a nuevas ideas, ofrece un espectro rico y variado. Desde la literatura robusta, la cual incluye sagas épicas y obras contemporáneas que han ganado reconocimiento internacional, hasta movimientos artísticos y de diseño que han influenciado significativamente las tendencias globales.',
+          audioUrl:
+            'https://sophieassets.blob.core.windows.net/speeches/57ef3d41-f672-43f2-810b-a9a3f412c294.mp3',
+          titleAI: 'Nordic Culture: Tradition and Innovation',
+          videoData: {
+            thumb: { url: '', width: 0, height: 0 },
+            finalVideo: { url: '', width: 0, height: 0 },
+          },
+          imageData: {
+            image: {},
+            thumb: {},
+            finalImage: {
+              url: 'https://images.pexels.com/photos/20156997/pexels-photo-20156997.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+              width: '',
+              height: '',
+            },
+            imagesIds: [],
+            urlBing: '',
+          },
+          keyPhrases: [
+            'La cultura nórdica',
+            'profunda veneración por las tradiciones',
+            'apertura a la innovación y a nuevas ideas',
+            'espectro rico y variado',
+            'literatura robusta',
+            'sagas épicas y obras contemporáneas',
+            'reconocimiento internacional',
+            'movimientos artísticos y de diseño',
+            'influenciado significativamente las tendencias globales',
+          ],
+        },
+        {
+          content:
+            'La música, la gastronomía y las festividades también reflejan la diversidad y la creatividad de estos pueblos, mostrando un equilibrio admirable entre el resguardo de su patrimonio y la exploración de nuevos horizontes.',
+          audioScript:
+            'La música, la gastronomía y las festividades también reflejan la diversidad y la creatividad de estos pueblos, mostrando un equilibrio admirable entre el resguardo de su patrimonio y la exploración de nuevos horizontes.',
+          audioUrl:
+            'https://sophieassets.blob.core.windows.net/speeches/96c1af4d-158d-4f63-9ce9-532d64bfcf8e.mp3',
+          titleAI: 'Nordic Culture: Tradition and Innovation',
+          imageData: {
+            image: {},
+            thumb: {},
+            finalImage: {},
+            imagesIds: '',
+            urlBing: '',
+          },
+          videoData: {
+            thumb: { url: '', width: 0, height: 0 },
+            finalVideo: {
+              url: 'https://player.vimeo.com/progressive_redirect/playback/530644627/rendition/1080p/file.mp4?loc=external&oauth2_token_id=1747418641&signature=bbed0b9c157c59c2d4311c45539f95b4294e971b3d9f695c13d28e53d3bbad43',
+              width: 0,
+              height: 0,
+            },
+          },
+          keyPhrases: [
+            'La música',
+            'la gastronomía y las festividades',
+            'reflejan la diversidad y la creatividad',
+            'equilibrio admirable',
+            'resguardo de su patrimonio',
+            'exploración de nuevos horizontes',
+          ],
+        },
+        {
+          content:
+            'Finalmente, es imposible hablar del corazón de los Países Nórdicos sin mencionar su compromiso con la paz y la colaboración internacional. Estos países son conocidos por su diplomacia activa, su solidaridad internacional y su participación en esfuerzos de paz y desarrollo sostenible alrededor del mundo.',
+          audioScript:
+            'Finalmente, es imposible hablar del corazón de los Países Nórdicos sin mencionar su compromiso con la paz y la colaboración internacional. Estos países son conocidos por su diplomacia activa, su solidaridad internacional y su participación en esfuerzos de paz y desarrollo sostenible alrededor del mundo.',
+          audioUrl:
+            'https://sophieassets.blob.core.windows.net/speeches/46d2198c-3398-4e1f-a5b8-34662896e57e.mp3',
+          titleAI: 'Nordic Commitment to Global Peace',
+          videoData: {
+            thumb: { url: '', width: 0, height: 0 },
+            finalVideo: { url: '', width: 0, height: 0 },
+          },
+          imageData: {
+            image: {},
+            thumb: {},
+            finalImage: {
+              url: 'https://images.pexels.com/photos/17384863/pexels-photo-17384863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+              width: '',
+              height: '',
+            },
+            imagesIds: [],
+            urlBing: '',
+          },
+          keyPhrases: [
+            'compromiso con la paz y la colaboración internacional',
+            'diplomacia activa',
+            'solidaridad internacional',
+            'participación en esfuerzos de paz y desarrollo sostenible',
+          ],
+        },
+        {
+          content:
+            'Este enfoque hacia la paz y la cooperación no solo fortalece su posición en la comunidad internacional, sino que también refleja los valores intrínsecos de su sociedad.',
+          audioScript:
+            'Este enfoque hacia la paz y la cooperación no solo fortalece su posición en la comunidad internacional, sino que también refleja los valores intrínsecos de su sociedad.',
+          audioUrl:
+            'https://sophieassets.blob.core.windows.net/speeches/fea4fd40-6f5d-4321-afdf-463f2741d8b5.mp3',
+          titleAI: '"Peace and Cooperation Values"',
+          imageData: {
+            image: {},
+            thumb: {},
+            finalImage: {},
+            imagesIds: '',
+            urlBing: '',
+          },
+          videoData: {
+            thumb: { url: '', width: 0, height: 0 },
+            finalVideo: {
+              url: 'https://player.vimeo.com/progressive_redirect/playback/530640865/rendition/1080p/file.mp4?loc=external&oauth2_token_id=1747418641&signature=6525c219821c644004535ace321ce996eb741a849ba03f7fb84eeaf0501a6ecf',
+              width: 0,
+              height: 0,
+            },
+          },
+          keyPhrases: [
+            'Este enfoque hacia la paz y la cooperación',
+            'fortalece su posición en la comunidad internacional',
+            'refleja los valores intrínsecos de su sociedad',
+          ],
+        },
+        {
+          content:
+            'En conclusión, descubrir el corazón de los Países Nórdicos es adentrarse en un mundo donde la naturaleza, la calidad de vida, la riqueza cultural y el compromiso con la paz y la sostenibilidad son ejes fundamentales que tejen la esencia de esta región. Esta exploración nos revela cómo la armonía entre el ser humano y su entorno puede crear sociedades prósperas, resilientes e inspiradoras.',
+          audioScript:
+            'En conclusión, descubrir el corazón de los Países Nórdicos es adentrarse en un mundo donde la naturaleza, la calidad de vida, la riqueza cultural y el compromiso con la paz y la sostenibilidad son ejes fundamentales que tejen la esencia de esta región. Esta exploración nos revela cómo la armonía entre el ser humano y su entorno puede crear sociedades prósperas, resilientes e inspiradoras.',
+          audioUrl:
+            'https://sophieassets.blob.core.windows.net/speeches/c51bbd67-1bb8-46d9-9c70-8fb70abe71d5.mp3',
+          titleAI: 'Exploring Nordic Heartlands',
+          videoData: {
+            thumb: { url: '', width: 0, height: 0 },
+            finalVideo: { url: '', width: 0, height: 0 },
+          },
+          imageData: {
+            image: {},
+            thumb: {},
+            finalImage: {
+              url: 'https://images.pexels.com/photos/2853632/pexels-photo-2853632.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+              width: '',
+              height: '',
+            },
+            imagesIds: [],
+            urlBing: '',
+          },
+          keyPhrases: [
+            'descubrir el corazón de los Países Nórdicos',
+            'la naturaleza',
+            'la calidad de vida',
+            'la riqueza cultural y el compromiso con la paz y la sostenibilidad',
+            'tejen la esencia de esta región',
+            'armonía entre el ser humano y su entorno',
+            'sociedades prósperas',
+            'resilientes e inspiradoras',
+          ],
+        },
+      ],
     },
-    slides: [
-      {
-        title: '¿Sabias qué?',
-        asset: {
-          type: 'image',
-          url: 'https://picsum.photos/seed/f29f3e08-aeae-4fbe-a56c-242318ac1518/958/1080',
-        },
-        paragraphs: [
-          'En los últimos años...',
-          'Las redes sociales se han convertido en una herramienta muy importante para la inteacción humana, especialmente entre los adolescentes y adultos jóvenes.',
-        ],
-      },
-      {
-        title:
-          '¿Pero qué pasa cuando las redes sociales afectan nuestra salud mental?',
-        asset: {
-          type: 'image',
-          url: 'https://picsum.photos/seed/ab33cf99-07c6-4926-8824-d3016777e958/834/1080',
-        },
-        paragraphs: [
-          'A pesar de su gran utilidad, en los últimos años, diversos estudios en Norteamérica y Europa han encontrado que el uso desmedido de las redes sociales contribuye al aumento de síntomas y problemas de salud mental.',
-        ],
-      },
-      {
-        title:
-          'Principales problemas de salud mental que se han incrementado con el uso excesivo de las redes sociales:',
-        asset: {
-          type: 'image',
-          url: 'https://picsum.photos/seed/bc8edfb4-8755-4387-8a5d-7f19d56f7ca3/1019/1080',
-        },
-        paragraphs: [
-          '• Transtornos del sueño\n• Acoso cibernético o ciberbullying\n• Ansiedad y síndrome de abstinencia\n• Baja autoestima',
-        ],
-      },
-      {
-        title: 'Transtornos del sueño',
-        asset: {
-          type: 'image',
-          url: 'https://picsum.photos/seed/bfa39a6c-0315-43f6-aca8-ee596e7d1d08/585/1080',
-        },
-        paragraphs: [
-          'El uso desmedido de las redes sociales ha sido asociado con un incremento en la aparición de transtorno de sueño, ansiedad, depresión y problemas de autoestima, sobre todo en personas con edades comprendidas entre 16 y 26 años.',
-        ],
-      },
-      {
-        title: 'Acoso cibérnetico',
-        asset: {
-          type: 'image',
-          url: 'https://picsum.photos/seed/5ad18577-3811-4452-ba67-4edff3f0488a/821/1080',
-        },
-        paragraphs: [
-          'El bullying cibernético o ciberbullying, es cada vez más frecuente entre los escolares, universitarios y adultos jóvenes.',
-          'Las redes sociales también se han convertido en un espacio en donde muchos descargan sentimientos de hostilidad y rechazo hacia otras personas, especialmente en el anonimato',
-        ],
-      },
-      {
-        title: 'Ansiedad y sindrome de abstinencia',
-        asset: {
-          type: 'image',
-          url: 'https://picsum.photos/seed/72ecd5de-0d21-4c32-8257-26f5a2a944ae/827/1080',
-        },
-        paragraphs: [
-          'Por otra parte, aquellos que tienen dificultades para controlar el uso de las redes sociales, constantemente han experimentado síntomas de',
-          'Esto se debe a la necesidad de estar conectado contantemente y así mantenerse actualizados de lo que sucede a su alrededor',
-          'Entre otros de los efectos del uso desmedido de las redes sociales, está el efecto negativo entre aquellas personas que las utilizan como una suerte de parámetro a partir del cual tienen a compararse',
-        ],
-      },
-      {
-        title:
-          '¿Cómo evitar los efectos negativos de las redes sociales en la salud mental?',
-        asset: {
-          type: 'image',
-          url: 'https://picsum.photos/seed/0e7900ee-a54b-4750-80ac-d97537c08e76/1008/1080',
-        },
-        paragraphs: [],
-      },
-      {
-        title: 'Puede que parezca un problema de menos relevancia, pero:',
-        asset: {
-          type: 'image',
-          url: 'https://picsum.photos/seed/510e0bfc-1a41-487f-8492-c43172159a31/1920/538',
-        },
-        paragraphs: [
-          'Lo cierto es que es importante estar atentos al uso que le damos a nuestras redes sociales, principalmente los más jovenes.',
-          'Revisemos la cantidad de tiempo que se dedica a la actividad en línea y prestemos atención al tipo de material que consumimos',
-        ],
-      },
-      {
-        title: 'Finalmente, también es necesario recordar que:',
-        asset: {
-          type: 'image',
-          url: 'https://picsum.photos/seed/b5c65fe7-1922-42a5-8568-5b58500bac20/1920/514',
-        },
-        paragraphs: [
-          'Un uso adecuado de las redes sociales puede ser una fuente importante de apoyo social y emocional. Sin embargo, es esencial mantener un equilibrio y conciencia en su uso, evitando posibles efectos negativos y la sobreexposición a contenidos estresantes.',
-        ],
-      },
-    ],
   },
   null,
   2

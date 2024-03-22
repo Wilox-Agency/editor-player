@@ -1,4 +1,4 @@
-import { arrayOf, type } from 'arktype';
+import { arrayOf, intersection, type, union } from 'arktype';
 
 import type { SlideshowContent } from './sharedTypes';
 import { getLoremPicsum } from '@/utils/random';
@@ -47,6 +47,50 @@ export function parseSlideshowBase(
     }
 
     lastSlide.paragraphs.push(item.content);
+  }
+
+  return slideshowContent;
+}
+
+/** This schema does not include all the attributes a slideshow lesson has, but
+ * only the ones that are used in the app */
+export const slideshowLessonSchema = type(
+  {
+    title: 'string',
+    elementCode: 'string',
+    elementLesson: {
+      paragraphs: arrayOf(
+        intersection(
+          { content: 'string', audioUrl: 'string', titleAI: 'string' },
+          union(
+            { imageData: { finalImage: { url: 'string' } } },
+            { videoData: { finalVideo: { url: 'string' } } }
+          )
+        )
+      ),
+    },
+  },
+  { keys: 'distilled' }
+);
+
+export function parseSlideshowLesson(
+  slideshowLesson: (typeof slideshowLessonSchema)['infer']
+): SlideshowContent {
+  const slideshowContent: SlideshowContent = {
+    title: slideshowLesson.title,
+    asset: { type: 'image', url: getLoremPicsum() },
+    slides: [],
+  };
+
+  for (const lessonParagraph of slideshowLesson.elementLesson.paragraphs) {
+    slideshowContent.slides.push({
+      title: lessonParagraph.titleAI,
+      asset:
+        'imageData' in lessonParagraph
+          ? { type: 'image', url: lessonParagraph.imageData.finalImage.url }
+          : { type: 'video', url: lessonParagraph.videoData.finalVideo.url },
+      paragraphs: [lessonParagraph.content],
+    });
   }
 
   return slideshowContent;

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import Konva from 'konva';
-import { Group, Layer, Stage, Transformer } from 'react-konva';
+import { Group, Layer, Stage } from 'react-konva';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Pause, Play } from 'lucide-react';
@@ -234,11 +234,6 @@ export function AnimationPlayer() {
             );
           })}
         </Layer>
-        {/* <Layer name="controllers">
-          {canvasTree.map((element) => (
-            <BorderTransformer key={element.id} elementId={element.id} />
-          ))}
-        </Layer> */}
       </Stage>
 
       {canvasTree.length > 0 && (
@@ -300,28 +295,4 @@ function formatTime(timeInSeconds: number) {
     .toString()
     .padStart(2, '0');
   return `${minutes}:${seconds}`;
-}
-
-/** Adds a border around the node with the provided ID. Used for debugging. */
-function BorderTransformer({ elementId }: { elementId: string }) {
-  const ref = useRef<Konva.Transformer>(null);
-  const { layerRef } = useKonvaRefsStore();
-
-  useEffect(() => {
-    const node = layerRef.current?.getChildren().find((node) => {
-      return node.id() === elementId;
-    });
-    if (!node) return;
-
-    ref.current?.nodes([node]);
-  }, [elementId, layerRef]);
-
-  return (
-    <Transformer
-      resizeEnabled={false}
-      rotateEnabled={false}
-      keepRatio={false}
-      ref={ref}
-    />
-  );
 }

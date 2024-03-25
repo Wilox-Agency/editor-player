@@ -8,6 +8,9 @@ import Konva from 'konva';
  *
  * This function throws if the size is not calculated after 1s.
  */
+/* TODO: Pause timeout when tab gets inactive. This is because the timeout will
+always get triggered when the tab gets inactive for some time, but removing the
+timeout altogether might lead to infinite wait times for unknown edge cases */
 export function waitUntilKonvaNodeSizeIsCalculated(
   node: Konva.Node,
   delayInMilliseconds: number = 50

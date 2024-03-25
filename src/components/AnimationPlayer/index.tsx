@@ -23,6 +23,7 @@ import { parseSlideshowLesson } from '@/utils/generateSlides/parse';
 import { combineSlides, createTweens } from '@/utils/slidesPlayer';
 import { fetchSlideshowLesson } from '@/utils/queries';
 import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
+import { preloadAudios } from '@/utils/audio';
 import type { Slide } from '@/utils/types';
 
 import { Slider } from '@/components/Slider';
@@ -60,15 +61,12 @@ export function AnimationPlayer() {
       });
       return await promise;
     },
-    refetchOnReconnect: false,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    retry: false,
   });
 
   // Generate slides (or get them from the home page)
   const { data: slides } = useQuery({
-    queryKey: [slidesFromHomePage, slideshowLesson],
+    enabled: !!slidesFromHomePage || !!slideshowLesson,
+    queryKey: ['generateSlides', slidesFromHomePage, slideshowLesson],
     queryFn: async () => {
       if (slidesFromHomePage) {
         return slidesFromHomePage as Slide[];
@@ -84,8 +82,12 @@ export function AnimationPlayer() {
         toast.promise(slidesPromise, {
           loading: 'Generating slides...',
           success: 'Slides generated successfully!',
-          error:
-            'Could not generate slides, please check if there are any broken images in the slideshow lesson.',
+          error: (error) => {
+            if (import.meta.env.DEV) {
+              console.log(error);
+            }
+            return 'Could not generate slides, please check if there are any broken images in the slideshow lesson.';
+          },
         });
         return await slidesPromise;
       }
@@ -110,20 +112,22 @@ export function AnimationPlayer() {
     updateTimelineDuration,
     handlePlayOrPause,
     handleChangeTime,
-  } = usePlayerTimeline({ layerRef });
+  } = usePlayerTimeline({ layerRef, audios: combinedSlides?.audios || [] });
 
   // Setup player
   useEffect(() => {
     if (!combinedSlides) return;
 
     // Load canvas tree
-    const canvasElements = combinedSlides.map(
+    const canvasElements = combinedSlides.canvasElements.map(
       ({ attributes: canvasElement }) => canvasElement
     );
     loadCanvasTree(canvasElements);
 
     // Prefetch assets
     prefetchAssetsFromCanvasElements(canvasElements);
+    // Preload audios
+    preloadAudios(combinedSlides.audios);
   }, [combinedSlides, loadCanvasTree]);
 
   // Setup the GSAP timeline
@@ -147,7 +151,7 @@ export function AnimationPlayer() {
       because they're all set at the same time) */
       await waitUntilKonvaNodeSizeIsCalculated(firstNode.children[0]!);
 
-      combinedSlides.forEach((item, itemIndex) => {
+      combinedSlides.canvasElements.forEach((item, itemIndex) => {
         const group = nodes[itemIndex];
         if (!group) return;
 

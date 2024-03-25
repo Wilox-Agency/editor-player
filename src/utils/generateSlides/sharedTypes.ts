@@ -8,9 +8,11 @@ export type Position = Record<Coordinate, number>;
 export type SlideshowContent = {
   title: string;
   asset: { type: AssetType; url: string };
+  audioUrl?: string;
   slides: {
     title: string;
     paragraphs: string[];
     asset: { type: AssetType; url: string };
+    audioUrl?: string;
   }[];
 };

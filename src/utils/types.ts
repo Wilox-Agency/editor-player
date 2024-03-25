@@ -320,3 +320,12 @@ export type Slide<TElement = CanvasElement> = {
   canvasElements: TElement[];
   duration: number;
 };
+
+export type SlideWithAudioUrl<TElement = CanvasElement> = Slide<TElement> & {
+  audioUrl?: string;
+};
+
+export type SlideWithAudioUrlAndStartTime<TElement = CanvasElement> =
+  SlideWithAudioUrl<TElement> & {
+    startTime: number;
+  };

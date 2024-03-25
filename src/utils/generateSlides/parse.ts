@@ -79,6 +79,9 @@ export function parseSlideshowLesson(
   const slideshowContent: SlideshowContent = {
     title: slideshowLesson.title,
     asset: { type: 'image', url: getLoremPicsum() },
+    /* Currently, there's no audio for the lesson title, but it will be added
+    soon */
+    audioUrl: undefined,
     slides: [],
   };
 
@@ -89,6 +92,7 @@ export function parseSlideshowLesson(
         'imageData' in lessonParagraph
           ? { type: 'image', url: lessonParagraph.imageData.finalImage.url }
           : { type: 'video', url: lessonParagraph.videoData.finalVideo.url },
+      audioUrl: lessonParagraph.audioUrl,
       paragraphs: [lessonParagraph.content],
     });
   }

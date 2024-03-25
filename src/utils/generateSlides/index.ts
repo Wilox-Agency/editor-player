@@ -8,10 +8,16 @@ import {
   fitTextIntoRect,
   generateTextAttributes,
 } from './text';
+import { getAudioDuration } from './audio';
 import type { SlideshowContent } from './sharedTypes';
 import { getElementThatContainsText } from '@/utils/konva/text';
 import { findLast } from '@/utils/array';
-import type { CanvasElement, CanvasElementOfType, Slide } from '@/utils/types';
+import type {
+  CanvasElement,
+  CanvasElementOfType,
+  Slide,
+  SlideWithAudioUrl,
+} from '@/utils/types';
 
 const ColorPalette = {
   black: '#000000',
@@ -52,6 +58,7 @@ function getUnusedRectColorsFromSlide(canvasElements: CanvasElement[]) {
   return unusedRectColors;
 }
 
+// TODO: Add support for audio to slides with subslides
 async function generateSlideWithSubSlides(
   slideContent: SlideshowContent['slides'][number]
 ) {
@@ -138,10 +145,12 @@ export async function generateSlide({
   title,
   paragraphs = [],
   asset,
+  audioUrl,
 }: {
   title: string;
   paragraphs?: string[];
   asset: { type: AssetType; url: string };
+  audioUrl?: string;
 }) {
   const assetElement = await generateAssetAttributes(asset);
 
@@ -187,20 +196,24 @@ export async function generateSlide({
 
   rectsAndTexts ??= [];
 
+  const duration = audioUrl ? await getAudioDuration(audioUrl) : undefined;
+
   return {
     canvasElements: [assetElement, ...rectsAndTexts],
-    duration: 2,
-  } satisfies Slide;
+    duration: duration || 2,
+    audioUrl,
+  } satisfies SlideWithAudioUrl;
 }
 
 export async function generateSlides(presentationContent: SlideshowContent) {
   // The only piece of text in the first slide will be the presentation title
-  const firstSlide: Slide = await generateSlide({
+  const firstSlide: SlideWithAudioUrl = await generateSlide({
     title: presentationContent.title,
     asset: presentationContent.asset,
+    audioUrl: presentationContent.audioUrl,
   });
 
-  const otherSlides: Slide[] = [];
+  const otherSlides: SlideWithAudioUrl[] = [];
   for (const slideContent of presentationContent.slides) {
     if (slideContent.paragraphs.length >= 3) {
       /* If the slide has 3 or more paragraphs, then it should be separated into

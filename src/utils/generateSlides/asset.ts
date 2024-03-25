@@ -22,7 +22,7 @@ function getAssetDimensions(type: AssetType, url: string) {
     }
 
     function handleError() {
-      reject('Invalid asset URL');
+      reject(`Invalid ${type} URL: "${url}"`);
       cleanup();
     }
 

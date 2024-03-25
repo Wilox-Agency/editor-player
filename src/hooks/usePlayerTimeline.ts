@@ -6,6 +6,7 @@ import gsap from 'gsap';
 
 import { usePlayerAudioStore } from '@/hooks/usePlayerAudioStore';
 import { getAllVideoElementsFromNode } from '@/utils/konva/misc';
+import { cleanListener } from '@/utils/zustand';
 
 type PlayerTimelineStore = {
   timelineCurrentTime: number;
@@ -46,36 +47,33 @@ export function usePlayerTimeline({
     usePlayerTimelineStore.setState({ timelineDuration: timeline.duration() });
   }
 
-  function handlePlayOrPause() {
+  const handlePlayOrPause = useCallback(() => {
     const timelineEnded = timeline.time() === timeline.duration();
 
     // If the timeline ended, reset and play it
     if (timelineEnded) {
+      usePlayerTimelineStore.setState({ timelineState: 'playing' });
       timeline.time(0);
       timeline.play();
-
-      usePlayerTimelineStore.setState({ timelineState: 'playing' });
       return;
     }
 
     // If the timeline is playing, pause it
     if (timeline.isActive()) {
-      timeline.pause();
-
       usePlayerTimelineStore.setState({ timelineState: 'paused' });
+      timeline.pause();
       return;
     }
 
     // If the timeline is paused, resume it
-    timeline.resume();
     usePlayerTimelineStore.setState({ timelineState: 'playing' });
-  }
+    timeline.resume();
+  }, [timeline]);
 
   function handleChangeTime(time: number) {
+    usePlayerTimelineStore.setState({ timelineState: 'paused' });
     timeline.pause();
     timeline.time(time);
-
-    usePlayerTimelineStore.setState({ timelineState: 'paused' });
 
     // Set the audio current time (if there's a current audio)
     const { currentAudio } = usePlayerAudioStore.getState();
@@ -108,10 +106,10 @@ export function usePlayerTimeline({
         currentAudio.shouldBePlayedAt + currentAudio.element.duration;
       if (!audioDidNotStart && !audioEnded) return;
 
-      // Pause the audio
-      currentAudio.element.pause();
       // Clear the audio that ended
       setCurrentAudio(undefined);
+      // Pause the audio
+      currentAudio.element.pause();
     }
 
     // Check if there's an audio that should be played
@@ -230,6 +228,39 @@ export function usePlayerTimeline({
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [timeline]);
+
+  /* Play/pause the timeline when the audio is played/paused using a shortcut,
+  gesture or something similar (which can be identified by the audio being
+  played/paused but the timeline not; using the Media Session API was already
+  considered, but it's not supported in WebView Android, which is one of the
+  target's of this application) */
+  useEffect(() => {
+    /* Subscribe to state changes instead of using the state as a `useEffect`
+    dependency to prevent extra re-renders, as this value is not being used to
+    update the UI where this hook is used */
+    const unsubscribe = usePlayerAudioStore.subscribe(
+      cleanListener(({ currentAudio }) => {
+        function handlePlayAudio() {
+          const { timelineState } = usePlayerTimelineStore.getState();
+          if (timelineState !== 'playing') handlePlayOrPause();
+        }
+
+        function handlePauseAudio() {
+          const { timelineState } = usePlayerTimelineStore.getState();
+          if (timelineState === 'playing') handlePlayOrPause();
+        }
+
+        currentAudio?.element.addEventListener('play', handlePlayAudio);
+        currentAudio?.element.addEventListener('pause', handlePauseAudio);
+
+        return () => {
+          currentAudio?.element.removeEventListener('play', handlePlayAudio);
+          currentAudio?.element.removeEventListener('pause', handlePauseAudio);
+        };
+      })
+    );
+    return () => unsubscribe();
+  }, [handlePlayOrPause]);
 
   // Clear timeline when the component that uses this hook is destroyed
   useEffect(() => {

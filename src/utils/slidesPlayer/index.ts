@@ -197,8 +197,8 @@ export function combineSlides(slides: SlideWithAudioUrl[]) {
   const parsedSlides = pipe(
     slides,
     setEmptyAnimationAttributes,
-    setSharedIdsForReusedElements,
     setSharedIdsForReusedRectsThatShouldMorph,
+    setSharedIdsForReusedElements,
     setTextContainers,
     createDummyElementsForSharedElementSlideInAnimation,
     setAnimationsWithoutTimings,

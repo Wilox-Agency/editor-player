@@ -228,6 +228,47 @@ export function setSharedIdsForReusedElements(
   for (const [slideIndex, slide] of slides.entries()) {
     const nextSlide = slides[slideIndex + 1];
 
+    /* TODO: Improve shared elements animations to allow elements being reused
+    with morph animations and elements being reused without morph animations
+    together */
+    /* Only set shared ID to reuse elements if morph animation is not necessary
+    (i.e. all elements that have morph animation have same shape and position as
+    the element they're morphing from) */
+    const isMorphAnimationRequired = slide.canvasElements.some((element) => {
+      if (
+        !element.animationAttributes.sharedWithNextSlide ||
+        element.animationAttributes.sharedWithNextSlide.animationType !==
+          'morph'
+      ) {
+        return false;
+      }
+
+      const elementFromNextSlide = nextSlide?.canvasElements.find(
+        ({ animationAttributes }) => {
+          return (
+            animationAttributes.sharedWithPreviousSlide?.sharedId !==
+              undefined &&
+            animationAttributes.sharedWithPreviousSlide.sharedId ===
+              element.animationAttributes.sharedWithNextSlide?.sharedId
+          );
+        }
+      );
+      /* The element from the next slide should always be found, but it's being
+      checked for safety */
+      if (!elementFromNextSlide) {
+        throw new Error('Shared element from next slide not found.');
+      }
+
+      const elementsHaveSameShapeAndPosition = compareElements(
+        element.attributes,
+        elementFromNextSlide.attributes,
+        { comparisonType: 'sameShapeAndPosition' }
+      );
+
+      return !elementsHaveSameShapeAndPosition;
+    });
+    if (isMorphAnimationRequired) continue;
+
     // Look for exactly equal element
     for (const element of slide.canvasElements) {
       const exactlyEqualElementInNextSlide = nextSlide?.canvasElements.find(
@@ -244,8 +285,10 @@ export function setSharedIdsForReusedElements(
         exactlyEqualElementInNextSlide &&
         /* The exactly equal element cannot already be shared with another one
         in the current slide */
-        exactlyEqualElementInNextSlide.animationAttributes
-          .sharedWithPreviousSlide === undefined
+        (exactlyEqualElementInNextSlide.animationAttributes
+          .sharedWithPreviousSlide === undefined ||
+          exactlyEqualElementInNextSlide.animationAttributes
+            .sharedWithPreviousSlide.animationType === 'morph')
       ) {
         const sharedId = crypto.randomUUID();
 
@@ -263,7 +306,9 @@ export function setSharedIdsForReusedElements(
       /* ...but only if the current element is not already shared with the next
       slide */
       const isAlreadySharedWithNextSlide =
-        element.animationAttributes.sharedWithNextSlide !== undefined;
+        element.animationAttributes.sharedWithNextSlide !== undefined &&
+        element.animationAttributes.sharedWithNextSlide.animationType !==
+          'morph';
       if (isAlreadySharedWithNextSlide) continue;
 
       const elementWithSameShapeAndPositionInNextSlide =
@@ -279,8 +324,10 @@ export function setSharedIdsForReusedElements(
         elementWithSameShapeAndPositionInNextSlide &&
         /* The element with same shape and position cannot already be shared
         with another one in the current slide */
-        elementWithSameShapeAndPositionInNextSlide.animationAttributes
-          .sharedWithPreviousSlide === undefined
+        (elementWithSameShapeAndPositionInNextSlide.animationAttributes
+          .sharedWithPreviousSlide === undefined ||
+          elementWithSameShapeAndPositionInNextSlide.animationAttributes
+            .sharedWithPreviousSlide.animationType === 'morph')
       ) {
         const sharedId = crypto.randomUUID();
 

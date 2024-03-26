@@ -61,7 +61,12 @@ export const slideshowLessonSchema = type(
     elementLesson: {
       paragraphs: arrayOf(
         intersection(
-          { content: 'string', audioUrl: 'string', titleAI: 'string' },
+          {
+            content: 'string',
+            audioUrl: 'string',
+            titleAI: 'string',
+            'translatedTitleAI?': 'string',
+          },
           union(
             { imageData: { finalImage: { url: 'string' } } },
             { videoData: { finalVideo: { url: 'string' } } }
@@ -87,7 +92,7 @@ export function parseSlideshowLesson(
 
   for (const lessonParagraph of slideshowLesson.elementLesson.paragraphs) {
     slideshowContent.slides.push({
-      title: lessonParagraph.titleAI,
+      title: lessonParagraph.translatedTitleAI || lessonParagraph.titleAI,
       asset:
         'imageData' in lessonParagraph
           ? { type: 'image', url: lessonParagraph.imageData.finalImage.url }

@@ -16,7 +16,7 @@ export const baseAttributesByTextType = {
   },
   paragraph: {
     fontFamily: 'Arial',
-    fontSize: 32,
+    fontSize: 40,
     lineHeight: 1,
     letterSpacing: 0,
     fontStyle: '',

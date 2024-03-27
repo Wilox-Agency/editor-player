@@ -13,6 +13,9 @@
   padding-inline: 0.75rem 1.25rem;
   border-radius: 0.5rem;
   box-shadow: 0 0 50px -12px rgb(24 24 27 / 0.9);
+  transition-property: opacity;
+  transition-timing-function: var(--ease-in-out);
+  transition-duration: 150ms;
 }
 
 .playerBarButton {

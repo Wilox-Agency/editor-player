@@ -21,6 +21,7 @@ import {
   StageVirtualSize,
 } from '@/utils/konva';
 import { checkCtrlOrMetaModifier } from '@/utils/input';
+import { LocalStorageKeys } from '@/utils/localStorage';
 import type { CanvasElement } from '@/utils/types';
 
 import { KonvaContextMenu } from '@/components/KonvaContextMenu';
@@ -29,7 +30,7 @@ import { BordersOfNodesThatAreOrWillBeSelected } from '@/components/konva/Border
 import { KonvaToolbar } from '@/components/KonvaToolbar';
 
 const initialElementsFromStorage = localStorage.getItem(
-  '@sophia-slide-editor:canvas-tree'
+  LocalStorageKeys.canvasTree
 );
 const initialElements: CanvasElement[] = initialElementsFromStorage
   ? (JSON.parse(initialElementsFromStorage) as CanvasElement[])
@@ -96,7 +97,7 @@ const initialElements: CanvasElement[] = initialElementsFromStorage
     ];
 
 const initialCanvasStyleFromStorage = localStorage.getItem(
-  '@sophia-slide-editor:canvas-style'
+  LocalStorageKeys.canvasStyle
 );
 const initialCanvasStyle = initialCanvasStyleFromStorage
   ? (JSON.parse(initialCanvasStyleFromStorage) as CanvasStyleStateJson)

@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
 import { useCanvasStyleStore } from '@/hooks/useCanvasStyleStore';
+import { LocalStorageKeys } from '@/utils/localStorage';
 import type { CanvasElement, CanvasElementOfType } from '@/utils/types';
 
 import { Image, Video } from '@/components/konva/Image';
@@ -60,11 +61,8 @@ export function saveCanvas() {
     useCanvasStyleStore.getState().canvasStyleToJson()
   );
 
-  localStorage.setItem('@sophia-slide-editor:canvas-tree', canvasTreeAsString);
-  localStorage.setItem(
-    '@sophia-slide-editor:canvas-style',
-    canvasStyleAsString
-  );
+  localStorage.setItem(LocalStorageKeys.canvasTree, canvasTreeAsString);
+  localStorage.setItem(LocalStorageKeys.canvasStyle, canvasStyleAsString);
 
   toast.success('Canvas saved successfully!');
 }

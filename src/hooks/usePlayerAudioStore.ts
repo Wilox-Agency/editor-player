@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
+import { LocalStorageKeys } from '@/utils/localStorage';
 import { getValidatedVolume } from '@/utils/validation';
 
 type State = {
@@ -26,10 +27,7 @@ export const usePlayerAudioStore = create(
     },
     setVolume: (volume) => {
       set({ volume });
-      localStorage.setItem(
-        '@sophia-slideshow-player:volume',
-        volume.toString()
-      );
+      localStorage.setItem(LocalStorageKeys.playerVolume, volume.toString());
     },
   }))
 );
@@ -38,7 +36,7 @@ function getInitialVolume() {
   const defaultVolume = 0.1;
 
   const volumeFromLocalStorageAsString = localStorage.getItem(
-    '@sophia-slideshow-player:volume'
+    LocalStorageKeys.playerVolume
   );
   const volumeFromLocalStorage = volumeFromLocalStorageAsString
     ? parseFloat(volumeFromLocalStorageAsString)

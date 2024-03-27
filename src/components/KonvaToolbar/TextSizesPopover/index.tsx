@@ -154,7 +154,7 @@ export function TextSizesPopover({
           minValue={TextSizes.minLineHeight}
           maxValue={TextSizes.maxLineHeight}
           step={0.1}
-          width="full"
+          length="full"
           onChange={handleChangeLineHeight}
         />
 
@@ -164,7 +164,7 @@ export function TextSizesPopover({
           minValue={TextSizes.minLetterSpacing}
           maxValue={TextSizes.maxLetterSpacing}
           step={1}
-          width="full"
+          length="full"
           onChange={handleChangeLetterSpacing}
         />
       </Popover.Content>

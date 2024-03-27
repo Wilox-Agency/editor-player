@@ -11,13 +11,13 @@ import styles from './Slider.module.css';
 
 type SliderProps = AriaSliderProps<number> & {
   /** @default 'full' */
-  width?: 'fixed' | 'full';
+  length?: 'fixed' | 'full' | 'full-flex';
   /** @default 'negative' */
   bottomMargin?: 'negative' | 'none';
 };
 
 export function Slider({
-  width = 'fixed',
+  length = 'fixed',
   bottomMargin = 'negative',
   ...props
 }: SliderProps) {
@@ -35,6 +35,7 @@ export function Slider({
       {...groupProps}
       className={styles.group}
       data-orientation={state.orientation}
+      data-length={length}
     >
       {props.label && (
         <div className={styles.labelAndOutput}>
@@ -46,20 +47,25 @@ export function Slider({
       <div
         {...trackProps}
         className={styles.track}
-        data-width={width}
+        data-orientation={state.orientation}
+        data-length={length}
         data-bottom-margin={bottomMargin}
         // `data-disabled` will only be present when disabled
         data-disabled={state.isDisabled ? '' : undefined}
         ref={trackRef}
       >
         {/* Track line */}
-        <div className={styles.trackLine} />
+        <div
+          className={styles.trackLine}
+          data-orientation={state.orientation}
+        />
         {/* Track fill */}
         <div
           className={styles.trackFill}
           style={{
             '--_slider-percentage': state.getThumbPercent(0) * 100 + '%',
           }}
+          data-orientation={state.orientation}
         />
         <Thumb state={state} trackRef={trackRef} />
       </div>
@@ -85,6 +91,7 @@ function Thumb({
       data-focused={isFocused ? '' : undefined}
       // `data-dragging` will only be present when is dragging
       data-dragging={isDragging ? '' : undefined}
+      data-orientation={state.orientation}
     >
       <input {...inputProps} className="sr-only" ref={inputRef} />
     </div>

@@ -91,7 +91,8 @@ export function usePlayerTimeline({
   const handleCurrentAudio = useCallback(() => {
     const { timelineCurrentTime, timelineState } =
       usePlayerTimelineStore.getState();
-    const { currentAudio, setCurrentAudio } = usePlayerAudioStore.getState();
+    const { currentAudio, setCurrentAudio, volume } =
+      usePlayerAudioStore.getState();
 
     /* Check if the current audio already ended (i.e. is not the current audio
     anymore) */
@@ -140,8 +141,8 @@ export function usePlayerTimeline({
     start yet, when reaching the moment when the audio starts, it would play
     from the time it had the last time it was played instead of from the start) */
     audioElement.currentTime = 0;
-    // Set the default volume
-    audioElement.volume = 0.1;
+    // Set the current volume
+    audioElement.volume = volume;
 
     // Only play the audio if the timeline is playing
     const isTimelinePlaying = timelineState === 'playing';
@@ -239,7 +240,8 @@ export function usePlayerTimeline({
     dependency to prevent extra re-renders, as this value is not being used to
     update the UI where this hook is used */
     const unsubscribe = usePlayerAudioStore.subscribe(
-      cleanListener(({ currentAudio }) => {
+      ({ currentAudio }) => currentAudio,
+      cleanListener((currentAudio) => {
         function handlePlayAudio() {
           const { timelineState } = usePlayerTimelineStore.getState();
           if (timelineState !== 'playing') handlePlayOrPause();

@@ -1,4 +1,5 @@
 import { type } from 'arktype';
+import gsap from 'gsap';
 
 import type {
   AssignableOrNever,
@@ -102,3 +103,22 @@ export const validateLineHeight = type(
 export const validateLetterSpacing = type(
   `${TextSizes.minLetterSpacing}<=number<=${TextSizes.maxLetterSpacing}`
 );
+
+export const Volumes = {
+  minVolume: 0,
+  maxVolume: 1,
+  volumeStep: 0.05,
+} as const;
+
+/**
+ * @returns `undefined` if the volume is `NaN`, otherwise, returns the validated
+ * volume.
+ */
+export function getValidatedVolume(unvalidatedVolume: number) {
+  if (isNaN(unvalidatedVolume)) return undefined;
+
+  return gsap.utils.snap(
+    Volumes.volumeStep,
+    gsap.utils.clamp(Volumes.minVolume, Volumes.maxVolume, unvalidatedVolume)
+  );
+}

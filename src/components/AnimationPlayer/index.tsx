@@ -4,7 +4,6 @@ import Konva from 'konva';
 import { Group, Layer, Stage } from 'react-konva';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Pause, Play } from 'lucide-react';
 
 import styles from './AnimationPlayer.module.css';
 
@@ -26,7 +25,7 @@ import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
 import { preloadAudios } from '@/utils/audio';
 import type { Slide } from '@/utils/types';
 
-import { Slider } from '@/components/Slider';
+import { PlayerBar } from '@/components/PlayerBar';
 
 export function AnimationPlayer() {
   const { state: slidesFromHomePage, search: searchParams } = useLocation();
@@ -251,48 +250,4 @@ export function AnimationPlayer() {
       )}
     </main>
   );
-}
-
-function PlayerBar({
-  handlePlayOrPause,
-  handleChangeTime,
-}: {
-  handlePlayOrPause: () => void;
-  handleChangeTime: (time: number) => void;
-}) {
-  const { timelineCurrentTime, timelineDuration, timelineState } =
-    usePlayerTimelineStore();
-
-  return (
-    <div className={styles.playerBar}>
-      <button className={styles.playPauseButton} onClick={handlePlayOrPause}>
-        {timelineState === 'playing' ? <Pause size={18} /> : <Play size={18} />}
-      </button>
-
-      <Slider
-        aria-label="Timeline"
-        value={timelineCurrentTime}
-        minValue={0}
-        maxValue={timelineDuration}
-        step={0.001}
-        bottomMargin="none"
-        onChange={handleChangeTime}
-      />
-
-      <span className={styles.playerBarTime}>
-        <span>{formatTime(timelineCurrentTime)}</span> /{' '}
-        <span>{formatTime(timelineDuration)}</span>
-      </span>
-    </div>
-  );
-}
-
-function formatTime(timeInSeconds: number) {
-  const minutes = Math.floor(timeInSeconds / 60)
-    .toString()
-    .padStart(2, '0');
-  const seconds = Math.floor(timeInSeconds % 60)
-    .toString()
-    .padStart(2, '0');
-  return `${minutes}:${seconds}`;
 }

@@ -42,9 +42,13 @@ export function App() {
             backgroundColor: 'var(--clr-neutral-background)',
             borderColor: 'var(--clr-neutral-subtle-highlight)',
           },
+          classNames: { closeButton: 'toast-close-button' },
         }}
+        position="top-right"
         theme="dark"
         richColors
+        closeButton
+        pauseWhenPageIsHidden
       />
     </QueryClientProvider>
   );

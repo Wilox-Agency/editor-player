@@ -67,6 +67,19 @@
   background-color: var(--canvas-background-color);
 }
 
+/* Using `!important` is necessary because the selectors for the rich color
+styles added by the Sonner library have high specificity and there's no way to
+style the close button directly (using the style attribute) */
+.toast-close-button {
+  background-color: var(--clr-neutral-dark) !important;
+  border-color: var(--clr-neutral-highlight) !important;
+}
+.toast-close-button[data-disabled='true'] {
+  background-color: var(--clr-neutral-background) !important;
+  color: var(--clr-neutral-highlight) !important;
+  border-color: var(--clr-neutral-subtle-highlight) !important;
+}
+
 .focus-ring {
   --_ring-color: transparent;
 

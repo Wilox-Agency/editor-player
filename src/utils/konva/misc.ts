@@ -6,36 +6,51 @@ import Konva from 'konva';
  * the provided node until it is calculated (i.e. it is different from
  * `undefined` and from `0`) and then returns it.
  *
- * This function throws if the size is not calculated after 1s.
+ * This function throws if the size is not calculated after 1s, though this
+ * timeout is reset when the browser tab gets inactive.
  */
-/* TODO: Pause timeout when tab gets inactive. This is because the timeout will
-always get triggered when the tab gets inactive for some time, but removing the
-timeout altogether might lead to infinite wait times for unknown edge cases */
 export function waitUntilKonvaNodeSizeIsCalculated(
   node: Konva.Node,
   delayInMilliseconds: number = 50
 ) {
   return new Promise<{ width: number; height: number }>((resolve, reject) => {
-    const startTime = new Date().getTime();
+    let startTime = new Date().getTime();
     const maxWaitTime = 1000; // 1s
+    let timeout: number;
+
+    function handleVisibilityChange() {
+      // Clear the timeout when the browser tab gets inactive...
+      if (document.hidden) {
+        clearTimeout(timeout);
+        return;
+      }
+      // ...and reset the wait time after the tab gets active again
+      startTime = new Date().getTime();
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    const removeVisibilityListener = () =>
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
 
     function checkSize() {
       const currentTime = new Date().getTime();
       const timeElapsed = currentTime - startTime;
       // Rejecting after exceeding the maximum wait time
       if (timeElapsed >= maxWaitTime) {
+        removeVisibilityListener();
         reject(new Error('Timeout'));
         return;
       }
 
       // Width and height can be `undefined` or `0`
       if (!node.width() || !node.height()) {
-        setTimeout(() => {
+        timeout = setTimeout(() => {
           checkSize();
         }, delayInMilliseconds);
         return;
       }
 
+      removeVisibilityListener();
       resolve({ width: node.width(), height: node.height() });
     }
 

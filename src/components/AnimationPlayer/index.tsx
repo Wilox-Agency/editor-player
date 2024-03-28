@@ -23,6 +23,7 @@ import { combineSlides, createTweens } from '@/utils/slidesPlayer';
 import { fetchSlideshowLesson } from '@/utils/queries';
 import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
 import { preloadAudios } from '@/utils/audio';
+import { observeFontsLoadingFromCanvasElements } from '@/utils/font';
 import type { Slide } from '@/utils/types';
 
 import { PlayerBar } from '@/components/PlayerBar';
@@ -127,6 +128,8 @@ export function AnimationPlayer() {
     prefetchAssetsFromCanvasElements(canvasElements);
     // Preload audios
     preloadAudios(combinedSlides.audios);
+    // Observe fonts loading
+    observeFontsLoadingFromCanvasElements(canvasElements);
   }, [combinedSlides, loadCanvasTree]);
 
   // Setup the GSAP timeline

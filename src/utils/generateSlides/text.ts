@@ -8,14 +8,14 @@ type TextType = 'title' | 'paragraph';
 
 export const baseAttributesByTextType = {
   title: {
-    fontFamily: 'Arial',
+    fontFamily: 'Oswald',
     fontSize: 80,
     lineHeight: 1,
     letterSpacing: -4,
     fontStyle: 'bold',
   },
   paragraph: {
-    fontFamily: 'Arial',
+    fontFamily: 'Roboto',
     fontSize: 40,
     lineHeight: 1,
     letterSpacing: 0,

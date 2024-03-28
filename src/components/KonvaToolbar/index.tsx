@@ -81,6 +81,7 @@ export function KonvaToolbar() {
           selection?.type === 'text' &&
           canvasElement?.type === 'text' && (
             <>
+              {/* TODO: Add option to change font family */}
               <TextSizesButton
                 node={selection.node}
                 canvasElement={canvasElement}

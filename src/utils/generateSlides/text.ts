@@ -20,8 +20,12 @@ export const baseAttributesByTextType = {
     lineHeight: 1,
     letterSpacing: 0,
     fontStyle: '',
+    align: 'justify',
   },
-} satisfies Record<TextType, Parameters<typeof fitTextIntoRect>[1]>;
+} satisfies Record<
+  TextType,
+  Parameters<typeof fitTextIntoRect>[1] & Partial<CanvasElementOfType<'text'>>
+>;
 
 export function fitTextIntoRect(
   text: string,

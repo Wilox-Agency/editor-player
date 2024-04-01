@@ -78,14 +78,20 @@ export const slideshowLessonSchema = type(
 );
 
 /** This schema extends the slideshow lesson schema, adding the course cover and
- * section title, which are necessary for the first slide. */
-export const slideshowLessonWithFirstSlideInfoSchema = intersection(
+ * section title, which are necessary for the first slide, and the color theme
+ * name which is part of the customization */
+export const slideshowLessonWithExternalInfoSchema = intersection(
   slideshowLessonSchema,
-  { courseCover: 'string', sectionTitle: 'string' }
+  {
+    courseCover: 'string',
+    sectionTitle: 'string',
+    // TODO: Validate color theme name using the `colorThemeNames` constant
+    'colorThemeName?': '"default" | "oxford" | "twilight" | "pastel"',
+  }
 );
 
 export function parseSlideshowLesson(
-  slideshowLesson: (typeof slideshowLessonWithFirstSlideInfoSchema)['infer']
+  slideshowLesson: (typeof slideshowLessonWithExternalInfoSchema)['infer']
 ): SlideshowContent {
   const slideshowContent: SlideshowContent = {
     title: slideshowLesson.sectionTitle,
@@ -94,6 +100,7 @@ export function parseSlideshowLesson(
     soon */
     audioUrl: undefined,
     slides: [],
+    colorThemeName: slideshowLesson.colorThemeName,
   };
 
   for (const lessonParagraph of slideshowLesson.elementLesson.paragraphs) {

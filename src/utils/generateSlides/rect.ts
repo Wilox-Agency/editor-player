@@ -2,7 +2,6 @@ import type { IRect } from 'konva/lib/types';
 import gsap from 'gsap';
 import { type } from 'arktype';
 
-import { rectColorPalette } from './index';
 import { type AssetElement } from './asset';
 import { baseAttributesByTextType, fitTextIntoRect } from './text';
 import type { Coordinate, Dimension, Position, Size } from './sharedTypes';
@@ -960,10 +959,12 @@ export function generateRects({
   numberOfParagraphs,
   paragraphs,
   assetElement,
+  colorPalette,
 }: {
   numberOfParagraphs: 0 | 1 | 2;
   paragraphs: string[];
   assetElement: AssetElement;
+  colorPalette: string[];
 }) {
   const isFullWidthAssetElement = assetElement.width === StageVirtualSize.width;
   const isFullHeightAssetElement =
@@ -1074,7 +1075,7 @@ export function generateRects({
     }
   }
 
-  const rectColors = gsap.utils.shuffle([...rectColorPalette]);
+  const rectColors = gsap.utils.shuffle([...colorPalette]);
   let currentColorIndex = 0;
 
   return {

@@ -8,7 +8,7 @@ import styles from './Home.module.css';
 import { generateSlides } from '@/utils/generateSlides';
 import {
   parseSlideshowLesson,
-  slideshowLessonWithFirstSlideInfoSchema,
+  slideshowLessonWithExternalInfoSchema,
 } from '@/utils/generateSlides/parse';
 
 export function Home() {
@@ -22,8 +22,7 @@ export function Home() {
   const validationResult = (() => {
     try {
       const parsed = JSON.parse(slideshowJson) as unknown;
-      const { data, problems } =
-        slideshowLessonWithFirstSlideInfoSchema(parsed);
+      const { data, problems } = slideshowLessonWithExternalInfoSchema(parsed);
       return { data, error: problems?.toString() };
     } catch (error) {
       return { error: 'Could not parse JSON' };

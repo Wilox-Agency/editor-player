@@ -2,7 +2,7 @@ import { arrayOf, type } from 'arktype';
 
 import {
   slideshowLessonSchema,
-  type slideshowLessonWithFirstSlideInfoSchema,
+  type slideshowLessonWithExternalInfoSchema,
 } from '@/utils/generateSlides/parse';
 
 const courseSchema = type({
@@ -13,6 +13,8 @@ const courseSchema = type({
     title: 'string',
     elements: 'object[]',
   }),
+  // TODO: Validate color theme name using the `colorThemeNames` constant
+  'slideshowColorThemeName?': '"default" | "oxford" | "twilight" | "pastel"',
 });
 
 export async function fetchSlideshowLesson({
@@ -79,5 +81,6 @@ export async function fetchSlideshowLesson({
     ...slideshowLesson,
     courseCover: validatedCourse.details.cover,
     sectionTitle,
-  } satisfies (typeof slideshowLessonWithFirstSlideInfoSchema)['infer'];
+    colorThemeName: validatedCourse.slideshowColorThemeName,
+  } satisfies (typeof slideshowLessonWithExternalInfoSchema)['infer'];
 }

@@ -1,5 +1,6 @@
 import gsap from 'gsap';
 import { type } from 'arktype';
+import contrast from 'contrast';
 
 import { type AssetType, generateAssetAttributes } from './asset';
 import { generateRects } from './rect';
@@ -9,6 +10,7 @@ import {
   generateTextAttributes,
 } from './text';
 import { getAudioDuration } from './audio';
+import { colorThemeOptions } from './colors';
 import type { SlideshowContent } from './sharedTypes';
 import { getElementThatContainsText } from '@/utils/konva/text';
 import { findLast } from '@/utils/array';
@@ -28,28 +30,22 @@ const ColorPalette = {
   yellow: '#fffc5a',
 } as const;
 
-export const rectColorPalette = [
-  ColorPalette.black,
-  ColorPalette.purple,
-  ColorPalette.green,
-  ColorPalette.yellow,
-];
-
-function chooseTextColor(
-  textContainerColor: (typeof rectColorPalette)[number]
-) {
-  if (textContainerColor === ColorPalette.black) return ColorPalette.white;
+function chooseTextColor(textContainerColor: string) {
+  if (contrast(textContainerColor) === 'dark') return ColorPalette.white;
   return ColorPalette.black;
 }
 
-function getUnusedRectColorsFromSlide(canvasElements: CanvasElement[]) {
+function getUnusedRectColorsFromSlide(
+  canvasElements: CanvasElement[],
+  colorPalette: string[]
+) {
   const rectElements = canvasElements.filter(
     (element): element is CanvasElementOfType<'rect'> => {
       return element.type === 'rect';
     }
   );
   const rectColors = rectElements.map((rect) => rect.fill);
-  const unusedRectColors = rectColorPalette.filter(
+  const unusedRectColors = colorPalette.filter(
     (color) => !rectColors.includes(color)
   );
   // Shuffle the colors to add some randomness
@@ -60,14 +56,18 @@ function getUnusedRectColorsFromSlide(canvasElements: CanvasElement[]) {
 
 // TODO: Add support for audio to slides with subslides
 async function generateSlideWithSubSlides(
-  slideContent: SlideshowContent['slides'][number]
+  slideContent: SlideshowContent['slides'][number],
+  colorPalette: string[]
 ) {
   // Generate the main slide
-  const mainSlide: Slide = await generateSlide({
-    title: slideContent.title,
-    paragraphs: slideContent.paragraphs.slice(0, 1),
-    asset: slideContent.asset,
-  });
+  const mainSlide: Slide = await generateSlide(
+    {
+      title: slideContent.title,
+      paragraphs: slideContent.paragraphs.slice(0, 1),
+      asset: slideContent.asset,
+    },
+    colorPalette
+  );
 
   const subSlides: Slide[] = [];
 
@@ -105,7 +105,8 @@ async function generateSlideWithSubSlides(
     /* Change the color of the text container if there's one that's not being
     used already by another rect */
     const unusedRectColors = getUnusedRectColorsFromSlide(
-      subSlide.canvasElements
+      subSlide.canvasElements,
+      colorPalette
     );
     if (unusedRectColors[0]) {
       textContainer.fill = unusedRectColors[0];
@@ -128,9 +129,7 @@ async function generateSlideWithSubSlides(
       y: textContainer.y! + textContainer.height! / 2 - height / 2,
       width,
       fontSize,
-      fill: chooseTextColor(
-        textContainer.fill as (typeof rectColorPalette)[number]
-      ),
+      fill: chooseTextColor(textContainer.fill!),
     } satisfies CanvasElementOfType<'text'>;
     // Set the new text attributes
     Object.assign(textElement, textAttributes);
@@ -141,17 +140,20 @@ async function generateSlideWithSubSlides(
   return [mainSlide, ...subSlides];
 }
 
-export async function generateSlide({
-  title,
-  paragraphs = [],
-  asset,
-  audioUrl,
-}: {
-  title: string;
-  paragraphs?: string[];
-  asset: { type: AssetType; url: string };
-  audioUrl?: string;
-}) {
+export async function generateSlide(
+  {
+    title,
+    paragraphs = [],
+    asset,
+    audioUrl,
+  }: {
+    title: string;
+    paragraphs?: string[];
+    asset: { type: AssetType; url: string };
+    audioUrl?: string;
+  },
+  colorPalette: string[]
+) {
   const assetElement = await generateAssetAttributes(asset);
 
   let rectsAndTexts: CanvasElementOfType<'rect' | 'text'>[];
@@ -162,6 +164,7 @@ export async function generateSlide({
     numberOfParagraphs: numberOfParagraphs,
     assetElement,
     paragraphs,
+    colorPalette,
   });
 
   rectsAndTexts = [
@@ -206,24 +209,33 @@ export async function generateSlide({
 }
 
 export async function generateSlides(presentationContent: SlideshowContent) {
+  const colorPalette =
+    colorThemeOptions[presentationContent.colorThemeName || 'default'];
+
   // The only piece of text in the first slide will be the presentation title
-  const firstSlide: SlideWithAudioUrl = await generateSlide({
-    title: presentationContent.title,
-    asset: presentationContent.asset,
-    audioUrl: presentationContent.audioUrl,
-  });
+  const firstSlide: SlideWithAudioUrl = await generateSlide(
+    {
+      title: presentationContent.title,
+      asset: presentationContent.asset,
+      audioUrl: presentationContent.audioUrl,
+    },
+    colorPalette
+  );
 
   const otherSlides: SlideWithAudioUrl[] = [];
   for (const slideContent of presentationContent.slides) {
     if (slideContent.paragraphs.length >= 3) {
       /* If the slide has 3 or more paragraphs, then it should be separated into
       sub-slides */
-      const slideWithSubSlides = await generateSlideWithSubSlides(slideContent);
+      const slideWithSubSlides = await generateSlideWithSubSlides(
+        slideContent,
+        colorPalette
+      );
       otherSlides.push(...slideWithSubSlides);
       continue;
     }
 
-    otherSlides.push(await generateSlide(slideContent));
+    otherSlides.push(await generateSlide(slideContent, colorPalette));
   }
 
   return [firstSlide, ...otherSlides];

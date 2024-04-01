@@ -2,17 +2,19 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
 import { LocalStorageKeys } from '@/utils/localStorage';
-import { getValidatedVolume } from '@/utils/validation';
+import { getInitialVolume } from '@/utils/volume';
 
 type State = {
   currentAudio:
     | { element: HTMLAudioElement; shouldBePlayedAt: number }
     | undefined;
+  backgroundMusicElement: HTMLAudioElement | undefined;
   volume: number;
 };
 
 type PlayerAudioStore = State & {
   setCurrentAudio: (audio: State['currentAudio']) => void;
+  setBackgroundMusic: (backgroundMusicElement: HTMLAudioElement) => void;
   setVolume: (volume: number) => void;
 };
 
@@ -21,9 +23,13 @@ const initialVolume = getInitialVolume();
 export const usePlayerAudioStore = create(
   subscribeWithSelector<PlayerAudioStore>((set) => ({
     currentAudio: undefined,
+    backgroundMusicElement: undefined,
     volume: initialVolume,
     setCurrentAudio: (audio) => {
       set({ currentAudio: audio });
+    },
+    setBackgroundMusic: (backgroundMusicElement) => {
+      set({ backgroundMusicElement });
     },
     setVolume: (volume) => {
       set({ volume });
@@ -31,18 +37,3 @@ export const usePlayerAudioStore = create(
     },
   }))
 );
-
-function getInitialVolume() {
-  const defaultVolume = 0.1;
-
-  const volumeFromLocalStorageAsString = localStorage.getItem(
-    LocalStorageKeys.playerVolume
-  );
-  const volumeFromLocalStorage = volumeFromLocalStorageAsString
-    ? parseFloat(volumeFromLocalStorageAsString)
-    : undefined;
-
-  if (volumeFromLocalStorage === undefined) return defaultVolume;
-
-  return getValidatedVolume(volumeFromLocalStorage) ?? defaultVolume;
-}

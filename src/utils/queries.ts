@@ -15,6 +15,7 @@ const courseSchema = type({
   }),
   // TODO: Validate color theme name using the `colorThemeNames` constant
   'slideshowColorThemeName?': '"default" | "oxford" | "twilight" | "pastel"',
+  'slideshowBackgroundMusicUrl?': 'string',
 });
 
 export async function fetchSlideshowLesson({
@@ -82,5 +83,6 @@ export async function fetchSlideshowLesson({
     courseCover: validatedCourse.details.cover,
     sectionTitle,
     colorThemeName: validatedCourse.slideshowColorThemeName,
+    backgroundMusicUrl: validatedCourse.slideshowBackgroundMusicUrl,
   } satisfies (typeof slideshowLessonWithExternalInfoSchema)['infer'];
 }

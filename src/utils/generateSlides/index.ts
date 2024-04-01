@@ -9,10 +9,10 @@ import {
   fitTextIntoRect,
   generateTextAttributes,
 } from './text';
-import { getAudioDuration } from './audio';
 import { colorThemeOptions } from './colors';
 import type { SlideshowContent } from './sharedTypes';
 import { getElementThatContainsText } from '@/utils/konva/text';
+import { getAudioDuration } from '@/utils/audio';
 import { findLast } from '@/utils/array';
 import type {
   CanvasElement,

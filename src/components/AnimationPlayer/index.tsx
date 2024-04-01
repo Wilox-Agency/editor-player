@@ -22,10 +22,11 @@ import { parseSlideshowLesson } from '@/utils/generateSlides/parse';
 import { combineSlides, createTweens } from '@/utils/slidesPlayer';
 import { fetchSlideshowLesson } from '@/utils/queries';
 import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
-import { preloadAudios } from '@/utils/audio';
+import { preloadAudios, getAudioDuration } from '@/utils/audio';
 import { observeFontsLoadingFromCanvasElements } from '@/utils/font';
 
 import { PlayerBar } from '@/components/PlayerBar';
+import { validateUrl } from '@/utils/validation';
 
 export function AnimationPlayer() {
   const { state: slideshowLessonFromHomePage, search: searchParams } =
@@ -94,6 +95,43 @@ export function AnimationPlayer() {
     },
   });
 
+  // Get the background music
+  const { data: backgroundMusic, isLoading: isLoadingBackgroundMusic } =
+    useQuery({
+      enabled: !!slideshowLessonFromHomePage || !!slideshowLesson,
+      queryKey: [
+        'backgroundMusic',
+        slideshowLessonFromHomePage,
+        slideshowLesson,
+      ],
+      queryFn: async () => {
+        let backgroundMusicUrl;
+        if (slideshowLessonFromHomePage) {
+          type SlideshowLesson = Parameters<typeof parseSlideshowLesson>[0];
+          backgroundMusicUrl = (slideshowLessonFromHomePage as SlideshowLesson)
+            .backgroundMusicUrl;
+        }
+        if (slideshowLesson) {
+          backgroundMusicUrl = slideshowLesson.backgroundMusicUrl;
+        }
+        
+        if (backgroundMusicUrl && !validateUrl(backgroundMusicUrl)) {
+          /* When there's an invalid background music URL, it's being assumed
+          that it's just missing the base URL */
+          const backgroundMusicBaseUrl = import.meta.env
+            .VITE_BACKGROUND_MUSIC_BASE_URL;
+          backgroundMusicUrl = backgroundMusicBaseUrl + backgroundMusicUrl;
+        }
+
+        if (!backgroundMusicUrl) return null;
+
+        const audioDuration = await getAudioDuration(backgroundMusicUrl);
+        if (audioDuration === undefined) return null;
+
+        return { url: backgroundMusicUrl, duration: audioDuration };
+      },
+    });
+
   // Generate animations
   const combinedSlides = useMemo(() => {
     if (!slides) return undefined;
@@ -112,11 +150,15 @@ export function AnimationPlayer() {
     updateTimelineDuration,
     handlePlayOrPause,
     handleChangeTime,
-  } = usePlayerTimeline({ layerRef, audios: combinedSlides?.audios || [] });
+  } = usePlayerTimeline({
+    layerRef,
+    audios: combinedSlides?.audios || [],
+    backgroundMusic: backgroundMusic || undefined,
+  });
 
   // Setup player
   useEffect(() => {
-    if (!combinedSlides) return;
+    if (!combinedSlides || isLoadingBackgroundMusic) return;
 
     // Load canvas tree
     const canvasElements = combinedSlides.canvasElements.map(
@@ -126,11 +168,19 @@ export function AnimationPlayer() {
 
     // Prefetch assets
     prefetchAssetsFromCanvasElements(canvasElements);
-    // Preload audios
-    preloadAudios(combinedSlides.audios);
+    // Preload audios, including background music if there's one
+    preloadAudios([
+      ...combinedSlides.audios,
+      ...(backgroundMusic ? [backgroundMusic] : []),
+    ]);
     // Observe fonts loading
     observeFontsLoadingFromCanvasElements(canvasElements);
-  }, [combinedSlides, loadCanvasTree]);
+  }, [
+    backgroundMusic,
+    combinedSlides,
+    isLoadingBackgroundMusic,
+    loadCanvasTree,
+  ]);
 
   // Setup the GSAP timeline
   useEffect(() => {

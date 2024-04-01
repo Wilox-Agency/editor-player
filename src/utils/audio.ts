@@ -28,9 +28,7 @@ export function preloadAudio(url: string) {
   });
 }
 
-export async function preloadAudios(
-  audios: { url: string; shouldBePlayedAt: number }[]
-) {
+export async function preloadAudios(audios: { url: string }[]) {
   const preloadAudiosPromise = Promise.allSettled(
     audios.map(({ url }) => preloadAudio(url))
   );
@@ -67,4 +65,37 @@ export async function preloadAudios(
     }
     document.body.append(audioElement);
   }
+}
+
+export function getAudioDuration(url: string) {
+  return new Promise<number | undefined>((resolve, reject) => {
+    const audioElement = document.createElement('audio');
+
+    function handleLoad() {
+      cleanup();
+
+      const duration = audioElement.duration;
+      if (isNaN(duration) || duration === Infinity) {
+        reject('Audio duration is unknown.');
+        return;
+      }
+
+      resolve(duration);
+    }
+
+    function handleError() {
+      reject(`Invalid audio URL: "${url}"`);
+      cleanup();
+    }
+
+    function cleanup() {
+      audioElement.removeEventListener('loadedmetadata', handleLoad);
+      audioElement.removeEventListener('error', handleError);
+      audioElement.remove();
+    }
+
+    audioElement.addEventListener('loadedmetadata', handleLoad);
+    audioElement.addEventListener('error', handleError);
+    audioElement.src = url;
+  });
 }

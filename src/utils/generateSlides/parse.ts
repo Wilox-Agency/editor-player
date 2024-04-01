@@ -79,7 +79,7 @@ export const slideshowLessonSchema = type(
 
 /** This schema extends the slideshow lesson schema, adding the course cover and
  * section title, which are necessary for the first slide, and the color theme
- * name which is part of the customization */
+ * name and background music URL, which are part of the customization */
 export const slideshowLessonWithExternalInfoSchema = intersection(
   slideshowLessonSchema,
   {
@@ -87,6 +87,7 @@ export const slideshowLessonWithExternalInfoSchema = intersection(
     sectionTitle: 'string',
     // TODO: Validate color theme name using the `colorThemeNames` constant
     'colorThemeName?': '"default" | "oxford" | "twilight" | "pastel"',
+    'backgroundMusicUrl?': 'string',
   }
 );
 
@@ -101,6 +102,7 @@ export function parseSlideshowLesson(
     audioUrl: undefined,
     slides: [],
     colorThemeName: slideshowLesson.colorThemeName,
+    backgroundMusicUrl: slideshowLesson.backgroundMusicUrl,
   };
 
   for (const lessonParagraph of slideshowLesson.elementLesson.paragraphs) {

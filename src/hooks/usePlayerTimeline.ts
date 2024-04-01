@@ -1,11 +1,13 @@
 import { type RefObject, useCallback, useEffect, useMemo } from 'react';
 import type Konva from 'konva';
 import { create } from 'zustand';
+import { shallow } from 'zustand/shallow';
 import { subscribeWithSelector } from 'zustand/middleware';
 import gsap from 'gsap';
 
 import { usePlayerAudioStore } from '@/hooks/usePlayerAudioStore';
 import { getAllVideoElementsFromNode } from '@/utils/konva/misc';
+import { backgroundMusicVolumeMultiplier } from '@/utils/volume';
 import { cleanListener } from '@/utils/zustand';
 
 type PlayerTimelineStore = {
@@ -33,6 +35,7 @@ export const usePlayerTimelineStore = create(
 export function usePlayerTimeline({
   layerRef,
   audios,
+  backgroundMusic,
 }: {
   layerRef: RefObject<Konva.Layer>;
   audios: {
@@ -40,6 +43,7 @@ export function usePlayerTimeline({
     shouldBePlayedAt: number;
     duration: number;
   }[];
+  backgroundMusic?: { url: string; duration: number };
 }) {
   const timeline = useMemo(() => gsap.timeline(), []);
 
@@ -75,12 +79,23 @@ export function usePlayerTimeline({
     timeline.pause();
     timeline.time(time);
 
-    // Set the audio current time (if there's a current audio)
-    const { currentAudio } = usePlayerAudioStore.getState();
+    const { currentAudio, backgroundMusicElement } =
+      usePlayerAudioStore.getState();
+    const { timelineCurrentTime } = usePlayerTimelineStore.getState();
+
+    // Set the audio and background music current times
     if (currentAudio) {
-      const { timelineCurrentTime } = usePlayerTimelineStore.getState();
       currentAudio.element.currentTime =
         timelineCurrentTime - currentAudio.shouldBePlayedAt;
+    }
+    if (backgroundMusic && backgroundMusicElement) {
+      /* The background music cycles and is played during the entire slideshow,
+      so instead of subtracting the duration from the timeline current time, as
+      with the current audio, just get the remainder of the timeline current
+      time divided by the duration, which is equivalent to the current time of
+      the music in its current cycle */
+      backgroundMusicElement.currentTime =
+        timelineCurrentTime % backgroundMusic.duration;
     }
   }
 
@@ -149,6 +164,46 @@ export function usePlayerTimeline({
     if (isTimelinePlaying) audioElement.play();
   }, [audios]);
 
+  /**
+   * Sets the background music and plays it if the timeline is playing. Should
+   * be called every time the timeline updates.
+   */
+  const handleBackgroundMusic = useCallback(() => {
+    if (!backgroundMusic) return;
+
+    const { backgroundMusicElement, setBackgroundMusic, volume } =
+      usePlayerAudioStore.getState();
+    const { timelineCurrentTime, timelineState } =
+      usePlayerTimelineStore.getState();
+    const isTimelinePlaying = timelineState === 'playing';
+
+    if (!backgroundMusicElement) {
+      const audioElementFromDom = document.querySelector(
+        `audio[src="${backgroundMusic.url}"]`
+      ) as HTMLAudioElement | undefined;
+      const audioElement =
+        audioElementFromDom || new Audio(backgroundMusic.url);
+
+      // Set the background music state
+      setBackgroundMusic(audioElement);
+
+      // Set the current volume
+      audioElement.volume = volume * backgroundMusicVolumeMultiplier;
+      // Only play the background music if the timeline is playing
+      if (isTimelinePlaying) audioElement.play();
+
+      return;
+    }
+
+    // Cycle the background music if it ended
+    if (backgroundMusicElement.ended) {
+      backgroundMusicElement.currentTime =
+        timelineCurrentTime % backgroundMusic.duration;
+
+      if (isTimelinePlaying) backgroundMusicElement.play();
+    }
+  }, [backgroundMusic]);
+
   // Set timeline event listeners
   useEffect(() => {
     timeline.eventCallback('onUpdate', () => {
@@ -158,8 +213,9 @@ export function usePlayerTimeline({
       // Redraw layer
       layerRef.current?.draw();
 
-      // Handle audio
+      // Handle audio and background music
       handleCurrentAudio();
+      handleBackgroundMusic();
     });
     timeline.eventCallback('onComplete', () => {
       // Update timeline state
@@ -170,7 +226,7 @@ export function usePlayerTimeline({
       timeline.eventCallback('onUpdate', null);
       timeline.eventCallback('onComplete', null);
     };
-  }, [handleCurrentAudio, layerRef, timeline]);
+  }, [handleBackgroundMusic, handleCurrentAudio, layerRef, timeline]);
 
   // Play/pause video and audio elements depending on timeline state
   useEffect(() => {
@@ -181,14 +237,17 @@ export function usePlayerTimeline({
       ({ timelineState }) => timelineState,
       (timelineState) => {
         const videoElements = getAllVideoElementsFromNode(layerRef.current!);
-        const { currentAudio } = usePlayerAudioStore.getState();
+        const { currentAudio, backgroundMusicElement } =
+          usePlayerAudioStore.getState();
 
         if (timelineState === 'playing') {
           videoElements.forEach((element) => element.play());
           currentAudio?.element.play();
+          backgroundMusicElement?.play();
         } else {
           videoElements.forEach((element) => element.pause());
           currentAudio?.element.pause();
+          backgroundMusicElement?.pause();
         }
       }
     );
@@ -230,18 +289,21 @@ export function usePlayerTimeline({
     };
   }, [timeline]);
 
-  /* Play/pause the timeline when the audio is played/paused using a shortcut,
-  gesture or something similar (which can be identified by the audio being
-  played/paused but the timeline not; using the Media Session API was already
-  considered, but it's not supported in WebView Android, which is one of the
-  target's of this application) */
+  /* Play/pause the timeline when the audio or background music is played/paused
+  using a shortcut, gesture or something similar (which can be identified by the
+  audio being played/paused but the timeline not; using the Media Session API
+  was already considered, but it's not supported in WebView Android, which is
+  one of the target's of this application) */
   useEffect(() => {
     /* Subscribe to state changes instead of using the state as a `useEffect`
     dependency to prevent extra re-renders, as this value is not being used to
     update the UI where this hook is used */
     const unsubscribe = usePlayerAudioStore.subscribe(
-      ({ currentAudio }) => currentAudio,
-      cleanListener((currentAudio) => {
+      ({ currentAudio, backgroundMusicElement }) => ({
+        currentAudio,
+        backgroundMusicElement,
+      }),
+      cleanListener(({ currentAudio, backgroundMusicElement }) => {
         function handlePlayAudio() {
           const { timelineState } = usePlayerTimelineStore.getState();
           if (timelineState !== 'playing') handlePlayOrPause();
@@ -254,12 +316,20 @@ export function usePlayerTimeline({
 
         currentAudio?.element.addEventListener('play', handlePlayAudio);
         currentAudio?.element.addEventListener('pause', handlePauseAudio);
+        backgroundMusicElement?.addEventListener('play', handlePlayAudio);
+        backgroundMusicElement?.addEventListener('pause', handlePauseAudio);
 
         return () => {
           currentAudio?.element.removeEventListener('play', handlePlayAudio);
           currentAudio?.element.removeEventListener('pause', handlePauseAudio);
+          backgroundMusicElement?.removeEventListener('play', handlePlayAudio);
+          backgroundMusicElement?.removeEventListener(
+            'pause',
+            handlePauseAudio
+          );
         };
-      })
+      }),
+      { equalityFn: shallow }
     );
     return () => unsubscribe();
   }, [handlePlayOrPause]);

@@ -21,6 +21,7 @@ import styles from './PlayerBar.module.css';
 
 import { usePlayerTimelineStore } from '@/hooks/usePlayerTimeline';
 import { usePlayerAudioStore } from '@/hooks/usePlayerAudioStore';
+import { backgroundMusicVolumeMultiplier } from '@/utils/volume';
 import { Volumes } from '@/utils/validation';
 
 import { Slider } from '@/components/Slider';
@@ -46,11 +47,16 @@ export function PlayerBar({
     isTimelinePlaying: timelineState === 'playing',
   });
 
+  /* Update the volume of the current audio and background music when the volume
+  state changes */
   useEffect(() => {
-    const { currentAudio } = usePlayerAudioStore.getState();
-    if (!currentAudio) return;
+    const { currentAudio, backgroundMusicElement } =
+      usePlayerAudioStore.getState();
 
-    currentAudio.element.volume = volume;
+    if (currentAudio) currentAudio.element.volume = volume;
+    if (backgroundMusicElement) {
+      backgroundMusicElement.volume = volume * backgroundMusicVolumeMultiplier;
+    }
   }, [volume]);
 
   return (

@@ -67,8 +67,8 @@ export const slideshowLessonSchema = type(
             'translatedTitleAI?': 'string',
           },
           union(
-            { imageData: { finalImage: { url: 'string' } } },
-            { videoData: { finalVideo: { url: 'string' } } }
+            { imageData: { finalImage: { url: 'string>1' } } },
+            { videoData: { finalVideo: { url: 'string>1' } } }
           )
         )
       ),

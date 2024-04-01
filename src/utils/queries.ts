@@ -1,9 +1,16 @@
 import { arrayOf, type } from 'arktype';
 
-import { slideshowLessonSchema } from '@/utils/generateSlides/parse';
+import {
+  slideshowLessonSchema,
+  type slideshowLessonWithFirstSlideInfoSchema,
+} from '@/utils/generateSlides/parse';
 
 const courseSchema = type({
+  details: {
+    cover: 'string',
+  },
   sections: arrayOf({
+    title: 'string',
     elements: 'object[]',
   }),
 });
@@ -44,12 +51,14 @@ export async function fetchSlideshowLesson({
   }
 
   let slideshowLesson;
+  let sectionTitle;
   sectionsLoop: for (const section of validatedCourse.sections) {
     for (const element of section.elements) {
       if ('elementCode' in element && element.elementCode === lessonId) {
         const { data: lesson } = slideshowLessonSchema(element);
         if (lesson) {
           slideshowLesson = lesson;
+          sectionTitle = section.title;
           break sectionsLoop;
         }
 
@@ -60,9 +69,15 @@ export async function fetchSlideshowLesson({
     }
   }
 
-  if (!slideshowLesson) {
+  /* Both variables are set together, so checking both is not necessary, but
+  they're being checked anyway so that both types are correctly inferred */
+  if (!slideshowLesson || !sectionTitle) {
     throw new Error('Slideshow lesson not found.');
   }
 
-  return slideshowLesson;
+  return {
+    ...slideshowLesson,
+    courseCover: validatedCourse.details.cover,
+    sectionTitle,
+  } satisfies (typeof slideshowLessonWithFirstSlideInfoSchema)['infer'];
 }

@@ -56,7 +56,6 @@ export function parseSlideshowBase(
  * only the ones that are used in the app */
 export const slideshowLessonSchema = type(
   {
-    title: 'string',
     elementCode: 'string',
     elementLesson: {
       paragraphs: arrayOf(
@@ -78,12 +77,19 @@ export const slideshowLessonSchema = type(
   { keys: 'distilled' }
 );
 
+/** This schema extends the slideshow lesson schema, adding the course cover and
+ * section title, which are necessary for the first slide. */
+export const slideshowLessonWithFirstSlideInfoSchema = intersection(
+  slideshowLessonSchema,
+  { courseCover: 'string', sectionTitle: 'string' }
+);
+
 export function parseSlideshowLesson(
-  slideshowLesson: (typeof slideshowLessonSchema)['infer']
+  slideshowLesson: (typeof slideshowLessonWithFirstSlideInfoSchema)['infer']
 ): SlideshowContent {
   const slideshowContent: SlideshowContent = {
-    title: slideshowLesson.title,
-    asset: { type: 'image', url: getLoremPicsum() },
+    title: slideshowLesson.sectionTitle,
+    asset: { type: 'image', url: slideshowLesson.courseCover },
     /* Currently, there's no audio for the lesson title, but it will be added
     soon */
     audioUrl: undefined,

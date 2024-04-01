@@ -8,7 +8,7 @@ import styles from './Home.module.css';
 import { generateSlides } from '@/utils/generateSlides';
 import {
   parseSlideshowLesson,
-  slideshowLessonSchema,
+  slideshowLessonWithFirstSlideInfoSchema,
 } from '@/utils/generateSlides/parse';
 
 export function Home() {
@@ -22,7 +22,8 @@ export function Home() {
   const validationResult = (() => {
     try {
       const parsed = JSON.parse(slideshowJson) as unknown;
-      const { data, problems } = slideshowLessonSchema(parsed);
+      const { data, problems } =
+        slideshowLessonWithFirstSlideInfoSchema(parsed);
       return { data, error: problems?.toString() };
     } catch (error) {
       return { error: 'Could not parse JSON' };
@@ -96,6 +97,9 @@ export function Home() {
 
 const slideshowJsonExample = JSON.stringify(
   {
+    courseCover:
+      'https://images.pexels.com/photos/4558461/pexels-photo-4558461.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    sectionTitle: 'Descubriendo el corazón de los Países Nórdicos.',
     type: 'Lección Engine',
     title: 'Presentation',
     elementCode: '67400928-3c9b-4730-8c60-a21a7f666b6c',

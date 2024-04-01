@@ -88,7 +88,8 @@ export const slideshowLessonWithExternalInfoSchema = intersection(
     // TODO: Validate color theme name using the `colorThemeNames` constant
     'colorThemeName?': '"default" | "oxford" | "twilight" | "pastel"',
     'backgroundMusicUrl?': 'string',
-  }
+  },
+  { keys: 'distilled' }
 );
 
 export function parseSlideshowLesson(

@@ -24,15 +24,15 @@ import { fetchSlideshowLesson } from '@/utils/queries';
 import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
 import { preloadAudios } from '@/utils/audio';
 import { observeFontsLoadingFromCanvasElements } from '@/utils/font';
-import type { Slide } from '@/utils/types';
 
 import { PlayerBar } from '@/components/PlayerBar';
 
 export function AnimationPlayer() {
-  const { state: slidesFromHomePage, search: searchParams } = useLocation();
+  const { state: slideshowLessonFromHomePage, search: searchParams } =
+    useLocation();
 
   const { data: slideshowLesson, error } = useQuery({
-    enabled: !slidesFromHomePage,
+    enabled: !slideshowLessonFromHomePage,
     queryKey: ['slideshowLesson', searchParams],
     queryFn: async () => {
       const searchParamsObject = new URLSearchParams(searchParams);
@@ -63,34 +63,34 @@ export function AnimationPlayer() {
     },
   });
 
-  // Generate slides (or get them from the home page)
+  // Generate slides
   const { data: slides } = useQuery({
-    enabled: !!slidesFromHomePage || !!slideshowLesson,
-    queryKey: ['generateSlides', slidesFromHomePage, slideshowLesson],
+    enabled: !!slideshowLessonFromHomePage || !!slideshowLesson,
+    queryKey: ['generateSlides', slideshowLessonFromHomePage, slideshowLesson],
     queryFn: async () => {
-      if (slidesFromHomePage) {
-        return slidesFromHomePage as Slide[];
-      }
-
-      if (slideshowLesson) {
+      // Generate slides from the lesson
+      let slidesPromise;
+      if (slideshowLessonFromHomePage) {
+        slidesPromise = generateSlides(
+          parseSlideshowLesson(slideshowLessonFromHomePage)
+        );
+      } else {
         /* TODO: Instead of generating the slides every time, check if there are
         slides already saved alongside the lesson and generate them if not */
-        // Generate slides from the lesson
-        const slidesPromise = generateSlides(
-          parseSlideshowLesson(slideshowLesson)
-        );
-        toast.promise(slidesPromise, {
-          loading: 'Generating slides...',
-          success: 'Slides generated successfully!',
-          error: (error) => {
-            if (import.meta.env.DEV) {
-              console.log(error);
-            }
-            return 'Could not generate slides, please check if there are any broken images in the slideshow lesson.';
-          },
-        });
-        return await slidesPromise;
+        slidesPromise = generateSlides(parseSlideshowLesson(slideshowLesson!));
       }
+
+      toast.promise(slidesPromise, {
+        loading: 'Generating slides...',
+        success: 'Slides generated successfully!',
+        error: (error) => {
+          if (import.meta.env.DEV) {
+            console.log(error);
+          }
+          return 'Could not generate slides, please check if there are any broken images in the slideshow lesson.';
+        },
+      });
+      return await slidesPromise;
     },
   });
 

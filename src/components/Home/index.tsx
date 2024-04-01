@@ -1,21 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import { type FormEvent, useId, useState } from 'react';
-import { toast } from 'sonner';
 import clsx from 'clsx';
 
 import styles from './Home.module.css';
 
-import { generateSlides } from '@/utils/generateSlides';
-import {
-  parseSlideshowLesson,
-  slideshowLessonWithExternalInfoSchema,
-} from '@/utils/generateSlides/parse';
+import { slideshowLessonWithExternalInfoSchema } from '@/utils/generateSlides/parse';
 
 export function Home() {
   const jsonTextAreaId = useId();
   const errorMessageId = useId();
   const [slideshowJson, setSlideshowJson] = useState(slideshowJsonExample);
-  const [isGeneratingSlide, setIsGeneratingSlide] = useState(false);
 
   const navigate = useNavigate();
 
@@ -35,25 +29,7 @@ export function Home() {
 
     if (!validationResult?.data) return;
 
-    const slideshowBase = validationResult.data;
-    setIsGeneratingSlide(true);
-
-    const slideshowContent = parseSlideshowLesson(slideshowBase);
-
-    toast.promise(generateSlides(slideshowContent), {
-      loading: 'Generating slide...',
-      success: (slides) => {
-        navigate('/player', { state: slides });
-        return 'Slides generated successfully!';
-      },
-      error: (error) => {
-        console.log(error);
-        return 'Could not generate slides, please try again or check your slideshow JSON.';
-      },
-      finally: () => {
-        setIsGeneratingSlide(false);
-      },
-    });
+    navigate('/player', { state: validationResult.data });
   }
 
   return (
@@ -85,7 +61,7 @@ export function Home() {
         <button
           className={styles.submitButton}
           type="submit"
-          disabled={!validationResult?.data || isGeneratingSlide}
+          disabled={!validationResult?.data}
         >
           Generate slides
         </button>

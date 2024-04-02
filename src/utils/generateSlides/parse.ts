@@ -157,7 +157,7 @@ function splitLessonParagraph(paragraph: string) {
       guarantee that, but TypeScript is not able to recognize it) */
       splitParagraphs[
         splitParagraphIndex + 1
-      ] = `${nextSplitParagraph!} ${splitParagraph}`;
+      ] = `${splitParagraph} ${nextSplitParagraph!}`;
     }
 
     // Remove the current paragraph after being merged with another

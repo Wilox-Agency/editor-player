@@ -31,13 +31,13 @@ import { StageVirtualSize } from '@/utils/konva';
 import { pipe } from '@/utils/pipe';
 import type {
   CanvasElementOfType,
-  SlideWithAudioUrlAndStartTime,
-  SlideWithAudioUrl,
+  SlideWithAudioAndStartTime,
+  SlideWithAudio,
 } from '@/utils/types';
 
 function setEmptyAnimationAttributes(
-  slides: SlideWithAudioUrl[]
-): SlideWithAudioUrl<CanvasElementWithAnimationAttributes>[] {
+  slides: SlideWithAudio[]
+): SlideWithAudio<CanvasElementWithAnimationAttributes>[] {
   return slides.map((slide) => {
     return {
       ...slide,
@@ -58,7 +58,7 @@ function setEmptyAnimationAttributes(
  * to the same array (but with a different type which includes the animations).
  */
 function setAnimationsWithoutTimings(
-  slides: SlideWithAudioUrl<CanvasElementWithAnimationsWithoutTimings>[]
+  slides: SlideWithAudio<CanvasElementWithAnimationsWithoutTimings>[]
 ) {
   for (const [slideIndex, slide] of slides.entries()) {
     const nextSlide = slides[slideIndex + 1];
@@ -76,7 +76,7 @@ function setAnimationsWithoutTimings(
 }
 
 function getWhichTransitionsSlideHas(
-  slide: SlideWithAudioUrl<CanvasElementWithAnimationsWithoutTimings>
+  slide: SlideWithAudio<CanvasElementWithAnimationsWithoutTimings>
 ) {
   let slideHasEnterAnimation = false;
   let slideHasExitAnimation = false;
@@ -120,7 +120,7 @@ function getWhichTransitionsSlideHas(
  * timings).
  */
 function setAnimationTimings(
-  slides: SlideWithAudioUrl<CanvasElementWithAnimationsWithoutTimings>[]
+  slides: SlideWithAudio<CanvasElementWithAnimationsWithoutTimings>[]
 ) {
   let currentTime = 0;
   currentTime = 0;
@@ -163,7 +163,7 @@ function setAnimationTimings(
     /* Save the start time of the slide (used to know when audio should be
     played) */
     (
-      slide as SlideWithAudioUrlAndStartTime<CanvasElementWithAnimations>
+      slide as SlideWithAudioAndStartTime<CanvasElementWithAnimations>
     ).startTime = currentTime;
     // Add the duration of the slide
     currentTime += slide.duration;
@@ -183,11 +183,11 @@ function setAnimationTimings(
     }
   }
 
-  return slides as SlideWithAudioUrlAndStartTime<CanvasElementWithAnimations>[];
+  return slides as SlideWithAudioAndStartTime<CanvasElementWithAnimations>[];
 }
 
 /** Combines slides by adding animations to transition between them. */
-export function combineSlides(slides: SlideWithAudioUrl[]) {
+export function combineSlides(slides: SlideWithAudio[]) {
   /* 3 slides example (considering the complete slide transition as 3s, and each
   part of the transition as one-third of the complete slide transition):
 
@@ -208,14 +208,20 @@ export function combineSlides(slides: SlideWithAudioUrl[]) {
 
   const combinedSlides: {
     canvasElements: CanvasElementWithAnimations[];
-    audios: { url: string; shouldBePlayedAt: number; duration: number }[];
+    audios: {
+      url: string;
+      shouldBePlayedAt: number;
+      start?: number;
+      duration: number;
+    }[];
   } = { canvasElements: [], audios: [] };
   for (const slide of parsedSlides) {
     combinedSlides.canvasElements.push(...slide.canvasElements);
-    if (slide.audioUrl) {
+    if (slide.audio) {
       combinedSlides.audios.push({
-        url: slide.audioUrl,
+        url: slide.audio.url,
         shouldBePlayedAt: slide.startTime,
+        start: slide.audio.start,
         duration: slide.duration,
       });
     }

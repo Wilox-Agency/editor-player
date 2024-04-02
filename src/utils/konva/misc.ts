@@ -25,6 +25,7 @@ export function waitUntilKonvaNodeSizeIsCalculated(
         return;
       }
       // ...and reset the wait time after the tab gets active again
+      // TODO: Set timeout again when document is not hidden anymore
       startTime = new Date().getTime();
     }
 
@@ -44,6 +45,7 @@ export function waitUntilKonvaNodeSizeIsCalculated(
 
       // Width and height can be `undefined` or `0`
       if (!node.width() || !node.height()) {
+        // TODO: Do not set timeout when document is already hidden
         timeout = setTimeout(() => {
           checkSize();
         }, delayInMilliseconds);

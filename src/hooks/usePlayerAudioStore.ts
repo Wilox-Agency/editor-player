@@ -6,7 +6,12 @@ import { getInitialVolume } from '@/utils/volume';
 
 type State = {
   currentAudio:
-    | { element: HTMLAudioElement; shouldBePlayedAt: number }
+    | {
+        element: HTMLAudioElement;
+        shouldBePlayedAt: number;
+        start?: number;
+        duration: number;
+      }
     | undefined;
   backgroundMusicElement: HTMLAudioElement | undefined;
   volume: number;

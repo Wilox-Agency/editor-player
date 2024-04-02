@@ -321,11 +321,11 @@ export type Slide<TElement = CanvasElement> = {
   duration: number;
 };
 
-export type SlideWithAudioUrl<TElement = CanvasElement> = Slide<TElement> & {
-  audioUrl?: string;
+export type SlideWithAudio<TElement = CanvasElement> = Slide<TElement> & {
+  audio?: { url: string; start?: number };
 };
 
-export type SlideWithAudioUrlAndStartTime<TElement = CanvasElement> =
-  SlideWithAudioUrl<TElement> & {
+export type SlideWithAudioAndStartTime<TElement = CanvasElement> =
+  SlideWithAudio<TElement> & {
     startTime: number;
   };

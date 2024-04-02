@@ -41,6 +41,7 @@ export function usePlayerTimeline({
   audios: {
     url: string;
     shouldBePlayedAt: number;
+    start?: number;
     duration: number;
   }[];
   backgroundMusic?: { url: string; duration: number };
@@ -86,7 +87,8 @@ export function usePlayerTimeline({
     // Set the audio and background music current times
     if (currentAudio) {
       currentAudio.element.currentTime =
-        timelineCurrentTime - currentAudio.shouldBePlayedAt;
+        (currentAudio.start ?? 0) +
+        (timelineCurrentTime - currentAudio.shouldBePlayedAt);
     }
     if (backgroundMusic && backgroundMusicElement) {
       /* The background music cycles and is played during the entire slideshow,
@@ -115,12 +117,11 @@ export function usePlayerTimeline({
       /* When going back in the timeline, the current time may be moved to a
       time where the audio didn't start yet, so it also needs to be paused and
       cleared */
-      const audioDidNotStart =
-        timelineCurrentTime < currentAudio.shouldBePlayedAt;
+      const audioStarted = timelineCurrentTime >= currentAudio.shouldBePlayedAt;
       const audioEnded =
         timelineCurrentTime >
-        currentAudio.shouldBePlayedAt + currentAudio.element.duration;
-      if (!audioDidNotStart && !audioEnded) return;
+        currentAudio.shouldBePlayedAt + currentAudio.duration;
+      if (audioStarted && !audioEnded) return;
 
       // Clear the audio that ended
       setCurrentAudio(undefined);
@@ -149,13 +150,15 @@ export function usePlayerTimeline({
     setCurrentAudio({
       element: audioElement,
       shouldBePlayedAt: audioThatShouldBePlayed.shouldBePlayedAt,
+      start: audioThatShouldBePlayed.start,
+      duration: audioThatShouldBePlayed.duration,
     });
 
     /* Reset the current time (otherwise, for example, when listening to part of
     an audio, then going back to a point in the timeline when the audio didn't
     start yet, when reaching the moment when the audio starts, it would play
     from the time it had the last time it was played instead of from the start) */
-    audioElement.currentTime = 0;
+    audioElement.currentTime = audioThatShouldBePlayed.start ?? 0;
     // Set the current volume
     audioElement.volume = volume;
 

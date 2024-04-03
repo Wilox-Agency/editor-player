@@ -47,6 +47,9 @@ dependencies:
   '@react-stately/slider':
     specifier: ^3.5.0
     version: 3.5.0(react@18.2.0)
+  '@smockle/contrast':
+    specifier: ^8.0.1
+    version: 8.0.1
   '@tanstack/react-query':
     specifier: ^5.28.6
     version: 5.28.6(react@18.2.0)
@@ -56,9 +59,6 @@ dependencies:
   clsx:
     specifier: ^2.1.0
     version: 2.1.0
-  contrast:
-    specifier: ^1.0.1
-    version: 1.0.1
   fast-deep-equal:
     specifier: ^3.1.3
     version: 3.1.3
@@ -1982,6 +1982,12 @@ packages:
     dev: true
     optional: true
 
+  /@smockle/contrast@8.0.1:
+    resolution: {integrity: sha512-D9CZV2nffDN3v5teA9sUUoXudhkVuHn8GZK0D2W0D+w+at5LFpNG47MwDIDtezn+S6WOO0TtK01kUCRTnskGWA==}
+    engines: {node: '>= 20.0.0'}
+    hasBin: true
+    dev: false
+
   /@swc/helpers@0.5.3:
     resolution: {integrity: sha512-FaruWX6KdudYloq1AHD/4nU+UsMTdNE8CKyrseXWEcgjDAbvkwJg2QGPAnfIJLIWsjZOSPLOAykK6fuYp4vp4A==}
     dependencies:
@@ -2513,12 +2519,6 @@ packages:
       yargs: 17.7.2
     dev: true
 
-  /contrast@1.0.1:
-    resolution: {integrity: sha512-cJvPtJOPXxFtkppBYqk1A1+ZtPT7neKmgjBKMtjnwSAZ5k+5GNdJHeDmIjCTLEItLcqna+K7GTtaGjQtDJcF4A==}
-    dependencies:
-      hex-to-rgb: 1.0.1
-    dev: false
-
   /convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
     dev: true
@@ -2943,10 +2943,6 @@ packages:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
     dev: true
-
-  /hex-to-rgb@1.0.1:
-    resolution: {integrity: sha512-2GsESdjpJIrRL8I7iPOp0r0wczJBk++Q/zFrviNaTRPWMIgk5bPqDmKPUvRHN0SZrYT9N1e+xZU1niYJ6QxzMg==}
-    dev: false
 
   /icss-replace-symbols@1.1.0:
     resolution: {integrity: sha512-chIaY3Vh2mh2Q3RGXttaDIzeiPvaVXJ+C4DAh/w3c37SKZ/U6PGMmuicR2EQQp9bKG8zLMCl7I+PtIoOOPp8Gg==}

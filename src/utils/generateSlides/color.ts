@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import contrast from 'contrast';
+import { Contrast } from '@smockle/contrast';
 
 import type { CanvasElement, CanvasElementOfType } from '@/utils/types';
 
@@ -47,8 +47,15 @@ const TextColors = {
 } as const;
 
 export function chooseTextColor(textContainerColor: string) {
-  if (contrast(textContainerColor) === 'dark') return TextColors.white;
-  return TextColors.black;
+  let colorAndContrast;
+  for (const color of Object.values(TextColors)) {
+    const contrast = new Contrast(color, textContainerColor).value;
+    if (!colorAndContrast || colorAndContrast.contrast < contrast) {
+      colorAndContrast = { color, contrast };
+    }
+  }
+
+  return colorAndContrast!.color;
 }
 
 export function getUnusedRectColorsFromSlide(

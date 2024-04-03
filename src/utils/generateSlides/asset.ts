@@ -171,7 +171,7 @@ export async function generateAssetAttributes({
     ...baseAttributes,
     ...(type === 'image'
       ? { type: 'image', imageUrl: url }
-      : { type: 'video', videoUrl: url, autoPlay: true, loop: true }),
+      : { type: 'video', videoUrl: url, loop: true }),
   } satisfies DistributiveOmit<CanvasElementOfType<'image' | 'video'>, 'id'>;
 }
 

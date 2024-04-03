@@ -244,11 +244,17 @@ export function usePlayerTimeline({
           usePlayerAudioStore.getState();
 
         if (timelineState === 'playing') {
-          videoElements.forEach((element) => element.play());
+          videoElements.forEach((element) => {
+            element.autoplay = true;
+            element.play();
+          });
           currentAudio?.element.play();
           backgroundMusicElement?.play();
         } else {
-          videoElements.forEach((element) => element.pause());
+          videoElements.forEach((element) => {
+            element.autoplay = false;
+            element.pause();
+          });
           currentAudio?.element.pause();
           backgroundMusicElement?.pause();
         }

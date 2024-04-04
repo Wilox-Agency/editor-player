@@ -44,13 +44,6 @@ function getSubSlideAudioStartEnd(paragraph: string, srt: SrtSubtitles) {
     throw new Error('SRT is missing paragraph words.');
   }
 
-  // TODO: Remove this
-  console.log('getting audio start/end:', {
-    paragraph,
-    paragraphFirstDisplayWord,
-    paragraphLastDisplayWord,
-  });
-
   const isFirstWordOnAudio =
     paragraphFirstDisplayWord === srt.transcriptionResult.displayWords[0];
 

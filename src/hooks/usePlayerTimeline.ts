@@ -318,9 +318,14 @@ export function usePlayerTimeline({
           if (timelineState !== 'playing') handlePlayOrPause();
         }
 
-        function handlePauseAudio() {
+        function handlePauseAudio(event: Event) {
           const { timelineState } = usePlayerTimelineStore.getState();
-          if (timelineState === 'playing') handlePlayOrPause();
+          const element = event.target as HTMLMediaElement;
+          /* Only pause the timeline if the timeline is playing AND the audio
+          didn't pause just because it ended */
+          if (timelineState === 'playing' && !element.ended) {
+            handlePlayOrPause();
+          }
         }
 
         currentAudio?.element.addEventListener('play', handlePlayAudio);

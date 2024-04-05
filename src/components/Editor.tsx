@@ -103,7 +103,7 @@ const initialCanvasStyle = initialCanvasStyleFromStorage
   ? (JSON.parse(initialCanvasStyleFromStorage) as CanvasStyleStateJson)
   : undefined;
 
-export function Editor() {
+export default function Editor() {
   const { canvasTree, loadCanvasTree } = useCanvasTreeStore();
   const { canvasBackgroundColor, loadCanvasStyleFromJson } =
     useCanvasStyleStore();

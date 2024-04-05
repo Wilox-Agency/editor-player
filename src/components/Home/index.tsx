@@ -6,7 +6,7 @@ import styles from './Home.module.css';
 
 import { slideshowLessonWithExternalInfoSchema } from '@/utils/generateSlides/parse';
 
-export function Home() {
+export default function Home() {
   const jsonTextAreaId = useId();
   const errorMessageId = useId();
   const [slideshowJson, setSlideshowJson] = useState(slideshowJsonExample);

@@ -1,23 +1,27 @@
+import { type ComponentType } from 'react';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 
-import { Home } from '@/components/Home';
-import { Editor } from '@/components/Editor';
-import { AnimationPlayer } from '@/components/AnimationPlayer';
+async function lazyImportDefault<T extends ComponentType>(
+  importPromise: Promise<{ default: T }>
+) {
+  const { default: Component } = await importPromise;
+  return { Component };
+}
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <Home />,
+    lazy: () => lazyImportDefault(import('@/components/Home')),
   },
   {
     path: '/editor',
-    element: <Editor />,
+    lazy: () => lazyImportDefault(import('@/components/Editor')),
   },
   {
     path: '/player',
-    element: <AnimationPlayer />,
+    lazy: () => lazyImportDefault(import('@/components/AnimationPlayer')),
   },
 ]);
 

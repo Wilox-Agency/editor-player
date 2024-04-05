@@ -28,7 +28,7 @@ import { observeFontsLoadingFromCanvasElements } from '@/utils/font';
 import { PlayerBar } from '@/components/PlayerBar';
 import { validateUrl } from '@/utils/validation';
 
-export function AnimationPlayer() {
+export default function AnimationPlayer() {
   const { state: slideshowLessonFromHomePage, search: searchParams } =
     useLocation();
 

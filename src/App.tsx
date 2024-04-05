@@ -13,15 +13,15 @@ async function lazyImportDefault<T extends ComponentType>(
 const router = createBrowserRouter([
   {
     path: '/',
-    lazy: () => lazyImportDefault(import('@/components/Home')),
+    lazy: () => lazyImportDefault(import('@/pages/Home')),
   },
   {
     path: '/editor',
-    lazy: () => lazyImportDefault(import('@/components/Editor')),
+    lazy: () => lazyImportDefault(import('@/pages/Editor')),
   },
   {
     path: '/player',
-    lazy: () => lazyImportDefault(import('@/components/AnimationPlayer')),
+    lazy: () => lazyImportDefault(import('@/pages/AnimationPlayer')),
   },
 ]);
 

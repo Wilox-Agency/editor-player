@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n \"tcm,vite\" -c \"auto\" -k \"tcm src/components --watch\" \"vite\"",
+    "dev": "concurrently -n \"tcm,vite\" -c \"auto\" -k \"tcm 'src/{pages,components}' --watch\" \"vite\"",
     "build": "tcm src/components && tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"

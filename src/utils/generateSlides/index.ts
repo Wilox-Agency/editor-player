@@ -1,6 +1,5 @@
 import { type } from 'arktype';
 
-import { parseAudioForSubSlide } from './audio';
 import { type AssetType, generateAssetAttributes } from './asset';
 import { generateRects } from './rect';
 import {
@@ -37,19 +36,15 @@ async function generateSlideWithSubSlides(
   slideContent: SlideshowContent['slides'][number],
   colorPalette: string[]
 ) {
-  const audio = parseAudioForSubSlide({
-    audioUrl: slideContent.audioUrl,
-    srt: slideContent.srt,
-    paragraph: slideContent.paragraphs[0],
-  });
-
   // Generate the main slide
   const mainSlide: SlideWithAudio = await generateSlide(
     {
       title: slideContent.title,
       paragraphs: slideContent.paragraphs.slice(0, 1),
       asset: slideContent.asset,
-      audio,
+      /* TODO: Report TypeScript where the first item is always considered to be
+      defined even though the type definition doesn't say that */
+      audio: slideContent.audios?.[0],
     },
     colorPalette
   );
@@ -57,14 +52,12 @@ async function generateSlideWithSubSlides(
   const subSlides: SlideWithAudio[] = [];
 
   // Then generate sub-slides based on the main one
-  for (const paragraph of slideContent.paragraphs.slice(1)) {
+  for (const [paragraphIndex, paragraph] of slideContent.paragraphs
+    .slice(1)
+    .entries()) {
     const previousSlide = subSlides[subSlides.length - 1] || mainSlide;
 
-    const audio = parseAudioForSubSlide({
-      audioUrl: slideContent.audioUrl,
-      srt: slideContent.srt,
-      paragraph,
-    });
+    const audio = slideContent.audios?.[paragraphIndex + 1];
 
     // Create a copy of the previous slide with new IDs for the elements
     const subSlide: SlideWithAudio = {
@@ -236,9 +229,7 @@ export async function generateSlides(presentationContent: SlideshowContent) {
           title: slideContent.title,
           paragraphs: slideContent.paragraphs,
           asset: slideContent.asset,
-          audio: slideContent.audioUrl
-            ? { url: slideContent.audioUrl }
-            : undefined,
+          audio: slideContent.audios?.[0],
         },
         colorPalette
       )

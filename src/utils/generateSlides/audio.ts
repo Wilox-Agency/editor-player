@@ -6,7 +6,22 @@ function ticksToSeconds(ticks: number) {
   return ticks / 10_000_000;
 }
 
-function getSubSlideAudioStartEnd(paragraph: string, srt: SrtSubtitles) {
+function compareWords(wordA: string, wordB: string) {
+  const symbolAndWhitespaceRegex = /[^\p{L}\d]*/gmu;
+  const wordsAreOnlySymbols =
+    wordA.replace(symbolAndWhitespaceRegex, '') === '' &&
+    wordB.replace(symbolAndWhitespaceRegex, '') === '';
+
+  if (!wordsAreOnlySymbols) {
+    // Remove symbols and whitespaces, then convert to lowercase
+    wordA = wordA.replace(symbolAndWhitespaceRegex, '').toLowerCase();
+    wordB = wordB.replace(symbolAndWhitespaceRegex, '').toLowerCase();
+  }
+
+  return wordA === wordB;
+}
+
+export function getSubSlideAudioStartEnd(paragraph: string, srt: SrtSubtitles) {
   const paragraphWords = paragraph.split(' ');
 
   let paragraphWordIndex = 0;
@@ -17,7 +32,10 @@ function getSubSlideAudioStartEnd(paragraph: string, srt: SrtSubtitles) {
 
     /* If the words are not equal, go to the next display word and start
     comparing from the first paragraph word again */
-    if (displayWord.displayText !== paragraphWord) {
+    if (
+      paragraphWord === undefined ||
+      !compareWords(displayWord.displayText, paragraphWord)
+    ) {
       paragraphWordIndex = 0;
       paragraphFirstDisplayWord = undefined;
       continue;
@@ -56,17 +74,4 @@ function getSubSlideAudioStartEnd(paragraph: string, srt: SrtSubtitles) {
         paragraphLastDisplayWord.durationInTicks
     ),
   };
-}
-
-export function parseAudioForSubSlide({
-  audioUrl,
-  srt,
-  paragraph,
-}: {
-  audioUrl: string | undefined;
-  srt: SrtSubtitles | undefined;
-  paragraph: string | undefined;
-}) {
-  if (!audioUrl || !srt || !paragraph) return undefined;
-  return { url: audioUrl, ...getSubSlideAudioStartEnd(paragraph, srt) };
 }

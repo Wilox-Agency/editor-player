@@ -25,7 +25,8 @@ export type SlideshowContent = {
     title: string;
     paragraphs: string[];
     asset: { type: AssetType; url: string };
-    audioUrl?: string;
-    srt?: SrtSubtitles;
+    audios?:
+      | readonly [{ url: string }]
+      | { url: string; start: number; end: number }[];
   }[];
 };

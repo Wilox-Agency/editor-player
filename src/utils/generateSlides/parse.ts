@@ -2,6 +2,7 @@ import { arrayOf, intersection, morph, type, union } from 'arktype';
 
 import type { SlideshowContent } from './sharedTypes';
 import { getLoremPicsum } from '@/utils/random';
+import { getSubSlideAudioStartEnd } from './audio';
 
 export const firstItemSchema = type({ type: '"h1"', content: 'string' });
 export const restSchema = type(
@@ -109,24 +110,40 @@ export const slideshowLessonWithExternalInfoSchema = intersection(
   { keys: 'distilled' }
 );
 
+const sentenceTerminalRegex = /\p{Sentence_Terminal}(?=$|\s)/mu;
+const minParagraphLength = 75;
+
+function splitSentences(text: string) {
+  const splitText: string[] = [];
+  text = text.trim();
+
+  let matchArray;
+  while (
+    (matchArray = text.match(sentenceTerminalRegex))?.index !== undefined
+  ) {
+    /* TODO: Report TypeScript bug where the match array is not inferred as
+    non-null even though the index is */
+    splitText.push(text.slice(0, matchArray!.index + 1));
+    text = text.slice(matchArray!.index + 1).trim();
+  }
+
+  if (text !== '') {
+    splitText.push(text);
+  }
+
+  return splitText;
+}
+
 function splitLessonParagraph(paragraph: string) {
-  const splitParagraphs = paragraph
-    // Separate the sentences
-    .split('.')
-    // Trim each sentence
-    .map((sentence) => sentence.trim())
-    // Filter empty strings
-    .filter(Boolean)
-    // Re-add the period at the end
-    .map((sentence) => sentence + '.');
-  const minParagraphLength = 75;
+  // Separate the sentences
+  const splitParagraphs = splitSentences(paragraph);
 
   // Merge the paragraphs that are too short with an adjacent one
   let splitParagraphIndex = 0;
   while (splitParagraphIndex < splitParagraphs.length) {
     const splitParagraph = splitParagraphs[splitParagraphIndex]!;
 
-    // If the current paragraph is not below min length, do nothing
+    // If the current paragraph is not below the min length, do nothing
     if (splitParagraph.length >= minParagraphLength) {
       splitParagraphIndex++;
       continue;
@@ -167,6 +184,87 @@ function splitLessonParagraph(paragraph: string) {
   return splitParagraphs;
 }
 
+function splitLessonParagraphInto2(paragraph: string) {
+  const middleIndex = Math.ceil((paragraph.length - 1) / 2);
+  const middleCharacter = paragraph[middleIndex];
+
+  const splitParagraph = (() => {
+    const isSentenceTerminal =
+      !!middleCharacter && sentenceTerminalRegex.test(middleCharacter);
+    if (isSentenceTerminal) {
+      return [
+        paragraph.slice(0, middleIndex + 1),
+        paragraph.slice(middleIndex + 1).trim(),
+      ];
+    }
+
+    let backwardIterator = middleIndex - 1;
+    // Checking the characters on the left
+    while (backwardIterator >= 0) {
+      const character = paragraph[backwardIterator];
+      const isSentenceTerminal =
+        !!character && sentenceTerminalRegex.test(character);
+      if (isSentenceTerminal) break;
+
+      backwardIterator--;
+    }
+
+    let forwardIterator = middleIndex + 1;
+    // Checking the characters on the right
+    while (forwardIterator <= paragraph.length - 1) {
+      const character = paragraph[forwardIterator];
+      const isSentenceTerminal =
+        !!character && sentenceTerminalRegex.test(character);
+      if (isSentenceTerminal) break;
+
+      forwardIterator++;
+    }
+
+    /* If the character at an iterator index is undefined, it means a sentence
+    terminal was NOT found by that iterator */
+    const backwardIteratorDistance =
+      paragraph[backwardIterator] === undefined
+        ? undefined
+        : Math.abs(backwardIterator - middleIndex);
+    const forwardIteratorDistance =
+      paragraph[forwardIterator] === undefined
+        ? undefined
+        : Math.abs(forwardIterator - middleIndex);
+
+    if (
+      backwardIteratorDistance &&
+      (!forwardIteratorDistance ||
+        backwardIteratorDistance < forwardIteratorDistance)
+    ) {
+      return [
+        paragraph.slice(0, backwardIterator + 1),
+        paragraph.slice(backwardIterator + 1).trim(),
+      ];
+    }
+    if (
+      forwardIteratorDistance &&
+      (!backwardIteratorDistance ||
+        forwardIteratorDistance < backwardIteratorDistance)
+    ) {
+      return [
+        paragraph.slice(0, forwardIterator + 1),
+        paragraph.slice(forwardIterator + 1).trim(),
+      ];
+    }
+  })();
+
+  /* If it was not possible to divide the paragraph or any of the resulting
+  paragraphs is below the min length, then just return the entire paragraph */
+  if (
+    !splitParagraph ||
+    splitParagraph.some((paragraph) => paragraph.length < minParagraphLength)
+  ) {
+    return [paragraph];
+  }
+
+  return splitParagraph;
+}
+
 function parseSlideshowLessonParagraphs(
   lessonParagraphs: (typeof slideshowLessonSchema)['infer']['elementLesson']['paragraphs']
 ) {
@@ -174,19 +272,11 @@ function parseSlideshowLessonParagraphs(
 
   // Create a slide for each lesson paragraph
   for (const lessonParagraph of lessonParagraphs) {
-    let validSrt;
-    try {
-      validSrt = srtSubtitlesSchema.assert(lessonParagraph.srt);
-    } catch (error) {
-      /* empty */
-    }
+    const { slideParagraphs, audios } = (() => {
+      const splitParagraphs = splitLessonParagraph(lessonParagraph.content);
 
-    let slideParagraphs;
-    if (!validSrt) {
-      /* If there are no valid SRT subtitles, then try to split the lesson
-      paragraph, but only use the split paragraphs if there's at most 2 of them,
-      otherwise just use the entire lesson paragraph as the only paragraph in
-      the slide. */
+      /* Only use the resulting paragraphs if there's a valid SRT or the lesson
+      paragraph was split into at most 2 paragraphs */
       /* But why at most 2 paragraphs? Because a single slide can have at most 2
       paragraphs, and to create sub-slides (which happens when there are 3 or
       more paragraphs), the timestamps of when each paragraph starts on the
@@ -195,23 +285,42 @@ function parseSlideshowLessonParagraphs(
       file per lesson paragraph, so when a single lesson paragraph is dividided
       into more than one slide, the audio needs to stop and start at specific
       times so it doesn't play during the transitions. */
-      const splitParagraphs = splitLessonParagraph(lessonParagraph.content);
-      if (splitParagraphs.length <= 2) {
-        /* If the lesson paragraph was split into at most 2 paragrahs, then use
-        them */
-        slideParagraphs = splitParagraphs;
-      } else {
-        // just use the lesson paragraph content as the only paragraph in the slide
-        slideParagraphs = [lessonParagraph.content];
+      const willGenerateSubSlides = splitParagraphs.length > 2;
+      if (!willGenerateSubSlides) {
+        return {
+          slideParagraphs: splitParagraphs,
+          audios: [{ url: lessonParagraph.audioUrl }] as const,
+        };
       }
-    } else {
-      /* But if there are valid SRT subtitles (which are not used as subtitles,
-      but they have the necessary timings to define when each audio should begin
-      or stop), split the text from the SRT */
-      slideParagraphs = splitLessonParagraph(
-        validSrt.transcriptionResult.display
-      );
-    }
+
+      if (srtSubtitlesSchema.allows(lessonParagraph.srt)) {
+        const srt = lessonParagraph.srt;
+
+        let audios;
+        try {
+          audios = splitParagraphs.map((paragraph) => {
+            return {
+              url: lessonParagraph.audioUrl,
+              ...getSubSlideAudioStartEnd(paragraph, srt),
+            };
+          });
+        } catch (error) {
+          /* empty */
+        }
+
+        if (audios) {
+          return { slideParagraphs: splitParagraphs, audios };
+        }
+      }
+
+      /* If the SRT is invalid, or the lesson paragraph content and SRT text
+      don't match, fallback to splitting the lesson paragraph into only 2
+      paragraphs */
+      return {
+        slideParagraphs: splitLessonParagraphInto2(lessonParagraph.content),
+        audios: [{ url: lessonParagraph.audioUrl }] as const,
+      };
+    })();
 
     // Create the slide
     slides.push({
@@ -220,9 +329,8 @@ function parseSlideshowLessonParagraphs(
         'imageData' in lessonParagraph
           ? { type: 'image', url: lessonParagraph.imageData.finalImage.url }
           : { type: 'video', url: lessonParagraph.videoData.finalVideo.url },
-      audioUrl: lessonParagraph.audioUrl,
       paragraphs: slideParagraphs,
-      srt: validSrt,
+      audios,
     });
   }
 

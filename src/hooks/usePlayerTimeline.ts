@@ -141,7 +141,7 @@ export function usePlayerTimeline({
     if (!audioThatShouldBePlayed) return;
 
     const audioElementFromDom = document.querySelector(
-      `audio[src="${audioThatShouldBePlayed.url}"]`
+      `audio[data-src="${audioThatShouldBePlayed.url}"]`
     ) as HTMLAudioElement | undefined;
     const audioElement =
       audioElementFromDom || new Audio(audioThatShouldBePlayed.url);

@@ -1,6 +1,43 @@
 import { toast } from 'sonner';
 
-export function preloadAudio(url: string) {
+/**
+ * Request an audio with the 'Range' header (which in turn makes the response
+ * include the 'Content-Range' header) and turn the response blob into a URL
+ */
+async function requestAudioWithRange(url: string) {
+  // Fetch the audio to get its 'Content-Length' header
+  const responseWithoutRange = await fetch(url);
+  const contentLengthHeader =
+    responseWithoutRange.headers.get('Content-Length');
+  const audioByteLength = contentLengthHeader
+    ? parseInt(contentLengthHeader)
+    : undefined;
+  if (!audioByteLength) {
+    throw new Error('Audio response is missing content length header.');
+  }
+
+  // Fetch the audio again with the 'Range' header
+  const responseWithRange = await fetch(url, {
+    headers: {
+      Range: `bytes=0-${audioByteLength - 1}`,
+    },
+  });
+  /* Turn the audio into a blob and create a URL for it so it can be used as the
+  `src` for the audio element */
+  const blob = await responseWithRange.blob();
+  const blobUrl = URL.createObjectURL(blob);
+
+  return blobUrl;
+}
+
+export async function preloadAudio(url: string) {
+  /* This function is used to request the audio with the 'Range' header, so the
+  audio seeking can work properly on Chromium (works fine without it on Firefox;
+  not sure about Safari). Reference:
+  https://stackoverflow.com/questions/36783521/why-does-setting-currenttime-of-html5-video-element-reset-time-in-chrome/65804889
+  */
+  const blobUrl = await requestAudioWithRange(url);
+
   return new Promise<HTMLAudioElement>((resolve, reject) => {
     const audioElement = document.createElement('audio');
     audioElement.preload = 'auto';
@@ -24,7 +61,9 @@ export function preloadAudio(url: string) {
     }
 
     audioElement.addEventListener('error', handleError);
-    audioElement.src = url;
+    audioElement.src = blobUrl;
+    // Set the original URL as a data attribute so it can be found using it
+    audioElement.setAttribute('data-src', url);
   });
 }
 

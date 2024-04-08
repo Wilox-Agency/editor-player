@@ -20,7 +20,6 @@ export const baseAttributesByTextType = {
     lineHeight: 1,
     letterSpacing: 0,
     fontStyle: '',
-    align: 'justify',
   },
 } satisfies Record<
   TextType,

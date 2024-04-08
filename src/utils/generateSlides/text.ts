@@ -10,14 +10,14 @@ export const baseAttributesByTextType = {
   title: {
     fontFamily: 'Oswald',
     fontSize: 80,
-    lineHeight: 1,
+    lineHeight: 1.2,
     letterSpacing: -4,
     fontStyle: 'bold',
   },
   paragraph: {
     fontFamily: 'Roboto',
     fontSize: 40,
-    lineHeight: 1,
+    lineHeight: 1.2,
     letterSpacing: 0,
     fontStyle: '',
   },

@@ -85,8 +85,8 @@ export const slideshowLessonSchema = type(
             'srt?': 'unknown',
           },
           union(
-            { imageData: { finalImage: { url: 'string>1' } } },
-            { videoData: { finalVideo: { url: 'string>1' } } }
+            { videoData: { finalVideo: { url: 'string>1' } } },
+            { imageData: { finalImage: { url: 'string>1' } } }
           )
         )
       ),
@@ -326,9 +326,9 @@ function parseSlideshowLessonParagraphs(
     slides.push({
       title: lessonParagraph.translatedTitleAI || lessonParagraph.titleAI,
       asset:
-        'imageData' in lessonParagraph
-          ? { type: 'image', url: lessonParagraph.imageData.finalImage.url }
-          : { type: 'video', url: lessonParagraph.videoData.finalVideo.url },
+        'videoData' in lessonParagraph
+          ? { type: 'video', url: lessonParagraph.videoData.finalVideo.url }
+          : { type: 'image', url: lessonParagraph.imageData.finalImage.url },
       paragraphs: slideParagraphs,
       audios,
     });

@@ -143,8 +143,15 @@ export function usePlayerTimeline({
     const audioElementFromDom = document.querySelector(
       `audio[data-src="${audioThatShouldBePlayed.url}"]`
     ) as HTMLAudioElement | undefined;
-    const audioElement =
-      audioElementFromDom || new Audio(audioThatShouldBePlayed.url);
+    let audioElement;
+    if (audioElementFromDom) {
+      audioElement = audioElementFromDom;
+    } else {
+      audioElement = new Audio(audioThatShouldBePlayed.url);
+      audioElement.preload = 'auto';
+      audioElement.setAttribute('data-src', audioThatShouldBePlayed.url);
+      document.body.append(audioElement);
+    }
 
     // Set the current audio state
     setCurrentAudio({
@@ -182,10 +189,17 @@ export function usePlayerTimeline({
 
     if (!backgroundMusicElement) {
       const audioElementFromDom = document.querySelector(
-        `audio[src="${backgroundMusic.url}"]`
+        `audio[data-src="${backgroundMusic.url}"]`
       ) as HTMLAudioElement | undefined;
-      const audioElement =
-        audioElementFromDom || new Audio(backgroundMusic.url);
+      let audioElement;
+      if (audioElementFromDom) {
+        audioElement = audioElementFromDom;
+      } else {
+        audioElement = new Audio(backgroundMusic.url);
+        audioElement.preload = 'auto';
+        audioElement.setAttribute('data-src', backgroundMusic.url);
+        document.body.append(audioElement);
+      }
 
       // Set the background music state
       setBackgroundMusic(audioElement);

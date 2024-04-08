@@ -101,6 +101,7 @@ export async function preloadAudios(audios: { url: string }[]) {
       audioElement = document.createElement('audio');
       audioElement.src = audioUrl;
       audioElement.preload = 'auto';
+      audioElement.setAttribute('data-src', audioUrl);
     }
     document.body.append(audioElement);
   }

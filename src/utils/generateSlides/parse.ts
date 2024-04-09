@@ -53,6 +53,10 @@ export function parseSlideshowBase(
   return slideshowContent;
 }
 
+/**
+ * If the input is valid, it gets **mutated** by trimming the string from
+ * `transcriptionResult.display`
+ */
 export const srtSubtitlesSchema = type({
   transcriptionJobStatus: '"finished"',
   transcriptionResult: {
@@ -293,15 +297,24 @@ function parseSlideshowLessonParagraphs(
         };
       }
 
-      if (srtSubtitlesSchema.allows(lessonParagraph.srt)) {
-        const srt = lessonParagraph.srt;
+      let validSrt;
+      try {
+        /* The `srtSubtitlesSchema` uses `morph`, which means the input will be
+        mutated if it's valid, so the object should be copied before passing it to
+        `assert` */
+        const srtCopy = JSON.parse(JSON.stringify(lessonParagraph.srt));
+        validSrt = srtSubtitlesSchema.assert(srtCopy);
+      } catch (error) {
+        /* empty */
+      }
 
+      if (validSrt) {
         let audios;
         try {
           audios = splitParagraphs.map((paragraph) => {
             return {
               url: lessonParagraph.audioUrl,
-              ...getSubSlideAudioStartEnd(paragraph, srt),
+              ...getSubSlideAudioStartEnd(paragraph, validSrt),
             };
           });
         } catch (error) {

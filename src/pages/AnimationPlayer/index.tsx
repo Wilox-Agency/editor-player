@@ -23,7 +23,6 @@ import { combineSlides, createTweens } from '@/utils/slidesPlayer';
 import { fetchSlideshowLesson } from '@/utils/queries';
 import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
 import { preloadAudios, getAudioDuration } from '@/utils/audio';
-import { observeFontsLoadingFromCanvasElements } from '@/utils/font';
 
 import { PlayerBar } from '@/components/PlayerBar';
 import { validateUrl } from '@/utils/validation';
@@ -114,7 +113,7 @@ export default function AnimationPlayer() {
         if (slideshowLesson) {
           backgroundMusicUrl = slideshowLesson.backgroundMusicUrl;
         }
-        
+
         if (backgroundMusicUrl && !validateUrl(backgroundMusicUrl)) {
           /* When there's an invalid background music URL, it's being assumed
           that it's just missing the base URL */
@@ -173,8 +172,6 @@ export default function AnimationPlayer() {
       ...combinedSlides.audios,
       ...(backgroundMusic ? [backgroundMusic] : []),
     ]);
-    // Observe fonts loading
-    observeFontsLoadingFromCanvasElements(canvasElements);
   }, [
     backgroundMusic,
     combinedSlides,

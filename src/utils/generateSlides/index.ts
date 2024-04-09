@@ -15,6 +15,7 @@ import {
 import type { AudioWithStartEnd, SlideshowContent } from './sharedTypes';
 import { getElementThatContainsText } from '@/utils/konva/text';
 import { getAudioDuration } from '@/utils/audio';
+import { waitUntilAllSupportedFontsLoad } from '@/utils/font';
 import { findLast } from '@/utils/array';
 import type { CanvasElementOfType, SlideWithAudio } from '@/utils/types';
 
@@ -195,6 +196,10 @@ export async function generateSlide(
 }
 
 export async function generateSlides(presentationContent: SlideshowContent) {
+  /* Wait until all fonts are loaded before generating the slides to prevent
+  wrong text measurements */
+  await waitUntilAllSupportedFontsLoad();
+
   const colorPalette =
     colorThemeOptions[presentationContent.colorThemeName || 'default'];
 

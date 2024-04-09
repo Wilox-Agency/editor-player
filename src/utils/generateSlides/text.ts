@@ -1,6 +1,7 @@
 import type { IRect } from 'konva/lib/types';
 
 import { getCanvasTextWidth } from '@/utils/konva/text';
+import { FontFamily } from '@/utils/font';
 import { TextSizes } from '@/utils/validation';
 import type { CanvasElementOfType } from '@/utils/types';
 
@@ -8,14 +9,14 @@ type TextType = 'title' | 'paragraph';
 
 export const baseAttributesByTextType = {
   title: {
-    fontFamily: 'Oswald',
+    fontFamily: FontFamily.Oswald,
     fontSize: 80,
     lineHeight: 1.2,
     letterSpacing: -4,
     fontStyle: 'bold',
   },
   paragraph: {
-    fontFamily: 'Roboto',
+    fontFamily: FontFamily.Roboto,
     fontSize: 40,
     lineHeight: 1.2,
     letterSpacing: 0,

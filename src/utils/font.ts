@@ -1,36 +1,56 @@
 import FontFaceObserver from 'fontfaceobserver';
 import { toast } from 'sonner';
 
-import type { CanvasElement } from '@/utils/types';
+export const FontFamily = {
+  Arial: 'Arial',
+  Oswald: 'Oswald',
+  Roboto: 'Roboto',
+} as const;
 
-export function observeFontsLoadingFromCanvasElements(
-  canvasElements: CanvasElement[]
-) {
-  const fontFamilies = new Set<string>();
+export const fontFamilies = Object.values(FontFamily);
 
-  for (const element of canvasElements) {
-    if (element.type !== 'text') continue;
-    /* If the text has no font family defined, it is using Arial, which is the
-    default font */
-    fontFamilies.add(element.fontFamily || 'Arial');
+async function waitUntilFontLoads(fontFamily: string | undefined) {
+  // Konva uses Arial as default font family
+  fontFamily ||= FontFamily.Arial;
+
+  /* There's no actual benefit of checking if the already font loaded using
+  `FontFaceSet.check` instead of just using the font face observer, but
+  observing local fonts (e.g. Arial) will always throw an error, which is a
+  false-positive. That's why `FontFaceSet.check` is necessary. */
+  /* `FontFaceSet.check` requires a font size, but it doesn't matter what font
+  size is used. */
+  const didFontAlreadyLoad = document.fonts.check(`16px ${fontFamily}`);
+  if (didFontAlreadyLoad) return;
+
+  const fontLoadPromise = new FontFaceObserver(fontFamily).load();
+
+  let warningToastId: string | number | undefined;
+  // Show a toast if the font doesn't load after 10 seconds
+  const timeout = setTimeout(() => {
+    warningToastId = toast.warning(
+      `The font "${fontFamily}" is taking too long to load. Consider reloading the page.`
+    );
+  }, 10_000 /* 10 seconds */);
+
+  await fontLoadPromise;
+
+  // Clear the timeout after the font is loaded
+  clearTimeout(timeout);
+  // Dismiss the toast if it was already shown
+  if (warningToastId !== undefined) {
+    /* Even though `toast.dismiss` can receive undefined, it should not be
+    called with undefined as it would dismiss all toasts. */
+    toast.dismiss(warningToastId);
   }
+}
 
-  const loadFontPromises = Array.from(fontFamilies).map((fontFamily) => {
-    /* There's no actual benefit of checking if the already font loaded using
-    `FontFaceSet.check` instead of just using the font face observer, but
-    observing local fonts (e.g. Arial) will always throw an error, which is a
-    false-positive. That's why `FontFaceSet.check` is necessary. */
-    /* `FontFaceSet.check` requires a font size, but it doesn't matter what font
-    size is used. */
-    const didFontAlreadyLoad = document.fonts.check(`16px ${fontFamily}`);
-    if (didFontAlreadyLoad) {
-      return new Promise<void>((resolve) => resolve());
-    }
-    return new FontFaceObserver(fontFamily).load();
+export async function waitUntilAllSupportedFontsLoad() {
+  const fontLoadPromises = fontFamilies.map((fontFamily) => {
+    return waitUntilFontLoads(fontFamily);
   });
-  const loadFontsPromise = Promise.allSettled(loadFontPromises);
+  const fontsLoadPromise = Promise.allSettled(fontLoadPromises);
 
-  toast.promise(loadFontsPromise, {
+  toast.promise(fontsLoadPromise, {
     loading: 'Loading fonts...',
     success: (results) => {
       const numberOfSuccesses = results.filter(
@@ -45,4 +65,6 @@ export function observeFontsLoadingFromCanvasElements(
     },
     error: 'Could not load fonts.',
   });
+
+  return await fontsLoadPromise;
 }

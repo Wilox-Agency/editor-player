@@ -45,7 +45,7 @@ export function fitTextIntoRect(
   const lines = text.split('\n');
   const lineHeightInPixels =
     textAttributes.lineHeight * textAttributes.fontSize;
-  const padding = rect.padding || 40;
+  const padding = rect.padding ?? 40;
   const maxWidth = rect.width - padding * 2;
   const maxHeight = rect.height - padding * 2;
   let currentTextWidth = 0;

@@ -53,6 +53,7 @@ export function App() {
         richColors
         closeButton
         pauseWhenPageIsHidden
+        expand
       />
     </QueryClientProvider>
   );

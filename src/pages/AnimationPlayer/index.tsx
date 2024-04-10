@@ -23,9 +23,10 @@ import { combineSlides, createTweens } from '@/utils/slidesPlayer';
 import { fetchSlideshowLesson } from '@/utils/queries';
 import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
 import { preloadAudios, getAudioDuration } from '@/utils/audio';
+import { validateUrl } from '@/utils/validation';
 
 import { PlayerBar } from '@/components/PlayerBar';
-import { validateUrl } from '@/utils/validation';
+import { PlayerThumbnail } from '@/components/PlayerThumbnail';
 
 export default function AnimationPlayer() {
   const { state: slideshowLessonFromHomePage, search: searchParams } =
@@ -283,6 +284,7 @@ export default function AnimationPlayer() {
             );
           })}
         </Layer>
+        <PlayerThumbnail firstSlideElements={slides?.[0]?.canvasElements} />
       </Stage>
 
       {canvasTree.length > 0 && (

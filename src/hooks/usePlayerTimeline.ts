@@ -13,7 +13,7 @@ import { cleanListener } from '@/utils/zustand';
 type PlayerTimelineStore = {
   timelineCurrentTime: number;
   timelineDuration: number;
-  timelineState: 'paused' | 'playing' | 'ended' | 'forcePaused';
+  timelineState: 'notStarted' | 'paused' | 'playing' | 'ended' | 'forcePaused';
   reset: () => void;
 };
 
@@ -21,12 +21,12 @@ export const usePlayerTimelineStore = create(
   subscribeWithSelector<PlayerTimelineStore>((set) => ({
     timelineCurrentTime: 0,
     timelineDuration: 0,
-    timelineState: 'paused',
+    timelineState: 'notStarted',
     reset: () => {
       set({
         timelineCurrentTime: 0,
         timelineDuration: 0,
-        timelineState: 'paused',
+        timelineState: 'notStarted',
       });
     },
   }))
@@ -283,8 +283,12 @@ export function usePlayerTimeline({
     function handleVisibilityChange() {
       const { timelineState } = usePlayerTimelineStore.getState();
 
-      // Do nothing when timeline already ended or was unforcedly paused
-      if (timelineState === 'ended' || timelineState === 'paused') return;
+      // Do nothing when timeline is idle
+      const isTimelineIdle =
+        timelineState === 'notStarted' ||
+        timelineState === 'ended' ||
+        timelineState === 'paused';
+      if (isTimelineIdle) return;
 
       // Force pause when tab gets inactive
       if (document.hidden) {

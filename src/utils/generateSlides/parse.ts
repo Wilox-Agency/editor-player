@@ -116,6 +116,7 @@ export const slideshowLessonWithExternalInfoSchema = intersection(
 
 const sentenceTerminalRegex = /\p{Sentence_Terminal}(?=$|\s)/mu;
 const minParagraphLength = 75;
+const maxParagraphLength = 200;
 
 function splitSentences(text: string) {
   const splitText: string[] = [];
@@ -147,7 +148,8 @@ function splitLessonParagraph(paragraph: string) {
   while (splitParagraphIndex < splitParagraphs.length) {
     const splitParagraph = splitParagraphs[splitParagraphIndex]!;
 
-    // If the current paragraph is not below the min length, do nothing
+    /* If the current paragraph is not below the min length, do nothing and
+    continue to the next paragraph */
     if (splitParagraph.length >= minParagraphLength) {
       splitParagraphIndex++;
       continue;
@@ -156,7 +158,8 @@ function splitLessonParagraph(paragraph: string) {
     const previousSplitParagraph = splitParagraphs[splitParagraphIndex - 1];
     const nextSplitParagraph = splitParagraphs[splitParagraphIndex + 1];
 
-    // If there's no paragraph to merge with, do nothing
+    /* If there's no paragraph to merge with, do nothing and continue to the
+    next paragraph */
     if (!previousSplitParagraph && !nextSplitParagraph) {
       splitParagraphIndex++;
       continue;
@@ -165,20 +168,43 @@ function splitLessonParagraph(paragraph: string) {
     /* If there's a paragraph to merge with, then merge with the shortest of
     them */
     const shouldMergeWithPreviousParagraph =
+      // The previous paragraph is defined
       previousSplitParagraph &&
+      /* The next paragraph does not exist, or it exists but the previous
+      paragraph is shorter than it or has same length */
       (!nextSplitParagraph ||
-        previousSplitParagraph.length < nextSplitParagraph.length);
+        previousSplitParagraph.length <= nextSplitParagraph.length) &&
+      /* The paragraph combined with the previous one is below or equal to the
+      max length */
+      splitParagraph.length + previousSplitParagraph.length <=
+        maxParagraphLength;
     if (shouldMergeWithPreviousParagraph) {
       splitParagraphs[
         splitParagraphIndex - 1
       ] = `${previousSplitParagraph} ${splitParagraph}`;
-    } else {
-      /* If the condition above is not met, then the next paragraph is
-      guaranteed to exist (because this condition and the previous one together
-      guarantee that, but TypeScript is not able to recognize it) */
+    }
+
+    const shouldMergeWithNextParagraph =
+      // The next paragraph is defined
+      nextSplitParagraph &&
+      // The paragraph was not merged with the previous one
+      !shouldMergeWithPreviousParagraph &&
+      /* The paragraph combined with the next one is below or equal to the max
+      length */
+      splitParagraph.length + nextSplitParagraph.length <= maxParagraphLength;
+    if (shouldMergeWithNextParagraph) {
       splitParagraphs[
         splitParagraphIndex + 1
-      ] = `${splitParagraph} ${nextSplitParagraph!}`;
+      ] = `${splitParagraph} ${nextSplitParagraph}`;
+    }
+
+    /* If the paragraph was not merged with another, then continue to the next
+    paragraph */
+    const didMerge =
+      shouldMergeWithPreviousParagraph || shouldMergeWithNextParagraph;
+    if (!didMerge) {
+      splitParagraphIndex++;
+      continue;
     }
 
     // Remove the current paragraph after being merged with another

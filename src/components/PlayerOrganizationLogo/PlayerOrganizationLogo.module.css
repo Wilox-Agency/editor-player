@@ -1,0 +1,13 @@
+.logoContainer {
+  background-color: rgb(0 0 0 / 0.3);
+  backdrop-filter: blur(2px);
+  /* The positioning is set through JS */
+  position: absolute;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  margin-left: 0.5rem;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 1rem;
+  transform-origin: left top;
+}

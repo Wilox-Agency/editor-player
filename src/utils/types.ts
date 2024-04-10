@@ -2,6 +2,8 @@ import type Konva from 'konva';
 import type { KonvaNodeComponent, KonvaNodeEvents } from 'react-konva';
 import type { IsNever, OptionalKeysOf, RequiredKeysOf } from 'type-fest';
 
+import type { slideshowLessonWithExternalInfoSchema } from '@/utils/generateSlides/parse';
+
 import type { ImageProps, VideoProps } from '@/components/konva/Image';
 import type { TextProps } from '@/components/konva/Text';
 import type { RectProps } from '@/components/konva/Rect';
@@ -329,3 +331,6 @@ export type SlideWithAudioAndStartTime<TElement = CanvasElement> =
   SlideWithAudio<TElement> & {
     startTime: number;
   };
+
+export type SlideshowLessonWithExternalInfo =
+  (typeof slideshowLessonWithExternalInfoSchema)['infer'];

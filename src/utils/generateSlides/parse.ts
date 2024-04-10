@@ -1,8 +1,9 @@
 import { arrayOf, intersection, morph, type, union } from 'arktype';
 
+import { getSubSlideAudioStartEnd } from './audio';
 import type { SlideshowContent } from './sharedTypes';
 import { getLoremPicsum } from '@/utils/random';
-import { getSubSlideAudioStartEnd } from './audio';
+import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
 
 export const firstItemSchema = type({ type: '"h1"', content: 'string' });
 export const restSchema = type(
@@ -110,6 +111,7 @@ export const slideshowLessonWithExternalInfoSchema = intersection(
     // TODO: Validate color theme name using the `colorThemeNames` constant
     'colorThemeName?': '"default" | "oxford" | "twilight" | "pastel"',
     'backgroundMusicUrl?': 'string',
+    'organizationLogoUrl?': 'string',
   },
   { keys: 'distilled' }
 );
@@ -377,7 +379,7 @@ function parseSlideshowLessonParagraphs(
 }
 
 export function parseSlideshowLesson(
-  slideshowLesson: (typeof slideshowLessonWithExternalInfoSchema)['infer']
+  slideshowLesson: SlideshowLessonWithExternalInfo
 ): SlideshowContent {
   const slideshowContent: SlideshowContent = {
     title: slideshowLesson.sectionTitle,

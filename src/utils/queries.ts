@@ -1,9 +1,9 @@
 import { arrayOf, type } from 'arktype';
+import { toast } from 'sonner';
 
-import {
-  slideshowLessonSchema,
-  type slideshowLessonWithExternalInfoSchema,
-} from '@/utils/generateSlides/parse';
+import { validateAssetUrl } from '@/utils/validation';
+import { slideshowLessonSchema } from '@/utils/generateSlides/parse';
+import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
 
 const courseSchema = type({
   details: {
@@ -13,9 +13,11 @@ const courseSchema = type({
     title: 'string',
     elements: 'object[]',
   }),
+  organizationCode: 'string',
   // TODO: Validate color theme name using the `colorThemeNames` constant
   'slideshowColorThemeName?': '"default" | "oxford" | "twilight" | "pastel"',
   'slideshowBackgroundMusicUrl?': 'string',
+  'slideshowShouldUseOrganizationLogo?': 'boolean',
 });
 
 export async function fetchSlideshowLesson({
@@ -78,11 +80,64 @@ export async function fetchSlideshowLesson({
     throw new Error('Slideshow lesson not found.');
   }
 
+  let organizationLogoUrl;
+  if (validatedCourse.slideshowShouldUseOrganizationLogo) {
+    try {
+      organizationLogoUrl = await fetchOrganizationLogoUrl(
+        validatedCourse.organizationCode
+      );
+    } catch (error) {
+      /* Instead of failing the whole request, just show a warning and continue
+      without the organization logo */
+      if (error instanceof Error) {
+        toast.warning(error.message);
+      }
+    }
+  }
+
   return {
     ...slideshowLesson,
     courseCover: validatedCourse.details.cover,
     sectionTitle,
     colorThemeName: validatedCourse.slideshowColorThemeName,
     backgroundMusicUrl: validatedCourse.slideshowBackgroundMusicUrl,
-  } satisfies (typeof slideshowLessonWithExternalInfoSchema)['infer'];
+    organizationLogoUrl,
+  } satisfies SlideshowLessonWithExternalInfo;
+}
+
+const organizationSchema = type({
+  logo: 'string',
+});
+
+async function fetchOrganizationLogoUrl(organizationCode: string) {
+  let organization;
+  try {
+    organization = await fetch(
+      `${import.meta.env.VITE_API_URL}/Organization/${organizationCode}`
+    ).then((response) => response.json() as Promise<unknown>);
+  } catch (error) {
+    throw new Error(
+      'Could not find organization, therefore the organization logo cannot be found and will not be displayed.'
+    );
+  }
+
+  const { data: validatedOrganization, problems } =
+    organizationSchema(organization);
+  if (problems) {
+    throw new Error(
+      'Organization has invalid format, therefore the organization logo cannot be found and will not be displayed.'
+    );
+  }
+
+  const isValidImage = await validateAssetUrl(
+    'image',
+    validatedOrganization.logo
+  );
+  if (!isValidImage) {
+    throw new Error(
+      'Organization logo is not a valid image, therefore it cannot be displayed.'
+    );
+  }
+
+  return validatedOrganization.logo;
 }

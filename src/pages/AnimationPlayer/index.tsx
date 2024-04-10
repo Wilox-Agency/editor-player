@@ -24,15 +24,17 @@ import { fetchSlideshowLesson } from '@/utils/queries';
 import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
 import { preloadAudios, getAudioDuration } from '@/utils/audio';
 import { validateUrl } from '@/utils/validation';
+import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
 
 import { PlayerBar } from '@/components/PlayerBar';
 import { PlayerThumbnail } from '@/components/PlayerThumbnail';
+import { PlayerOrganizationLogo } from '@/components/PlayerOrganizationLogo';
 
 export default function AnimationPlayer() {
   const { state: slideshowLessonFromHomePage, search: searchParams } =
     useLocation();
 
-  const { data: slideshowLesson, error } = useQuery({
+  const { data: slideshowLessonFromServer, error } = useQuery({
     enabled: !slideshowLessonFromHomePage,
     queryKey: ['slideshowLesson', searchParams],
     queryFn: async () => {
@@ -64,22 +66,25 @@ export default function AnimationPlayer() {
     },
   });
 
+  const slideshowLesson = useMemo(() => {
+    return (
+      (slideshowLessonFromHomePage as
+        | SlideshowLessonWithExternalInfo
+        | undefined) || slideshowLessonFromServer
+    );
+  }, [slideshowLessonFromHomePage, slideshowLessonFromServer]);
+
   // Generate slides
   const { data: slides } = useQuery({
-    enabled: !!slideshowLessonFromHomePage || !!slideshowLesson,
-    queryKey: ['generateSlides', slideshowLessonFromHomePage, slideshowLesson],
+    enabled: !!slideshowLesson,
+    queryKey: ['generateSlides', slideshowLesson],
     queryFn: async () => {
       // Generate slides from the lesson
-      let slidesPromise;
-      if (slideshowLessonFromHomePage) {
-        slidesPromise = generateSlides(
-          parseSlideshowLesson(slideshowLessonFromHomePage)
-        );
-      } else {
-        /* TODO: Instead of generating the slides every time, check if there are
-        slides already saved alongside the lesson and generate them if not */
-        slidesPromise = generateSlides(parseSlideshowLesson(slideshowLesson!));
-      }
+      /* TODO: Instead of generating the slides every time, check if there are
+      slides already saved alongside the lesson and generate them if not */
+      const slidesPromise = generateSlides(
+        parseSlideshowLesson(slideshowLesson!)
+      );
 
       toast.promise(slidesPromise, {
         loading: 'Generating slides...',
@@ -98,22 +103,10 @@ export default function AnimationPlayer() {
   // Get the background music
   const { data: backgroundMusic, isLoading: isLoadingBackgroundMusic } =
     useQuery({
-      enabled: !!slideshowLessonFromHomePage || !!slideshowLesson,
-      queryKey: [
-        'backgroundMusic',
-        slideshowLessonFromHomePage,
-        slideshowLesson,
-      ],
+      enabled: !!slideshowLesson,
+      queryKey: ['backgroundMusic', slideshowLesson],
       queryFn: async () => {
-        let backgroundMusicUrl;
-        if (slideshowLessonFromHomePage) {
-          type SlideshowLesson = Parameters<typeof parseSlideshowLesson>[0];
-          backgroundMusicUrl = (slideshowLessonFromHomePage as SlideshowLesson)
-            .backgroundMusicUrl;
-        }
-        if (slideshowLesson) {
-          backgroundMusicUrl = slideshowLesson.backgroundMusicUrl;
-        }
+        let backgroundMusicUrl = slideshowLesson!.backgroundMusicUrl;
 
         if (backgroundMusicUrl && !validateUrl(backgroundMusicUrl)) {
           /* When there's an invalid background music URL, it's being assumed
@@ -285,6 +278,9 @@ export default function AnimationPlayer() {
           })}
         </Layer>
         <PlayerThumbnail firstSlideElements={slides?.[0]?.canvasElements} />
+        <PlayerOrganizationLogo
+          logoUrl={slideshowLesson?.organizationLogoUrl}
+        />
       </Stage>
 
       {canvasTree.length > 0 && (

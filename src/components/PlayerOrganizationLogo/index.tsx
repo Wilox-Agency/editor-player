@@ -11,7 +11,7 @@ import { convertScale } from '@/utils/konva/scale';
 export function PlayerOrganizationLogo({
   logoUrl,
 }: {
-  logoUrl: string | undefined;
+  logoUrl: string | null | undefined;
 }) {
   const logoContainerRef = useRef<HTMLDivElement>(null);
 

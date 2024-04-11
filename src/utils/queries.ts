@@ -1,26 +1,13 @@
-import { arrayOf, type } from 'arktype';
 import { toast } from 'sonner';
 
 import { validateAssetUrl } from '@/utils/validation';
-import { slideshowLessonSchema } from '@/utils/generateSlides/parse';
-import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
+import { slideshowLessonWithExternalInfoSchema } from '@/utils/generateSlides/parse';
+import type {
+  SlideWithAudio,
+  SlideshowLessonWithExternalInfo,
+} from '@/utils/types';
 
-const courseSchema = type({
-  details: {
-    cover: 'string',
-  },
-  sections: arrayOf({
-    title: 'string',
-    elements: 'object[]',
-  }),
-  organizationCode: 'string',
-  // TODO: Validate color theme name using the `colorThemeNames` constant
-  'slideshowColorThemeName?': '"default" | "oxford" | "twilight" | "pastel"',
-  'slideshowBackgroundMusicUrl?': 'string',
-  'slideshowShouldUseOrganizationLogo?': 'boolean',
-});
-
-export async function fetchSlideshowLesson({
+export async function fetchSlideshowLessonOrSlides({
   courseId,
   lessonId,
 }: {
@@ -34,110 +21,64 @@ export async function fetchSlideshowLesson({
     throw new Error('Azure functions key is missing.');
   }
 
-  let course;
+  const searchParamsObject = new URLSearchParams({ courseId, lessonId });
+  const url = `${
+    import.meta.env.VITE_API_URL
+  }/SlideshowLesson?${searchParamsObject.toString()}`;
+
+  let response;
   try {
-    course = await fetch(
-      `${import.meta.env.VITE_API_URL}/Courses/${courseId}`,
-      {
-        headers: {
-          'x-functions-key': import.meta.env.VITE_AZURE_FUNCTIONS_KEY,
-        },
-      }
-    ).then((response) => response.json() as Promise<unknown>);
+    response = await fetch(url, {
+      headers: { 'x-functions-key': import.meta.env.VITE_AZURE_FUNCTIONS_KEY },
+    });
   } catch (error) {
-    throw new Error('Course not found.');
+    throw new Error('Could not fetch slideshow lesson for unknown reasons.');
   }
 
-  const { data: validatedCourse, problems } = courseSchema(course);
-  if (problems) {
-    throw new Error(
-      'Course has invalid format and, therefore, slideshow lesson cannot be found.'
-    );
-  }
-
-  let slideshowLesson;
-  let sectionTitle;
-  sectionsLoop: for (const section of validatedCourse.sections) {
-    for (const element of section.elements) {
-      if ('elementCode' in element && element.elementCode === lessonId) {
-        const { data: lesson } = slideshowLessonSchema(element);
-        if (lesson) {
-          slideshowLesson = lesson;
-          sectionTitle = section.title;
-          break sectionsLoop;
-        }
-
-        throw new Error(
-          `Element with ID "${element.elementCode}" is not a valid slideshow lesson.`
-        );
+  // TODO: Validate all possible response types
+  const data = (await response.json()) as
+    | { error: string }
+    | {
+        slides: SlideWithAudio[];
+        backgroundMusicUrl?: string;
+        organizationLogoUrl?: string | null;
       }
+    | SlideshowLessonWithExternalInfo;
+
+  if ('error' in data) {
+    throw new Error(data.error);
+  }
+
+  // Validate the data if it's a lesson
+  if ('elementLesson' in data) {
+    const isValidSlideshowLesson =
+      slideshowLessonWithExternalInfoSchema.allows(data);
+    if (!isValidSlideshowLesson) {
+      throw new Error('Invalid slideshow lesson.');
     }
   }
 
-  /* Both variables are set together, so checking both is not necessary, but
-  they're being checked anyway so that both types are correctly inferred */
-  if (!slideshowLesson || !sectionTitle) {
-    throw new Error('Slideshow lesson not found.');
-  }
-
-  let organizationLogoUrl;
-  if (validatedCourse.slideshowShouldUseOrganizationLogo) {
-    try {
-      organizationLogoUrl = await fetchOrganizationLogoUrl(
-        validatedCourse.organizationCode
-      );
-    } catch (error) {
-      /* Instead of failing the whole request, just show a warning and continue
-      without the organization logo */
-      if (error instanceof Error) {
-        toast.warning(error.message);
-      }
-    }
-  }
-
-  return {
-    ...slideshowLesson,
-    courseCover: validatedCourse.details.cover,
-    sectionTitle,
-    colorThemeName: validatedCourse.slideshowColorThemeName,
-    backgroundMusicUrl: validatedCourse.slideshowBackgroundMusicUrl,
-    organizationLogoUrl,
-  } satisfies SlideshowLessonWithExternalInfo;
-}
-
-const organizationSchema = type({
-  logo: 'string',
-});
-
-async function fetchOrganizationLogoUrl(organizationCode: string) {
-  let organization;
-  try {
-    organization = await fetch(
-      `${import.meta.env.VITE_API_URL}/Organization/${organizationCode}`
-    ).then((response) => response.json() as Promise<unknown>);
-  } catch (error) {
-    throw new Error(
+  /* When the organization logo URL is `null`, it means that the organization
+  logo should be used but it was not found */
+  if (data.organizationLogoUrl === null) {
+    toast.warning(
       'Could not find organization, therefore the organization logo cannot be found and will not be displayed.'
     );
   }
 
-  const { data: validatedOrganization, problems } =
-    organizationSchema(organization);
-  if (problems) {
-    throw new Error(
-      'Organization has invalid format, therefore the organization logo cannot be found and will not be displayed.'
+  if (data.organizationLogoUrl) {
+    const isValidImage = await validateAssetUrl(
+      'image',
+      data.organizationLogoUrl
     );
+    if (!isValidImage) {
+      // Set the organization logo URL to `null` so that it will not be used
+      data.organizationLogoUrl = null;
+      toast.warning(
+        'Organization logo is not a valid image, therefore it cannot be displayed.'
+      );
+    }
   }
 
-  const isValidImage = await validateAssetUrl(
-    'image',
-    validatedOrganization.logo
-  );
-  if (!isValidImage) {
-    throw new Error(
-      'Organization logo is not a valid image, therefore it cannot be displayed.'
-    );
-  }
-
-  return validatedOrganization.logo;
+  return data;
 }

@@ -20,7 +20,8 @@ import { waitUntilKonvaNodeSizeIsCalculated } from '@/utils/konva/misc';
 import { generateSlides } from '@/utils/generateSlides';
 import { parseSlideshowLesson } from '@/utils/generateSlides/parse';
 import { combineSlides, createTweens } from '@/utils/slidesPlayer';
-import { fetchSlideshowLesson } from '@/utils/queries';
+import { fetchSlideshowLessonOrSlides } from '@/utils/queries';
+import { saveSlidesToSlideshowLesson } from '@/utils/mutations';
 import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
 import { preloadAudios, getAudioDuration } from '@/utils/audio';
 import { validateUrl } from '@/utils/validation';
@@ -34,28 +35,33 @@ export default function AnimationPlayer() {
   const { state: slideshowLessonFromHomePage, search: searchParams } =
     useLocation();
 
-  const { data: slideshowLessonFromServer, error } = useQuery({
+  /* Get the slideshow lesson or slides from the server if the slideshow lesson
+  was not already provided by the user through the home page form */
+  const { data: slideshowLessonOrSlidesFromServer, error } = useQuery({
     enabled: !slideshowLessonFromHomePage,
-    queryKey: ['slideshowLesson', searchParams],
+    queryKey: ['slideshowLessonOrSlidesFromServer', searchParams],
     queryFn: async () => {
       const searchParamsObject = new URLSearchParams(searchParams);
-
       const courseId = searchParamsObject.get('courseId');
       const lessonId = searchParamsObject.get('lessonId');
-
       if (!courseId || !lessonId) {
         throw new Error(
           '`courseId` or `lessonId` query parameters are missing.'
         );
       }
 
-      const promise = fetchSlideshowLesson({ courseId, lessonId });
+      const promise = fetchSlideshowLessonOrSlides({ courseId, lessonId });
       /* Using a timeout is required to render a toast on initial page load. See
       https://sonner.emilkowal.ski/toast#render-toast-on-page-load */
       setTimeout(() => {
         toast.promise(promise, {
           loading: 'Fetching slideshow lesson...',
-          success: 'Slideshow lesson found!',
+          success: (slideshowLessonOrSlides) => {
+            if ('slides' in slideshowLessonOrSlides) {
+              return 'Found up to date slides!';
+            }
+            return 'Slideshow lesson found!';
+          },
           error: (error) => {
             if (error instanceof Error) return error.message;
             return 'Slideshow lesson not found.';
@@ -66,22 +72,28 @@ export default function AnimationPlayer() {
     },
   });
 
+  /* Get the slideshow lesson that will be used to generate the slides if the
+  slides were not already fetched from the server */
   const slideshowLesson = useMemo(() => {
-    return (
-      (slideshowLessonFromHomePage as
+    if (slideshowLessonFromHomePage) {
+      return slideshowLessonFromHomePage as
         | SlideshowLessonWithExternalInfo
-        | undefined) || slideshowLessonFromServer
-    );
-  }, [slideshowLessonFromHomePage, slideshowLessonFromServer]);
+        | undefined;
+    }
+    if (
+      slideshowLessonOrSlidesFromServer &&
+      'elementLesson' in slideshowLessonOrSlidesFromServer
+    ) {
+      return slideshowLessonOrSlidesFromServer;
+    }
+  }, [slideshowLessonFromHomePage, slideshowLessonOrSlidesFromServer]);
 
-  // Generate slides
-  const { data: slides } = useQuery({
+  // Generate slides if they were not fetched from the server
+  const { data: generatedSlides } = useQuery({
     enabled: !!slideshowLesson,
     queryKey: ['generateSlides', slideshowLesson],
     queryFn: async () => {
       // Generate slides from the lesson
-      /* TODO: Instead of generating the slides every time, check if there are
-      slides already saved alongside the lesson and generate them if not */
       const slidesPromise = generateSlides(
         parseSlideshowLesson(slideshowLesson!)
       );
@@ -100,13 +112,65 @@ export default function AnimationPlayer() {
     },
   });
 
+  /* If the slides were generated now, and they used the slideshow lesson fetched
+  from the server, save the generated slides */
+  useEffect(() => {
+    /* Prevent saving slides that were generated based on the slideshow lesson
+    from the home page */
+    const slidesWereGeneratedFromFetchedSlideshowLesson =
+      generatedSlides &&
+      slideshowLessonOrSlidesFromServer &&
+      'elementLesson' in slideshowLessonOrSlidesFromServer;
+    if (!slidesWereGeneratedFromFetchedSlideshowLesson) return;
+
+    const searchParamsObject = new URLSearchParams(searchParams);
+    const courseId = searchParamsObject.get('courseId');
+    const lessonId = searchParamsObject.get('lessonId');
+    if (!courseId || !lessonId) return;
+
+    const saveSlidesPromise = saveSlidesToSlideshowLesson({
+      courseId,
+      lessonId,
+      slides: generatedSlides,
+    });
+
+    toast.promise(saveSlidesPromise, {
+      loading: 'Saving slides...',
+      success: 'Slides saved successfully!',
+      error: (error) => {
+        if (error instanceof Error) return error.message;
+        return 'Could not save slides.';
+      },
+    });
+  }, [generatedSlides, searchParams, slideshowLessonOrSlidesFromServer]);
+
+  // Get the slides that were generated or fetched from the server
+  const slides = useMemo(() => {
+    /* If the server found up-to-date slides, return them (they're only returned
+    by the server when the slides are up to date) */
+    const slidesWereFetchedFromServer =
+      slideshowLessonOrSlidesFromServer &&
+      'slides' in slideshowLessonOrSlidesFromServer;
+    if (slidesWereFetchedFromServer) {
+      return slideshowLessonOrSlidesFromServer.slides;
+    }
+
+    return generatedSlides;
+  }, [generatedSlides, slideshowLessonOrSlidesFromServer]);
+
   // Get the background music
   const { data: backgroundMusic, isLoading: isLoadingBackgroundMusic } =
     useQuery({
-      enabled: !!slideshowLesson,
-      queryKey: ['backgroundMusic', slideshowLesson],
+      enabled: !!slideshowLesson || !!slideshowLessonOrSlidesFromServer,
+      queryKey: [
+        'backgroundMusic',
+        slideshowLesson?.backgroundMusicUrl,
+        slideshowLessonOrSlidesFromServer?.backgroundMusicUrl,
+      ],
       queryFn: async () => {
-        let backgroundMusicUrl = slideshowLesson!.backgroundMusicUrl;
+        let backgroundMusicUrl =
+          slideshowLesson?.backgroundMusicUrl ||
+          slideshowLessonOrSlidesFromServer?.backgroundMusicUrl;
 
         if (backgroundMusicUrl && !validateUrl(backgroundMusicUrl)) {
           /* When there's an invalid background music URL, it's being assumed

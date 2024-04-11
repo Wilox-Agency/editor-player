@@ -22,6 +22,7 @@ import { parseSlideshowLesson } from '@/utils/generateSlides/parse';
 import { combineSlides, createTweens } from '@/utils/slidesPlayer';
 import { fetchSlideshowLessonOrSlides } from '@/utils/queries';
 import { saveSlidesToSlideshowLesson } from '@/utils/mutations';
+import { waitUntilAllSupportedFontsLoad } from '@/utils/font';
 import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
 import { preloadAudios, getAudioDuration } from '@/utils/audio';
 import { validateUrl } from '@/utils/validation';
@@ -88,9 +89,20 @@ export default function AnimationPlayer() {
     }
   }, [slideshowLessonFromHomePage, slideshowLessonOrSlidesFromServer]);
 
+  /* Wait until all fonts are loaded before generating or rendering the slides
+  to prevent wrong text measurements and prevent any text from being drawn
+  incorrectly */
+  const { isLoading: isLoadingFonts } = useQuery({
+    queryKey: ['loadFonts'],
+    queryFn: async () => {
+      await waitUntilAllSupportedFontsLoad();
+      return null;
+    },
+  });
+
   // Generate slides if they were not fetched from the server
   const { data: generatedSlides } = useQuery({
-    enabled: !!slideshowLesson,
+    enabled: !!slideshowLesson && !isLoadingFonts,
     queryKey: ['generateSlides', slideshowLesson],
     queryFn: async () => {
       // Generate slides from the lesson
@@ -215,7 +227,7 @@ export default function AnimationPlayer() {
 
   // Setup player
   useEffect(() => {
-    if (!combinedSlides || isLoadingBackgroundMusic) return;
+    if (!combinedSlides || isLoadingBackgroundMusic || isLoadingFonts) return;
 
     // Load canvas tree
     const canvasElements = combinedSlides.canvasElements.map(
@@ -234,6 +246,7 @@ export default function AnimationPlayer() {
     backgroundMusic,
     combinedSlides,
     isLoadingBackgroundMusic,
+    isLoadingFonts,
     loadCanvasTree,
   ]);
 

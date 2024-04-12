@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { type PointerEvent, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import Konva from 'konva';
 import { Group, Layer, Stage } from 'react-konva';
@@ -225,6 +225,12 @@ export default function AnimationPlayer() {
     backgroundMusic: backgroundMusic || undefined,
   });
 
+  // Play/pause when clicking on the stage wrapper with a pointer
+  function handleClickStageWrapperWithPointer(event: PointerEvent) {
+    if (event.pointerType !== 'mouse') return;
+    handlePlayOrPause();
+  }
+
   // Setup player
   useEffect(() => {
     if (!combinedSlides || isLoadingBackgroundMusic || isLoadingFonts) return;
@@ -319,46 +325,48 @@ export default function AnimationPlayer() {
 
   return (
     <main>
-      <Stage
-        id={stageWrapperId}
-        className="konva-stage-wrapper"
-        style={{
-          '--canvas-background-color': '#f0e6e6',
-        }}
-        width={StageVirtualSize.width}
-        height={StageVirtualSize.height}
-        ref={stageRef}
-      >
-        <Layer listening={false} ref={layerRef}>
-          {canvasTree.map((element) => {
-            const { type, ...props } = element;
-            const Component = CanvasComponentByType[type];
+      <div onPointerDown={handleClickStageWrapperWithPointer}>
+        <Stage
+          id={stageWrapperId}
+          className="konva-stage-wrapper"
+          style={{
+            '--canvas-background-color': '#f0e6e6',
+          }}
+          width={StageVirtualSize.width}
+          height={StageVirtualSize.height}
+          ref={stageRef}
+        >
+          <Layer listening={false} ref={layerRef}>
+            {canvasTree.map((element) => {
+              const { type, ...props } = element;
+              const Component = CanvasComponentByType[type];
 
-            const { x, y, ...otherProps } = props;
+              const { x, y, ...otherProps } = props;
 
-            const elementRect = getCanvasElementRect(element);
+              const elementRect = getCanvasElementRect(element);
 
-            return (
-              <Group
-                key={props.id}
-                x={x}
-                y={y}
-                clipX={0}
-                clipY={0}
-                clipWidth={elementRect.width}
-                clipHeight={elementRect.height}
-              >
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <Component {...(otherProps as any)} />
-              </Group>
-            );
-          })}
-        </Layer>
-        <PlayerThumbnail firstSlideElements={slides?.[0]?.canvasElements} />
-        <PlayerOrganizationLogo
-          logoUrl={slideshowLesson?.organizationLogoUrl}
-        />
-      </Stage>
+              return (
+                <Group
+                  key={props.id}
+                  x={x}
+                  y={y}
+                  clipX={0}
+                  clipY={0}
+                  clipWidth={elementRect.width}
+                  clipHeight={elementRect.height}
+                >
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                  <Component {...(otherProps as any)} />
+                </Group>
+              );
+            })}
+          </Layer>
+          <PlayerThumbnail firstSlideElements={slides?.[0]?.canvasElements} />
+          <PlayerOrganizationLogo
+            logoUrl={slideshowLesson?.organizationLogoUrl}
+          />
+        </Stage>
+      </div>
 
       {canvasTree.length > 0 && (
         <PlayerBar

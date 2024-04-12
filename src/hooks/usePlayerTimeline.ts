@@ -48,10 +48,19 @@ export function usePlayerTimeline({
 }) {
   const timeline = useMemo(() => gsap.timeline(), []);
 
+  /** Function that should be called after setting up the timeline. */
   function updateTimelineDuration() {
-    usePlayerTimelineStore.setState({ timelineDuration: timeline.duration() });
+    usePlayerTimelineStore.setState({
+      /* Sometimes the timeline sends the 'onComplete' event before the timeline
+      is set up (because the duration is 0), which causes the timeline state to
+      be changed from 'notStarted' to 'ended', so it needs to be set to
+      'notStarted' here */
+      timelineState: 'notStarted',
+      timelineDuration: timeline.duration(),
+    });
   }
 
+  /** Handler that plays or pauses the timeline depending on its state. */
   const handlePlayOrPause = useCallback(() => {
     const timelineEnded = timeline.time() === timeline.duration();
 
@@ -75,6 +84,7 @@ export function usePlayerTimeline({
     timeline.resume();
   }, [timeline]);
 
+  /** The `onChange` event handler to be used with a timeline slider. */
   function handleChangeTime(time: number) {
     usePlayerTimelineStore.setState({ timelineState: 'paused' });
     timeline.pause();
@@ -375,11 +385,8 @@ export function usePlayerTimeline({
 
   return {
     timeline,
-    /** Function that should be called after setting up the timeline. */
     updateTimelineDuration,
-    /** Handler that plays or pauses the timeline depending on its state. */
     handlePlayOrPause,
-    /** The `onChange` event handler to be used with a timeline slider. */
     handleChangeTime,
   };
 }

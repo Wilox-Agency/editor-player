@@ -8,12 +8,13 @@ import {
 } from 'react';
 import { create } from 'zustand';
 import * as Toolbar from '@radix-ui/react-toolbar';
-import * as Popover from '@radix-ui/react-popover';
+import { offset, useFloating } from '@floating-ui/react-dom';
 import {
   useFocusVisible,
   useFocusWithin,
   useHover,
 } from '@react-aria/interactions';
+import { useFocusRing } from '@react-aria/focus';
 import { mergeProps } from '@react-aria/utils';
 import { Pause, Play, Volume1, Volume2, VolumeX } from 'lucide-react';
 
@@ -36,28 +37,11 @@ export function PlayerBar({
   const { timelineCurrentTime, timelineDuration, timelineState } =
     usePlayerTimelineStore();
 
-  const volume = usePlayerAudioStore((state) => state.volume);
-  const setVolume = usePlayerAudioStore((state) => state.setVolume);
-  // Use a different volume icon depending on the volume
-  const VolumeIcon = volume === 0 ? VolumeX : volume <= 0.5 ? Volume1 : Volume2;
-
   const playerBarRef = useRef<HTMLDivElement>(null);
   const { visibility, playerBarProps } = usePlayerBarVisibility({
     playerBarRef,
     isTimelinePlaying: timelineState === 'playing',
   });
-
-  /* Update the volume of the current audio and background music when the volume
-  state changes */
-  useEffect(() => {
-    const { currentAudio, backgroundMusicElement } =
-      usePlayerAudioStore.getState();
-
-    if (currentAudio) currentAudio.element.volume = volume;
-    if (backgroundMusicElement) {
-      backgroundMusicElement.volume = volume * backgroundMusicVolumeMultiplier;
-    }
-  }, [volume]);
 
   return (
     <Toolbar.Root
@@ -80,32 +64,7 @@ export function PlayerBar({
         )}
       </Toolbar.Button>
 
-      <Popover.Root>
-        <Toolbar.Button asChild>
-          <Popover.Trigger className={styles.playerBarButton}>
-            <VolumeIcon size={18} aria-label="Volume" />
-          </Popover.Trigger>
-        </Toolbar.Button>
-
-        <Popover.Portal>
-          <Popover.Content
-            className={styles.popover}
-            side="top"
-            sideOffset={12}
-          >
-            <Slider
-              aria-label="Volume slider"
-              value={volume}
-              minValue={Volumes.minVolume}
-              maxValue={Volumes.maxVolume}
-              step={Volumes.volumeStep}
-              bottomMargin="none"
-              orientation="vertical"
-              onChange={setVolume}
-            />
-          </Popover.Content>
-        </Popover.Portal>
-      </Popover.Root>
+      <VolumeButton />
 
       <span className={styles.playerBarTime}>
         <span>{formatTime(timelineCurrentTime)}</span> /{' '}
@@ -123,6 +82,74 @@ export function PlayerBar({
         onChange={handleChangeTime}
       />
     </Toolbar.Root>
+  );
+}
+
+function VolumeButton() {
+  const volume = usePlayerAudioStore((state) => state.volume);
+  const setVolume = usePlayerAudioStore((state) => state.setVolume);
+  const muted = usePlayerAudioStore((state) => state.muted);
+  const toggleMute = usePlayerAudioStore((state) => state.toggleMute);
+  // Use a different volume icon depending on the volume and muted states
+  const VolumeIcon =
+    volume === 0 || muted ? VolumeX : volume <= 0.5 ? Volume1 : Volume2;
+
+  const { isPopoverOpen, triggerProps, popoverProps } = useVolumePopover();
+
+  const { refs, floatingStyles } = useFloating({
+    open: isPopoverOpen,
+    placement: 'top',
+    middleware: [offset(12)],
+  });
+
+  /* Update the volume of the current audio and background music when the volume
+  or muted states changes */
+  useEffect(() => {
+    const { currentAudio, backgroundMusicElement } =
+      usePlayerAudioStore.getState();
+    const volumeToSet = muted ? 0 : volume;
+
+    if (currentAudio) currentAudio.element.volume = volumeToSet;
+    if (backgroundMusicElement) {
+      backgroundMusicElement.volume =
+        volumeToSet * backgroundMusicVolumeMultiplier;
+    }
+  }, [muted, volume]);
+
+  return (
+    <>
+      <Toolbar.Button
+        className={styles.playerBarButton}
+        onClick={toggleMute}
+        {...triggerProps}
+        ref={refs.setReference}
+      >
+        <VolumeIcon
+          size={18}
+          aria-label={muted ? 'Unmute volume' : 'Mute volume'}
+        />
+      </Toolbar.Button>
+
+      {isPopoverOpen && (
+        <div
+          style={floatingStyles}
+          className={styles.popover}
+          {...popoverProps}
+          ref={refs.setFloating}
+        >
+          <Slider
+            aria-label="Volume"
+            value={muted ? 0 : volume}
+            minValue={Volumes.minVolume}
+            maxValue={Volumes.maxVolume}
+            step={Volumes.volumeStep}
+            bottomMargin="none"
+            orientation="vertical"
+            onChange={setVolume}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
@@ -239,9 +266,8 @@ function usePlayerBarVisibility({
     []
   );
 
-  // Toggle player bar visibility when touching outside of it,
+  // Toggle player bar visibility when touching outside of it
   useEffect(() => {
-    // TODO: Do nothing if volume slider is open
     function handleTouchOutside(event: TouchEvent) {
       const isPlayerBarTouch = playerBarRef.current?.contains(
         event.target as HTMLElement | null
@@ -276,7 +302,6 @@ function usePlayerBarVisibility({
 
   // Toggle player bar visibility depending on various states
   useEffect(() => {
-    // TODO: Also require the volume slider to be closed to set the hide timeout
     const shouldSetHideTimeout =
       isTimelinePlaying &&
       !isHovered &&
@@ -310,6 +335,54 @@ function usePlayerBarVisibility({
 
   return {
     visibility,
+    // TODO: Test if memoizing the props is beneficial
     playerBarProps: mergeProps(hoverProps, focusVisibleWithinProps),
+  };
+}
+
+function useVolumePopover() {
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+  const { isHovered: isTriggerHovered, hoverProps: triggerHoverProps } =
+    useHover({});
+  const { isHovered: isPopoverHovered, hoverProps: popoverHoverProps } =
+    useHover({});
+  const {
+    isFocusVisible: isTriggerFocusVisible,
+    focusProps: triggerFocusProps,
+  } = useFocusRing();
+  const {
+    isFocusVisibleWithin: isPopoverFocusVisibleWithin,
+    focusVisibleWithinProps: popoverFocusVisibleWithinProps,
+  } = useFocusVisibleWithin();
+
+  /* Open instantly when one of the parts gets hovered or gets focus and close
+  with delay when all parts lose focus and none of them are hovered */
+  const timeoutRef = useRef<number>();
+  useEffect(() => {
+    const shouldClosePopover =
+      !isTriggerHovered &&
+      !isPopoverHovered &&
+      !isTriggerFocusVisible &&
+      !isPopoverFocusVisibleWithin;
+    if (shouldClosePopover) {
+      timeoutRef.current = setTimeout(() => setIsPopoverOpen(false), 300);
+      return;
+    }
+
+    clearTimeout(timeoutRef.current);
+    setIsPopoverOpen(true);
+  }, [
+    isTriggerFocusVisible,
+    isTriggerHovered,
+    isPopoverFocusVisibleWithin,
+    isPopoverHovered,
+  ]);
+
+  return {
+    isPopoverOpen,
+    // TODO: Test if memoizing the props is beneficial
+    triggerProps: mergeProps(triggerHoverProps, triggerFocusProps),
+    popoverProps: mergeProps(popoverHoverProps, popoverFocusVisibleWithinProps),
   };
 }

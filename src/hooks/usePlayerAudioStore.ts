@@ -15,12 +15,14 @@ type State = {
     | undefined;
   backgroundMusicElement: HTMLAudioElement | undefined;
   volume: number;
+  muted: boolean;
 };
 
 type PlayerAudioStore = State & {
   setCurrentAudio: (audio: State['currentAudio']) => void;
   setBackgroundMusic: (backgroundMusicElement: HTMLAudioElement) => void;
   setVolume: (volume: number) => void;
+  toggleMute: () => void;
 };
 
 const initialVolume = getInitialVolume();
@@ -30,6 +32,7 @@ export const usePlayerAudioStore = create(
     currentAudio: undefined,
     backgroundMusicElement: undefined,
     volume: initialVolume,
+    muted: false,
     setCurrentAudio: (audio) => {
       set({ currentAudio: audio });
     },
@@ -37,8 +40,11 @@ export const usePlayerAudioStore = create(
       set({ backgroundMusicElement });
     },
     setVolume: (volume) => {
-      set({ volume });
+      set({ volume, muted: false });
       localStorage.setItem(LocalStorageKeys.playerVolume, volume.toString());
+    },
+    toggleMute: () => {
+      set((state) => ({ muted: !state.muted }));
     },
   }))
 );

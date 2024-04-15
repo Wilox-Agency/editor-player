@@ -139,3 +139,17 @@ export function getAudioDuration(url: string) {
     audioElement.src = url;
   });
 }
+
+export async function checkIfCanAutoplay(audioTestUrl: string) {
+  const audio = new Audio(audioTestUrl);
+  audio.volume = 0.01;
+
+  try {
+    await audio.play();
+    return true;
+  } catch (error) {
+    return false;
+  } finally {
+    audio.pause();
+  }
+}

@@ -1,6 +1,5 @@
 import { type PointerEvent, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import Konva from 'konva';
 import { Group, Layer, Stage } from 'react-konva';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -14,12 +13,12 @@ import {
   usePlayerTimeline,
   usePlayerTimelineStore,
 } from '@/hooks/usePlayerTimeline';
+import { useSetupPlayerTimeline } from '@/hooks/useSetupPlayerTimeline';
 import { CanvasComponentByType, StageVirtualSize } from '@/utils/konva';
 import { getCanvasElementRect } from '@/utils/konva/rect';
-import { waitUntilKonvaNodeSizeIsCalculated } from '@/utils/konva/misc';
 import { generateSlides } from '@/utils/generateSlides';
 import { parseSlideshowLesson } from '@/utils/generateSlides/parse';
-import { combineSlides, createTweens } from '@/utils/slidesPlayer';
+import { combineSlides } from '@/utils/slidesPlayer';
 import { fetchSlideshowLessonOrSlides } from '@/utils/queries';
 import { saveSlidesToSlideshowLesson } from '@/utils/mutations';
 import { waitUntilAllSupportedFontsLoad } from '@/utils/font';
@@ -224,6 +223,14 @@ export default function AnimationPlayer() {
     backgroundMusic: backgroundMusic || undefined,
   });
 
+  useSetupPlayerTimeline({
+    stageRef,
+    layerRef,
+    combinedSlides,
+    timeline,
+    updateTimelineDuration,
+  });
+
   // Play/pause when clicking on the stage wrapper with a pointer
   function handleClickStageWrapperWithPointer(event: PointerEvent) {
     if (event.pointerType !== 'mouse') return;
@@ -284,65 +291,6 @@ export default function AnimationPlayer() {
     prefetchAssetsFromCanvasElements(canvasElements);
   }, [combinedSlides, isLoadingFonts, loadCanvasTree]);
 
-  // Setup the GSAP timeline
-  useEffect(() => {
-    (async () => {
-      const stage = stageRef.current;
-      const nodes = layerRef.current!.getChildren();
-      const firstNode = nodes[0];
-      if (!stage || !firstNode || !combinedSlides) return;
-
-      if (!(firstNode instanceof Konva.Group)) {
-        throw new Error('Node being animated is not contained within a group');
-      }
-
-      // Hide the nodes so they are not visible before the timeline is set up
-      nodes.forEach((node) => node.visible(false));
-
-      /* The nodes attributes are not calculated instantly after adding them
-      (even though this function says it waits until the node size is
-      calculated, it technically waits until all initial properties are set,
-      because they're all set at the same time) */
-      await waitUntilKonvaNodeSizeIsCalculated(firstNode.children[0]!);
-
-      combinedSlides.canvasElements.forEach((item, itemIndex) => {
-        const group = nodes[itemIndex];
-        if (!group) return;
-
-        if (!(group instanceof Konva.Group)) {
-          throw new Error(
-            'Node being animated is not contained within a group'
-          );
-        }
-
-        item.animations?.forEach((animation) => {
-          const node = group.children[0]!;
-          const { groupTween, nodeTween } = createTweens({
-            animation,
-            group,
-            node,
-          });
-
-          if (groupTween) {
-            timeline.add(groupTween, animation.startTime);
-          }
-          if (nodeTween) {
-            timeline.add(nodeTween, animation.startTime);
-          }
-        });
-      });
-
-      // Update the timeline duration after adding the animations
-      updateTimelineDuration();
-
-      // Pause the timeline so it doesn't play automatically
-      timeline.pause();
-
-      // Show the nodes that are visible from the start
-      nodes.forEach((node) => node.visible(node.opacity() > 0));
-    })();
-  }, [combinedSlides, layerRef, stageRef, timeline, updateTimelineDuration]);
-
   // Clear canvas tree and reset timeline when the component is destroyed
   useEffect(() => {
     return () => {
@@ -382,6 +330,9 @@ export default function AnimationPlayer() {
                   clipY={0}
                   clipWidth={elementRect.width}
                   clipHeight={elementRect.height}
+                  /* Hide the nodes by default so they are not visible before
+                  the timeline is set up */
+                  visible={false}
                 >
                   {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                   <Component {...(otherProps as any)} />

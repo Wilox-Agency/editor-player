@@ -49,7 +49,7 @@ export function usePlayerTimeline({
   const timeline = useMemo(() => gsap.timeline(), []);
 
   /** Function that should be called after setting up the timeline. */
-  function updateTimelineDuration() {
+  const updateTimelineDuration = useCallback(() => {
     usePlayerTimelineStore.setState({
       /* Sometimes the timeline sends the 'onComplete' event before the timeline
       is set up (because the duration is 0), which causes the timeline state to
@@ -58,7 +58,7 @@ export function usePlayerTimeline({
       timelineState: 'notStarted',
       timelineDuration: timeline.duration(),
     });
-  }
+  }, [timeline]);
 
   /** Handler that plays or pauses the timeline depending on its state. */
   const handlePlayOrPause = useCallback(() => {

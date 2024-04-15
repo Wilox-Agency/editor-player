@@ -183,15 +183,15 @@ export default function AnimationPlayer() {
           slideshowLesson?.backgroundMusicUrl ||
           slideshowLessonOrSlidesFromServer?.backgroundMusicUrl;
 
-        if (backgroundMusicUrl && !validateUrl(backgroundMusicUrl)) {
+        if (!backgroundMusicUrl) return null;
+
+        if (!validateUrl(backgroundMusicUrl)) {
           /* When there's an invalid background music URL, it's being assumed
           that it's just missing the base URL */
           const backgroundMusicBaseUrl = import.meta.env
             .VITE_BACKGROUND_MUSIC_BASE_URL;
           backgroundMusicUrl = backgroundMusicBaseUrl + backgroundMusicUrl;
         }
-
-        if (!backgroundMusicUrl) return null;
 
         const audioDuration = await getAudioDuration(backgroundMusicUrl);
         if (audioDuration === undefined) return null;
@@ -230,9 +230,48 @@ export default function AnimationPlayer() {
     handlePlayOrPause();
   }
 
-  // Setup player
+  // Preload audios, including background music if there's one
+  const { isLoading: isPreloadingAudios } = useQuery({
+    enabled:
+      (!!slideshowLessonFromHomePage || !!slideshowLessonOrSlidesFromServer) &&
+      !isLoadingBackgroundMusic,
+    queryKey: [
+      'preloadAudios',
+      backgroundMusic,
+      isLoadingBackgroundMusic,
+      slideshowLessonFromHomePage,
+      slideshowLessonOrSlidesFromServer,
+    ],
+    queryFn: async () => {
+      const slideAudios = (() => {
+        if (slideshowLessonFromHomePage) {
+          return (
+            slideshowLessonFromHomePage as SlideshowLessonWithExternalInfo
+          ).elementLesson.paragraphs.map(({ audioUrl }) => ({ url: audioUrl }));
+        }
+
+        if ('elementLesson' in slideshowLessonOrSlidesFromServer!) {
+          return slideshowLessonOrSlidesFromServer.elementLesson.paragraphs.map(
+            ({ audioUrl }) => ({ url: audioUrl })
+          );
+        }
+
+        return slideshowLessonOrSlidesFromServer!.slides
+          .map(({ audio }) => audio)
+          .filter((audio): audio is { url: string } => !!audio);
+      })();
+
+      await preloadAudios([
+        ...slideAudios,
+        ...(backgroundMusic ? [backgroundMusic] : []),
+      ]);
+      return null;
+    },
+  });
+
+  // Load canvas tree and prefetch assets
   useEffect(() => {
-    if (!combinedSlides || isLoadingBackgroundMusic || isLoadingFonts) return;
+    if (!combinedSlides || isLoadingFonts) return;
 
     // Load canvas tree
     const canvasElements = combinedSlides.canvasElements.map(
@@ -240,20 +279,10 @@ export default function AnimationPlayer() {
     );
     loadCanvasTree(canvasElements);
 
+    // TODO: Start prefetching the assets before the generating the slides
     // Prefetch assets
     prefetchAssetsFromCanvasElements(canvasElements);
-    // Preload audios, including background music if there's one
-    preloadAudios([
-      ...combinedSlides.audios,
-      ...(backgroundMusic ? [backgroundMusic] : []),
-    ]);
-  }, [
-    backgroundMusic,
-    combinedSlides,
-    isLoadingBackgroundMusic,
-    isLoadingFonts,
-    loadCanvasTree,
-  ]);
+  }, [combinedSlides, isLoadingFonts, loadCanvasTree]);
 
   // Setup the GSAP timeline
   useEffect(() => {

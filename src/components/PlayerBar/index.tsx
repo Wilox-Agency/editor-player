@@ -28,9 +28,11 @@ import { Volumes } from '@/utils/validation';
 import { Slider } from '@/components/Slider';
 
 export function PlayerBar({
+  disabled,
   handlePlayOrPause,
   handleChangeTime,
 }: {
+  disabled?: boolean;
   handlePlayOrPause: () => void;
   handleChangeTime: (time: number) => void;
 }) {
@@ -55,6 +57,7 @@ export function PlayerBar({
     >
       <Toolbar.Button
         className={styles.playerBarButton}
+        disabled={disabled}
         onClick={handlePlayOrPause}
       >
         {timelineState === 'playing' ? (
@@ -64,7 +67,7 @@ export function PlayerBar({
         )}
       </Toolbar.Button>
 
-      <VolumeButton />
+      <VolumeButton disabled={disabled} />
 
       <span className={styles.playerBarTime}>
         <span>{formatTime(timelineCurrentTime)}</span> /{' '}
@@ -79,13 +82,14 @@ export function PlayerBar({
         step={0.001}
         length="full-flex"
         bottomMargin="none"
+        isDisabled={disabled}
         onChange={handleChangeTime}
       />
     </Toolbar.Root>
   );
 }
 
-function VolumeButton() {
+function VolumeButton({ disabled }: { disabled?: boolean }) {
   const volume = usePlayerAudioStore((state) => state.volume);
   const setVolume = usePlayerAudioStore((state) => state.setVolume);
   const muted = usePlayerAudioStore((state) => state.muted);
@@ -94,7 +98,9 @@ function VolumeButton() {
   const VolumeIcon =
     volume === 0 || muted ? VolumeX : volume <= 0.5 ? Volume1 : Volume2;
 
-  const { isPopoverOpen, triggerProps, popoverProps } = useVolumePopover();
+  const { isPopoverOpen, triggerProps, popoverProps } = useVolumePopover({
+    disabled,
+  });
 
   const { refs, floatingStyles } = useFloating({
     open: isPopoverOpen,
@@ -120,6 +126,7 @@ function VolumeButton() {
     <>
       <Toolbar.Button
         className={styles.playerBarButton}
+        disabled={disabled}
         onClick={toggleMute}
         {...triggerProps}
         ref={refs.setReference}
@@ -340,7 +347,7 @@ function usePlayerBarVisibility({
   };
 }
 
-function useVolumePopover() {
+function useVolumePopover({ disabled }: { disabled?: boolean }) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const { isHovered: isTriggerHovered, hoverProps: triggerHoverProps } =
@@ -360,6 +367,11 @@ function useVolumePopover() {
   with delay when all parts lose focus and none of them are hovered */
   const timeoutRef = useRef<number>();
   useEffect(() => {
+    if (disabled) {
+      setIsPopoverOpen(false);
+      return;
+    }
+
     const shouldClosePopover =
       !isTriggerHovered &&
       !isPopoverHovered &&
@@ -373,6 +385,7 @@ function useVolumePopover() {
     clearTimeout(timeoutRef.current);
     setIsPopoverOpen(true);
   }, [
+    disabled,
     isTriggerFocusVisible,
     isTriggerHovered,
     isPopoverFocusVisibleWithin,

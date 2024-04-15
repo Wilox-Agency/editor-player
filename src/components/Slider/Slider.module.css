@@ -41,6 +41,9 @@
   height: var(--_slider-track-main-size);
   margin-block: var(--_slider-track-main-coordinate-margin);
 }
+.track[data-disabled] {
+  opacity: 0.6;
+}
 
 .trackLine,
 .trackFill {

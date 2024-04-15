@@ -393,6 +393,7 @@ export default function AnimationPlayer() {
 
       {canvasTree.length > 0 && (
         <PlayerBar
+          disabled={!isSetupFinished || isPreloadingAudios}
           handlePlayOrPause={handlePlayOrPause}
           handleChangeTime={handleChangeTime}
         />

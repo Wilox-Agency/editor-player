@@ -29,7 +29,6 @@ import { validateUrl } from '@/utils/validation';
 import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
 
 import { PlayerBar } from '@/components/PlayerBar';
-import { PlayerThumbnail } from '@/components/PlayerThumbnail';
 import { PlayerOrganizationLogo } from '@/components/PlayerOrganizationLogo';
 
 export default function AnimationPlayer() {
@@ -361,7 +360,6 @@ export default function AnimationPlayer() {
               );
             })}
           </Layer>
-          <PlayerThumbnail firstSlideElements={slides?.[0]?.canvasElements} />
           <PlayerOrganizationLogo
             logoUrl={slideshowLesson?.organizationLogoUrl}
           />

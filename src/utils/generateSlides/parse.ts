@@ -391,7 +391,7 @@ export function parseSlideshowLesson(
       slideshowLesson.elementLesson.paragraphs
     ),
     colorThemeName: slideshowLesson.colorThemeName,
-    backgroundMusicUrl: slideshowLesson.colorThemeName,
+    backgroundMusicUrl: slideshowLesson.backgroundMusicUrl,
   };
 
   return slideshowContent;

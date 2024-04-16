@@ -20,7 +20,7 @@ export type SlideshowContent = {
   asset: { type: AssetType; url: string };
   audioUrl?: string;
   colorThemeName?: (typeof colorThemeNames)[number];
-  backgroundMusicUrl?: string;
+  backgroundMusicUrl?: string | null;
   slides: {
     title: string;
     paragraphs: string[];

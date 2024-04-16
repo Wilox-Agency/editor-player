@@ -110,7 +110,7 @@ export const slideshowLessonWithExternalInfoSchema = intersection(
     sectionTitle: 'string',
     // TODO: Validate color theme name using the `colorThemeNames` constant
     'colorThemeName?': '"default" | "oxford" | "twilight" | "pastel"',
-    'backgroundMusicUrl?': 'string',
+    'backgroundMusicUrl?': 'string | null',
     'organizationLogoUrl?': 'string | null',
   },
   { keys: 'distilled' }

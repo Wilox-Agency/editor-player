@@ -40,7 +40,7 @@ export async function fetchSlideshowLessonOrSlides({
     | { error: string }
     | {
         slides: SlideWithAudio[];
-        backgroundMusicUrl?: string;
+        backgroundMusicUrl?: string | null;
         organizationLogoUrl?: string | null;
       }
     | SlideshowLessonWithExternalInfo;

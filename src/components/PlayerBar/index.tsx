@@ -7,7 +7,6 @@ import {
   useState,
 } from 'react';
 import { create } from 'zustand';
-import * as Toolbar from '@radix-ui/react-toolbar';
 import { offset, useFloating } from '@floating-ui/react-dom';
 import {
   useFocusVisible,
@@ -46,7 +45,7 @@ export function PlayerBar({
   });
 
   return (
-    <Toolbar.Root
+    <div
       className={styles.playerBar}
       style={{
         display: visibility === 'hidden' ? 'none' : undefined,
@@ -55,7 +54,7 @@ export function PlayerBar({
       {...playerBarProps}
       ref={playerBarRef}
     >
-      <Toolbar.Button
+      <button
         className={styles.playerBarButton}
         disabled={disabled}
         onClick={handlePlayOrPause}
@@ -65,7 +64,7 @@ export function PlayerBar({
         ) : (
           <Play size={18} aria-label="Play" />
         )}
-      </Toolbar.Button>
+      </button>
 
       <VolumeButton disabled={disabled} />
 
@@ -85,7 +84,7 @@ export function PlayerBar({
         isDisabled={disabled}
         onChange={handleChangeTime}
       />
-    </Toolbar.Root>
+    </div>
   );
 }
 
@@ -124,7 +123,7 @@ function VolumeButton({ disabled }: { disabled?: boolean }) {
 
   return (
     <>
-      <Toolbar.Button
+      <button
         className={styles.playerBarButton}
         disabled={disabled}
         onClick={toggleMute}
@@ -135,7 +134,7 @@ function VolumeButton({ disabled }: { disabled?: boolean }) {
           size={18}
           aria-label={muted ? 'Unmute volume' : 'Mute volume'}
         />
-      </Toolbar.Button>
+      </button>
 
       {isPopoverOpen && (
         <div

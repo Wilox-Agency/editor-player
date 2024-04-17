@@ -23,11 +23,7 @@ import { fetchSlideshowLessonOrSlides } from '@/utils/queries';
 import { saveSlidesToSlideshowLesson } from '@/utils/mutations';
 import { waitUntilAllSupportedFontsLoad } from '@/utils/font';
 import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
-import {
-  checkIfCanAutoplay,
-  getAudioDuration,
-  preloadAudios,
-} from '@/utils/audio';
+import { getAudioDuration, preloadAudios } from '@/utils/audio';
 import { validateUrl } from '@/utils/validation';
 import { MouseButton } from '@/utils/input';
 import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
@@ -305,41 +301,6 @@ export default function AnimationPlayer() {
     // Prefetch assets
     prefetchAssetsFromCanvasElements(canvasElements);
   }, [combinedSlides, isLoadingFonts, loadCanvasTree]);
-
-  // Autoplay the timeline after it's done setting up and the audios are loaded
-  useEffect(() => {
-    (async () => {
-      if (!canPlaySlideshow) return;
-
-      const audioTestUrl = (() => {
-        if (slideshowLesson) {
-          for (const paragraph of slideshowLesson.elementLesson.paragraphs) {
-            if (paragraph.audioUrl) return paragraph.audioUrl;
-          }
-        }
-
-        if (slides) {
-          for (const slide of slides) {
-            if (slide.audio) return slide.audio.url;
-          }
-        }
-      })();
-
-      if (audioTestUrl) {
-        const canAutoplay = await checkIfCanAutoplay(audioTestUrl);
-        /* Prevent autoplaying if the browser doesn't allow it so the slideshow
-        doesn't play without audio */
-        if (!canAutoplay) {
-          toast.warning(
-            'Autoplay was blocked by your browser. If you want to autoplay the slideshow, please allow autoplay in your browser settings.'
-          );
-          return;
-        }
-      }
-
-      handlePlayOrPause();
-    })();
-  }, [canPlaySlideshow, handlePlayOrPause, slides, slideshowLesson]);
 
   // Clear canvas tree and reset timeline when the component is destroyed
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { arrayOf, intersection, morph, type, union } from 'arktype';
 
 import { getSubSlideAudioStartEnd } from './audio';
-import type { SlideshowContent } from './sharedTypes';
+import type { SlideshowContent, SrtSubtitles } from './sharedTypes';
 import { getLoremPicsum } from '@/utils/random';
 import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
 
@@ -325,7 +325,7 @@ function parseSlideshowLessonParagraphs(
         };
       }
 
-      let validSrt;
+      let validSrt: SrtSubtitles | undefined;
       try {
         /* The `srtSubtitlesSchema` uses `morph`, which means the input will be
         mutated if it's valid, so the object should be copied before passing it to
@@ -342,7 +342,7 @@ function parseSlideshowLessonParagraphs(
           audios = splitParagraphs.map((paragraph) => {
             return {
               url: lessonParagraph.audioUrl,
-              ...getSubSlideAudioStartEnd(paragraph, validSrt),
+              ...getSubSlideAudioStartEnd(paragraph, validSrt!),
             };
           });
         } catch (error) {

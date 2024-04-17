@@ -67,7 +67,11 @@ function setAnimationsWithoutTimings(
       if (nextSlide) {
         setRectMorphAnimationsWithoutTimings({ element, nextSlide });
       }
-      setEnterAnimationWithoutTimings({ element, slide });
+      /* First slide should not have enter animation (i.e. should be visible
+      from the start) */
+      if (slideIndex !== 0) {
+        setEnterAnimationWithoutTimings({ element, slide });
+      }
       setExitAnimationWithoutTimings({ element, slide });
     }
   }

@@ -287,6 +287,10 @@ export default function AnimationPlayer() {
       },
     });
 
+  const canPlaySlideshow = useMemo(() => {
+    return isSetupFinished && !isPreloadAudiosPending && !isPreloadingAudios;
+  }, [isPreloadAudiosPending, isPreloadingAudios, isSetupFinished]);
+
   // Load canvas tree and prefetch assets
   useEffect(() => {
     if (!combinedSlides || isLoadingFonts) return;
@@ -305,9 +309,7 @@ export default function AnimationPlayer() {
   // Autoplay the timeline after it's done setting up and the audios are loaded
   useEffect(() => {
     (async () => {
-      if (!isSetupFinished || isPreloadAudiosPending || isPreloadingAudios) {
-        return;
-      }
+      if (!canPlaySlideshow) return;
 
       const audioTestUrl = (() => {
         if (slideshowLesson) {
@@ -337,14 +339,7 @@ export default function AnimationPlayer() {
 
       handlePlayOrPause();
     })();
-  }, [
-    handlePlayOrPause,
-    isPreloadAudiosPending,
-    isPreloadingAudios,
-    isSetupFinished,
-    slides,
-    slideshowLesson,
-  ]);
+  }, [canPlaySlideshow, handlePlayOrPause, slides, slideshowLesson]);
 
   // Clear canvas tree and reset timeline when the component is destroyed
   useEffect(() => {
@@ -403,7 +398,7 @@ export default function AnimationPlayer() {
 
       {canvasTree.length > 0 && (
         <PlayerBar
-          disabled={!isSetupFinished || isPreloadingAudios}
+          disabled={!canPlaySlideshow}
           handlePlayOrPause={handlePlayOrPause}
           handleChangeTime={handleChangeTime}
         />

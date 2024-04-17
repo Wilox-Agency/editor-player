@@ -29,6 +29,7 @@ import {
   preloadAudios,
 } from '@/utils/audio';
 import { validateUrl } from '@/utils/validation';
+import { MouseButton } from '@/utils/input';
 import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
 
 import { PlayerBar } from '@/components/PlayerBar';
@@ -237,7 +238,9 @@ export default function AnimationPlayer() {
 
   // Play/pause when clicking on the stage wrapper with a pointer
   function handleClickStageWrapperWithPointer(event: PointerEvent) {
-    if (event.pointerType !== 'mouse') return;
+    const isLeftMouseClick =
+      event.pointerType === 'mouse' && event.button === MouseButton.left;
+    if (!isLeftMouseClick) return;
     handlePlayOrPause();
   }
 

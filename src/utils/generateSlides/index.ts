@@ -33,7 +33,12 @@ async function getSlideDuration(audio: AudioWithStartEnd | undefined) {
 }
 
 async function generateSlideWithSubSlides(
-  slideContent: SlideshowContent['slides'][number],
+  {
+    baseSlideIndex,
+    ...slideContent
+  }: SlideshowContent['slides'][number] & {
+    baseSlideIndex: number | undefined;
+  },
   colorPalette: string[]
 ) {
   // Generate the main slide
@@ -45,6 +50,7 @@ async function generateSlideWithSubSlides(
       /* TODO: Report TypeScript where the first item is always considered to be
       defined even though the type definition doesn't say that */
       audio: slideContent.audios?.[0],
+      baseSlideIndex,
     },
     colorPalette
   );
@@ -67,6 +73,7 @@ async function generateSlideWithSubSlides(
       })),
       duration: await getSlideDuration(audio),
       audio,
+      baseSlideIndex,
     };
 
     const textElement = findLast(subSlide.canvasElements, (element) => {
@@ -132,11 +139,13 @@ export async function generateSlide(
     paragraphs = [],
     asset,
     audio,
+    baseSlideIndex,
   }: {
     title: string;
     paragraphs?: string[];
     asset: { type: AssetType; url: string };
     audio?: AudioWithStartEnd;
+    baseSlideIndex: number | undefined;
   },
   colorPalette: string[]
 ) {
@@ -191,6 +200,7 @@ export async function generateSlide(
     canvasElements: [assetElement, ...rectsAndTexts],
     duration,
     audio,
+    baseSlideIndex,
   } satisfies SlideWithAudio;
 }
 
@@ -206,17 +216,21 @@ export async function generateSlides(presentationContent: SlideshowContent) {
       audio: presentationContent.audioUrl
         ? { url: presentationContent.audioUrl }
         : undefined,
+      baseSlideIndex: undefined,
     },
     colorPalette
   );
 
   const otherSlides: SlideWithAudio[] = [];
-  for (const slideContent of presentationContent.slides) {
+  for (const [
+    baseSlideIndex,
+    slideContent,
+  ] of presentationContent.slides.entries()) {
     if (slideContent.paragraphs.length >= 3) {
       /* If the slide has 3 or more paragraphs, then it should be separated into
       sub-slides */
       const slideWithSubSlides = await generateSlideWithSubSlides(
-        slideContent,
+        { ...slideContent, baseSlideIndex },
         colorPalette
       );
       otherSlides.push(...slideWithSubSlides);
@@ -230,6 +244,7 @@ export async function generateSlides(presentationContent: SlideshowContent) {
           paragraphs: slideContent.paragraphs,
           asset: slideContent.asset,
           audio: slideContent.audios?.[0],
+          baseSlideIndex,
         },
         colorPalette
       )

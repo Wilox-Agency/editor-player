@@ -321,6 +321,17 @@ export type JsUnion<A, B> =
 export type Slide<TElement = CanvasElement> = {
   canvasElements: TElement[];
   duration: number;
+  /**
+   * The index of the slide based on the slideshow content that was used to
+   * generate it.
+   *
+   * Notes:
+   * - The slide that's generated based on the section title and course cover
+   *   (which is the first slide) doesn't have a base slide index (i.e. it's
+   *   undefined).
+   * - Sub-slides have the same index as their parent slide.
+   */
+  baseSlideIndex: number | undefined;
 };
 
 export type SlideWithAudio<TElement = CanvasElement> = Slide<TElement> & {

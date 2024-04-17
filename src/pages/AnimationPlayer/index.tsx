@@ -18,7 +18,7 @@ import { CanvasComponentByType, StageVirtualSize } from '@/utils/konva';
 import { getCanvasElementRect } from '@/utils/konva/rect';
 import { generateSlides } from '@/utils/generateSlides';
 import { parseSlideshowLesson } from '@/utils/generateSlides/parse';
-import { combineSlides } from '@/utils/slidesPlayer';
+import { combineSlides } from '@/utils/generateAnimations';
 import { fetchSlideshowLessonOrSlides } from '@/utils/queries';
 import { saveSlidesToSlideshowLesson } from '@/utils/mutations';
 import { waitUntilAllSupportedFontsLoad } from '@/utils/font';

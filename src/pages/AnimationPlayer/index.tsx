@@ -236,7 +236,7 @@ export default function AnimationPlayer() {
   function handleClickStageWrapperWithPointer(event: PointerEvent) {
     const isLeftMouseClick =
       event.pointerType === 'mouse' && event.button === MouseButton.left;
-    if (!isLeftMouseClick) return;
+    if (!isLeftMouseClick || !canPlaySlideshow) return;
     handlePlayOrPause();
   }
 

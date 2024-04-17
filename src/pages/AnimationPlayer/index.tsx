@@ -245,43 +245,47 @@ export default function AnimationPlayer() {
   }
 
   // Preload audios, including background music if there's one
-  const { isLoading: isPreloadingAudios } = useQuery({
-    enabled:
-      (!!slideshowLessonFromHomePage || !!slideshowLessonOrSlidesFromServer) &&
-      !isLoadingBackgroundMusic,
-    queryKey: [
-      'preloadAudios',
-      backgroundMusic,
-      isLoadingBackgroundMusic,
-      slideshowLessonFromHomePage,
-      slideshowLessonOrSlidesFromServer,
-    ],
-    queryFn: async () => {
-      const slideAudios = (() => {
-        if (slideshowLessonFromHomePage) {
-          return (
-            slideshowLessonFromHomePage as SlideshowLessonWithExternalInfo
-          ).elementLesson.paragraphs.map(({ audioUrl }) => ({ url: audioUrl }));
-        }
+  const { isLoading: isPreloadingAudios, isPending: isPreloadAudiosPending } =
+    useQuery({
+      enabled:
+        (!!slideshowLessonFromHomePage ||
+          !!slideshowLessonOrSlidesFromServer) &&
+        !isLoadingBackgroundMusic,
+      queryKey: [
+        'preloadAudios',
+        backgroundMusic,
+        isLoadingBackgroundMusic,
+        slideshowLessonFromHomePage,
+        slideshowLessonOrSlidesFromServer,
+      ],
+      queryFn: async () => {
+        const slideAudios = (() => {
+          if (slideshowLessonFromHomePage) {
+            return (
+              slideshowLessonFromHomePage as SlideshowLessonWithExternalInfo
+            ).elementLesson.paragraphs.map(({ audioUrl }) => ({
+              url: audioUrl,
+            }));
+          }
 
-        if ('elementLesson' in slideshowLessonOrSlidesFromServer!) {
-          return slideshowLessonOrSlidesFromServer.elementLesson.paragraphs.map(
-            ({ audioUrl }) => ({ url: audioUrl })
-          );
-        }
+          if ('elementLesson' in slideshowLessonOrSlidesFromServer!) {
+            return slideshowLessonOrSlidesFromServer.elementLesson.paragraphs.map(
+              ({ audioUrl }) => ({ url: audioUrl })
+            );
+          }
 
-        return slideshowLessonOrSlidesFromServer!.slides
-          .map(({ audio }) => audio)
-          .filter((audio): audio is { url: string } => !!audio);
-      })();
+          return slideshowLessonOrSlidesFromServer!.slides
+            .map(({ audio }) => audio)
+            .filter((audio): audio is { url: string } => !!audio);
+        })();
 
-      await preloadAudios([
-        ...slideAudios,
-        ...(backgroundMusic ? [backgroundMusic] : []),
-      ]);
-      return null;
-    },
-  });
+        await preloadAudios([
+          ...slideAudios,
+          ...(backgroundMusic ? [backgroundMusic] : []),
+        ]);
+        return null;
+      },
+    });
 
   // Load canvas tree and prefetch assets
   useEffect(() => {
@@ -301,7 +305,9 @@ export default function AnimationPlayer() {
   // Autoplay the timeline after it's done setting up and the audios are loaded
   useEffect(() => {
     (async () => {
-      if (!isSetupFinished || isPreloadingAudios) return;
+      if (!isSetupFinished || isPreloadAudiosPending || isPreloadingAudios) {
+        return;
+      }
 
       const audioTestUrl = (() => {
         if (slideshowLesson) {
@@ -333,6 +339,7 @@ export default function AnimationPlayer() {
     })();
   }, [
     handlePlayOrPause,
+    isPreloadAudiosPending,
     isPreloadingAudios,
     isSetupFinished,
     slides,

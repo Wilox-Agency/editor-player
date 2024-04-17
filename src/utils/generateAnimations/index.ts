@@ -190,15 +190,16 @@ function setAnimationTimings(
   return slides as SlideWithAudioAndStartTime<CanvasElementWithAnimations>[];
 }
 
-/** Combines slides by adding animations to transition between them. */
-export function combineSlides(slides: SlideWithAudio[]) {
+/** Adds animations to transition between slides. */
+export function addAnimationsToSlides(slides: SlideWithAudio[]) {
   /* 3 slides example (considering the complete slide transition as 3s, and each
   part of the transition as one-third of the complete slide transition):
 
   1s first transition (enter) -> first slide duration -> 3s transition (1s exit
   -> 1 morph -> 1s enter) -> second slide duration -> 3s transition -> third
   slide duration -> 1s last transition (exit) */
-  const parsedSlides = pipe(
+
+  const animatedSlides = pipe(
     slides,
     setEmptyAnimationAttributes,
     setSharedIdsForReusedRectsThatShouldMorph,
@@ -210,6 +211,13 @@ export function combineSlides(slides: SlideWithAudio[]) {
     setAnimationTimings
   );
 
+  return animatedSlides;
+}
+
+/** Combines animated slides to be used in the animation player. */
+export function combineSlides(
+  animatedSlides: SlideWithAudioAndStartTime<CanvasElementWithAnimations>[]
+) {
   const combinedSlides: {
     canvasElements: CanvasElementWithAnimations[];
     audios: {
@@ -219,7 +227,8 @@ export function combineSlides(slides: SlideWithAudio[]) {
       duration: number;
     }[];
   } = { canvasElements: [], audios: [] };
-  for (const slide of parsedSlides) {
+
+  for (const slide of animatedSlides) {
     combinedSlides.canvasElements.push(...slide.canvasElements);
     if (slide.audio) {
       combinedSlides.audios.push({

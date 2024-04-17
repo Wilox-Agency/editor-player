@@ -1,7 +1,7 @@
 import { RefObject, useEffect, useState } from 'react';
 import Konva from 'konva';
 
-import { combineSlides, createTweens } from '@/utils/generateAnimations';
+import { type combineSlides, createTweens } from '@/utils/generateAnimations';
 import { waitUntilKonvaNodeSizeIsCalculated } from '@/utils/konva/misc';
 
 export function useSetupPlayerTimeline({

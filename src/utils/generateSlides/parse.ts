@@ -342,7 +342,7 @@ function parseSlideshowLessonParagraphs(
           audios = splitParagraphs.map((paragraph) => {
             return {
               url: lessonParagraph.audioUrl,
-              ...getSubSlideAudioStartEnd(paragraph, validSrt!),
+              ...getSubSlideAudioStartEnd(paragraph, validSrt),
             };
           });
         } catch (error) {

@@ -54,6 +54,7 @@ export function App() {
         closeButton
         pauseWhenPageIsHidden
         expand
+        visibleToasts={5}
       />
     </QueryClientProvider>
   );

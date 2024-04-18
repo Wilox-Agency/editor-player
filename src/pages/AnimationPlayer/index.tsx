@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Group, Layer, Stage } from 'react-konva';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { type } from 'arktype';
 
 import styles from './AnimationPlayer.module.css';
 
@@ -207,11 +208,30 @@ export default function AnimationPlayer() {
     });
 
   // Generate animations
-  const combinedSlides = useMemo(() => {
-    if (!slides) return undefined;
+  const { animatedSlides, combinedSlides } = useMemo(() => {
+    if (!slides) {
+      return { animatedSlides: undefined, combinedSlides: undefined };
+    }
+
     const animatedSlides = addAnimationsToSlides(slides);
-    return combineSlides(animatedSlides);
+    return { animatedSlides, combinedSlides: combineSlides(animatedSlides) };
   }, [slides]);
+
+  // Get the index of the slide to preview (if provided)
+  const slideIndexToPreview = useMemo(() => {
+    const searchParamsObject = new URLSearchParams(searchParams);
+    const unparsedSlideIndex = searchParamsObject.get('previewIndex');
+    if (!unparsedSlideIndex) return undefined;
+
+    const { data: slideIndexToPreview } =
+      type('parsedInteger')(unparsedSlideIndex);
+
+    if (slideIndexToPreview === undefined) {
+      toast.error(`Invalid preview index: "${unparsedSlideIndex}"`);
+    }
+
+    return slideIndexToPreview;
+  }, [searchParams]);
 
   const { canvasTree, loadCanvasTree } = useCanvasTreeStore();
   const { stageRef, layerRef } = useKonvaRefsStore();
@@ -233,18 +253,13 @@ export default function AnimationPlayer() {
 
   const { isSetupFinished } = useSetupPlayerTimeline({
     layerRef,
+    animatedSlides,
     combinedSlides,
+    slideIndexToPreview,
     timeline,
     updateTimelineDuration,
+    handleChangeTime,
   });
-
-  // Play/pause when clicking on the stage wrapper with a pointer
-  function handleClickStageWrapperWithPointer(event: PointerEvent) {
-    const isLeftMouseClick =
-      event.pointerType === 'mouse' && event.button === MouseButton.left;
-    if (!isLeftMouseClick || !canPlaySlideshow) return;
-    handlePlayOrPause();
-  }
 
   // Preload audios, including background music if there's one
   const { isLoading: isPreloadingAudios, isPending: isPreloadAudiosPending } =
@@ -292,6 +307,14 @@ export default function AnimationPlayer() {
   const canPlaySlideshow = useMemo(() => {
     return isSetupFinished && !isPreloadAudiosPending && !isPreloadingAudios;
   }, [isPreloadAudiosPending, isPreloadingAudios, isSetupFinished]);
+
+  // Play/pause when clicking on the stage wrapper with a pointer
+  function handleClickStageWrapperWithPointer(event: PointerEvent) {
+    const isLeftMouseClick =
+      event.pointerType === 'mouse' && event.button === MouseButton.left;
+    if (!isLeftMouseClick || !canPlaySlideshow) return;
+    handlePlayOrPause();
+  }
 
   // Load canvas tree and prefetch assets
   useEffect(() => {

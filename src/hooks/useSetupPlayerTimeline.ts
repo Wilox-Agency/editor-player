@@ -1,19 +1,37 @@
 import { RefObject, useEffect, useState } from 'react';
 import Konva from 'konva';
+import { toast } from 'sonner';
+import { type } from 'arktype';
 
-import { type combineSlides, createTweens } from '@/utils/generateAnimations';
+import {
+  type addAnimationsToSlides,
+  type combineSlides,
+  createTweens,
+  getWhichTransitionsSlideHas,
+} from '@/utils/generateAnimations';
+import {
+  ENTER_EXIT_ELEMENT_TRANSITION_DURATION,
+  MORPH_ELEMENT_TRANSITION_DURATION,
+} from '@/utils/generateAnimations/setAnimationTimings';
 import { waitUntilKonvaNodeSizeIsCalculated } from '@/utils/konva/misc';
+import { findLast } from '@/utils/array';
 
 export function useSetupPlayerTimeline({
   layerRef,
+  animatedSlides,
   combinedSlides,
+  slideIndexToPreview,
   timeline,
   updateTimelineDuration,
+  handleChangeTime,
 }: {
   layerRef: RefObject<Konva.Layer>;
+  animatedSlides: ReturnType<typeof addAnimationsToSlides> | undefined;
   combinedSlides: ReturnType<typeof combineSlides> | undefined;
+  slideIndexToPreview: number | undefined;
   timeline: gsap.core.Timeline;
   updateTimelineDuration: () => void;
+  handleChangeTime: (time: number) => void;
 }) {
   const [konvaNodesLoaded, setKonvaNodesLoaded] = useState(false);
   const [isSetupFinished, setIsSetupFinished] = useState(false);
@@ -49,7 +67,7 @@ export function useSetupPlayerTimeline({
   // Setup the GSAP timeline
   useEffect(() => {
     const nodes = layerRef.current!.getChildren();
-    if (!combinedSlides || !konvaNodesLoaded) return;
+    if (!animatedSlides || !combinedSlides || !konvaNodesLoaded) return;
 
     combinedSlides.canvasElements.forEach((item, itemIndex) => {
       const group = nodes[itemIndex];
@@ -87,13 +105,92 @@ export function useSetupPlayerTimeline({
 
     // Update the 'is setup finished' state
     setIsSetupFinished(true);
+
+    // If the user wants to preview a slide, jump to it
+    if (slideIndexToPreview !== undefined) {
+      jumpToSlideToPreview({
+        slideIndexToPreview,
+        animatedSlides,
+        handleChangeTime,
+      });
+    }
   }, [
+    animatedSlides,
     combinedSlides,
+    handleChangeTime,
     konvaNodesLoaded,
     layerRef,
+    slideIndexToPreview,
     timeline,
     updateTimelineDuration,
   ]);
 
   return { isSetupFinished };
+}
+
+function validateSlideIndexToPreview(
+  slides: { lessonParagraphIndex: number | undefined }[],
+  unvalidatedSlideIndex: number
+) {
+  const lastLessonParagraphIndex = findLast(
+    slides,
+    (slide) => slide.lessonParagraphIndex !== undefined
+  )?.lessonParagraphIndex;
+  if (lastLessonParagraphIndex === undefined) {
+    toast.error(
+      'Cannot skip to the slide you want to preview because the slideshow is using an old format.' +
+        ' If you want to be able to skip to a slide, you will need to generate the slides again by making any changes to the lesson.'
+    );
+    return null;
+  }
+
+  const { data: validatedSlideIndex } = type(
+    `0<=number<=${lastLessonParagraphIndex}`
+  )(unvalidatedSlideIndex);
+
+  if (validatedSlideIndex === undefined) {
+    toast.error('The slide you are trying to preview does not exist.');
+    return null;
+  }
+
+  return validatedSlideIndex;
+}
+
+function jumpToSlideToPreview({
+  slideIndexToPreview: unvalidatedSlideIndexToPreview,
+  animatedSlides,
+  handleChangeTime,
+}: {
+  slideIndexToPreview: number;
+  animatedSlides: ReturnType<typeof addAnimationsToSlides>;
+  handleChangeTime: (time: number) => void;
+}) {
+  const slideIndexToPreview = validateSlideIndexToPreview(
+    animatedSlides,
+    unvalidatedSlideIndexToPreview
+  );
+  if (slideIndexToPreview === null) return;
+
+  const slideToPreview = animatedSlides.find(
+    (slide) => slide.lessonParagraphIndex === slideIndexToPreview
+  );
+  // The slide should always exist, as the index is validated beforehand
+  if (!slideToPreview) {
+    toast.error('The slide you are trying to preview does not exist.');
+    return;
+  }
+
+  /* The slideshow should start right before the morph animation between the
+  previous slide and the slide to preview */
+  let timeToJumpTo = slideToPreview.startTime;
+  const { slideHasEnterAnimation, slideHasMorphAnimation } =
+    getWhichTransitionsSlideHas(slideToPreview);
+  if (slideHasEnterAnimation) {
+    timeToJumpTo -= ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
+  }
+  if (slideHasMorphAnimation) {
+    timeToJumpTo -= MORPH_ELEMENT_TRANSITION_DURATION;
+  }
+
+  handleChangeTime(timeToJumpTo);
 }

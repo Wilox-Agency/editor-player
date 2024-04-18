@@ -85,31 +85,34 @@ export function usePlayerTimeline({
   }, [timeline]);
 
   /** The `onChange` event handler to be used with a timeline slider. */
-  function handleChangeTime(time: number) {
-    usePlayerTimelineStore.setState({ timelineState: 'paused' });
-    timeline.pause();
-    timeline.time(time);
+  const handleChangeTime = useCallback(
+    (time: number) => {
+      usePlayerTimelineStore.setState({ timelineState: 'paused' });
+      timeline.pause();
+      timeline.time(time);
 
-    const { currentAudio, backgroundMusicElement } =
-      usePlayerAudioStore.getState();
-    const { timelineCurrentTime } = usePlayerTimelineStore.getState();
+      const { currentAudio, backgroundMusicElement } =
+        usePlayerAudioStore.getState();
+      const { timelineCurrentTime } = usePlayerTimelineStore.getState();
 
-    // Set the audio and background music current times
-    if (currentAudio) {
-      currentAudio.element.currentTime =
-        (currentAudio.start ?? 0) +
-        (timelineCurrentTime - currentAudio.shouldBePlayedAt);
-    }
-    if (backgroundMusic && backgroundMusicElement) {
-      /* The background music cycles and is played during the entire slideshow,
+      // Set the audio and background music current times
+      if (currentAudio) {
+        currentAudio.element.currentTime =
+          (currentAudio.start ?? 0) +
+          (timelineCurrentTime - currentAudio.shouldBePlayedAt);
+      }
+      if (backgroundMusic && backgroundMusicElement) {
+        /* The background music cycles and is played during the entire slideshow,
       so instead of subtracting the duration from the timeline current time, as
       with the current audio, just get the remainder of the timeline current
       time divided by the duration, which is equivalent to the current time of
       the music in its current cycle */
-      backgroundMusicElement.currentTime =
-        timelineCurrentTime % backgroundMusic.duration;
-    }
-  }
+        backgroundMusicElement.currentTime =
+          timelineCurrentTime % backgroundMusic.duration;
+      }
+    },
+    [backgroundMusic, timeline]
+  );
 
   /**
    * Sets the current audio and plays it if the timeline is playing. Should be

@@ -79,7 +79,7 @@ function setAnimationsWithoutTimings(
   return slides;
 }
 
-function getWhichTransitionsSlideHas(
+export function getWhichTransitionsSlideHas(
   slide: SlideWithAudio<CanvasElementWithAnimationsWithoutTimings>
 ) {
   let slideHasEnterAnimation = false;

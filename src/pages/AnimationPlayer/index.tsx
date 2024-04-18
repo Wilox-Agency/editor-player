@@ -232,7 +232,6 @@ export default function AnimationPlayer() {
   });
 
   const { isSetupFinished } = useSetupPlayerTimeline({
-    stageRef,
     layerRef,
     combinedSlides,
     timeline,

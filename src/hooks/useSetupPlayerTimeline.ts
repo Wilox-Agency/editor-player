@@ -5,13 +5,11 @@ import { type combineSlides, createTweens } from '@/utils/generateAnimations';
 import { waitUntilKonvaNodeSizeIsCalculated } from '@/utils/konva/misc';
 
 export function useSetupPlayerTimeline({
-  stageRef,
   layerRef,
   combinedSlides,
   timeline,
   updateTimelineDuration,
 }: {
-  stageRef: RefObject<Konva.Stage>;
   layerRef: RefObject<Konva.Layer>;
   combinedSlides: ReturnType<typeof combineSlides> | undefined;
   timeline: gsap.core.Timeline;
@@ -50,9 +48,8 @@ export function useSetupPlayerTimeline({
 
   // Setup the GSAP timeline
   useEffect(() => {
-    const stage = stageRef.current;
     const nodes = layerRef.current!.getChildren();
-    if (!stage || !combinedSlides || !konvaNodesLoaded) return;
+    if (!combinedSlides || !konvaNodesLoaded) return;
 
     combinedSlides.canvasElements.forEach((item, itemIndex) => {
       const group = nodes[itemIndex];
@@ -94,7 +91,6 @@ export function useSetupPlayerTimeline({
     combinedSlides,
     konvaNodesLoaded,
     layerRef,
-    stageRef,
     timeline,
     updateTimelineDuration,
   ]);

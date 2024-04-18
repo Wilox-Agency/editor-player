@@ -22,7 +22,13 @@ async function waitUntilFontLoads(fontFamily: string | undefined) {
   const didFontAlreadyLoad = document.fonts.check(`16px ${fontFamily}`);
   if (didFontAlreadyLoad) return;
 
-  const fontLoadPromise = new FontFaceObserver(fontFamily).load();
+  /* Using a long max wait time to account for bad internet connection, though
+  it's really unlikely for a font to take this long */
+  const maxWaitTime = 60 * 1000; // 60 seconds
+  const fontLoadPromise = new FontFaceObserver(fontFamily).load(
+    null,
+    maxWaitTime
+  );
 
   let warningToastId: string | number | undefined;
   // Show a toast if the font doesn't load after 10 seconds

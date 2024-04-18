@@ -322,7 +322,7 @@ export type Slide<TElement = CanvasElement> = {
   canvasElements: TElement[];
   duration: number;
   /**
-   * The index of the slide based on the slideshow content that was used to
+   * The index of the slide based on the lesson paragraph that was used to
    * generate it.
    *
    * Notes:
@@ -331,7 +331,7 @@ export type Slide<TElement = CanvasElement> = {
    *   undefined).
    * - Sub-slides have the same index as their parent slide.
    */
-  baseSlideIndex: number | undefined;
+  lessonParagraphIndex: number | undefined;
 };
 
 export type SlideWithAudio<TElement = CanvasElement> = Slide<TElement> & {

@@ -50,21 +50,26 @@ export async function waitUntilAllSupportedFontsLoad() {
   });
   const fontsLoadPromise = Promise.allSettled(fontLoadPromises);
 
-  toast.promise(fontsLoadPromise, {
-    loading: 'Loading fonts...',
-    success: (results) => {
+  const toastId = toast.loading('Loading fonts...');
+  fontsLoadPromise
+    .then((results) => {
       const numberOfSuccesses = results.filter(
         (result) => result.status === 'fulfilled'
       ).length;
       const totalOfResults = results.length;
 
       if (numberOfSuccesses === totalOfResults) {
-        return 'All fonts loaded successfully!';
+        toast.success('All fonts loaded successfully!', { id: toastId });
+        return;
       }
-      return `${numberOfSuccesses} fonts loaded out of ${totalOfResults}.`;
-    },
-    error: 'Could not load fonts.',
-  });
+      toast.warning(
+        `${numberOfSuccesses} fonts loaded out of ${totalOfResults}.`,
+        { id: toastId }
+      );
+    })
+    .catch(() => {
+      toast.error('Could not load fonts.', { id: toastId });
+    });
 
   return await fontsLoadPromise;
 }

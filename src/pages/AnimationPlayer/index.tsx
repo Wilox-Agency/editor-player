@@ -94,17 +94,20 @@ export default function AnimationPlayer() {
   /* Wait until all fonts are loaded before generating or rendering the slides
   to prevent wrong text measurements and prevent any text from being drawn
   incorrectly */
-  const { isLoading: isLoadingFonts } = useQuery({
-    queryKey: ['loadFonts'],
-    queryFn: async () => {
-      await waitUntilAllSupportedFontsLoad();
-      return null;
-    },
-  });
+  const { isLoading: isLoadingFonts, isPending: isLoadFontsPending } = useQuery(
+    {
+      queryKey: ['loadFonts'],
+      queryFn: async () => {
+        await waitUntilAllSupportedFontsLoad();
+        return null;
+      },
+    }
+  );
 
+  // TODO: Prevent generating slides if any of the fonts are not loaded
   // Generate slides if they were not fetched from the server
   const { data: generatedSlides } = useQuery({
-    enabled: !!slideshowLesson && !isLoadingFonts,
+    enabled: !!slideshowLesson && !isLoadingFonts && !isLoadFontsPending,
     queryKey: ['generateSlides', slideshowLesson],
     queryFn: async () => {
       // Generate slides from the lesson
@@ -293,7 +296,7 @@ export default function AnimationPlayer() {
 
   // Load canvas tree and prefetch assets
   useEffect(() => {
-    if (!combinedSlides || isLoadingFonts) return;
+    if (!combinedSlides || isLoadingFonts || isLoadFontsPending) return;
 
     // Load canvas tree
     const canvasElements = combinedSlides.canvasElements.map(
@@ -304,7 +307,7 @@ export default function AnimationPlayer() {
     // TODO: Start prefetching the assets before the generating the slides
     // Prefetch assets
     prefetchAssetsFromCanvasElements(canvasElements);
-  }, [combinedSlides, isLoadingFonts, loadCanvasTree]);
+  }, [combinedSlides, isLoadFontsPending, isLoadingFonts, loadCanvasTree]);
 
   // Clear canvas tree and reset timeline when the component is destroyed
   useEffect(() => {

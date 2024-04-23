@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import Konva from 'konva';
 import { toast } from 'sonner';
 import { type } from 'arktype';
@@ -35,6 +35,12 @@ export function useSetupPlayerTimeline({
 }) {
   const [konvaNodesLoaded, setKonvaNodesLoaded] = useState(false);
   const [isSetupFinished, setIsSetupFinished] = useState(false);
+  const isSetupFinishedRef = useRef(false);
+
+  // Update the ref when the state changes
+  useEffect(() => {
+    isSetupFinishedRef.current = isSetupFinished;
+  }, [isSetupFinished]);
 
   // Keep track of when the Konva nodes are loaded
   useEffect(() => {
@@ -66,8 +72,17 @@ export function useSetupPlayerTimeline({
 
   // Setup the GSAP timeline
   useEffect(() => {
+    const timelineIsAlreadySetUp = isSetupFinishedRef.current;
+    if (
+      !animatedSlides ||
+      !combinedSlides ||
+      !konvaNodesLoaded ||
+      timelineIsAlreadySetUp
+    ) {
+      return;
+    }
+
     const nodes = layerRef.current!.getChildren();
-    if (!animatedSlides || !combinedSlides || !konvaNodesLoaded) return;
 
     combinedSlides.canvasElements.forEach((item, itemIndex) => {
       const group = nodes[itemIndex];

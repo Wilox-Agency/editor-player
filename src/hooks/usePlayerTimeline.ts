@@ -6,7 +6,8 @@ import { subscribeWithSelector } from 'zustand/middleware';
 import gsap from 'gsap';
 
 import { usePlayerAudioStore } from '@/hooks/usePlayerAudioStore';
-import { getAllVideoElementsFromNode } from '@/utils/konva/misc';
+import { usePlayerVideoStore } from '@/hooks/usePlayerVideoStore';
+import { getVideoElementFromNodeId } from '@/utils/konva/misc';
 import { backgroundMusicVolumeMultiplier } from '@/utils/volume';
 import { cleanListener } from '@/utils/zustand';
 
@@ -36,6 +37,7 @@ export function usePlayerTimeline({
   layerRef,
   audios,
   backgroundMusic,
+  videos,
 }: {
   layerRef: RefObject<Konva.Layer>;
   audios: {
@@ -45,6 +47,13 @@ export function usePlayerTimeline({
     duration: number;
   }[];
   backgroundMusic?: { url: string; duration: number };
+  videos: {
+    elementId: string;
+    shouldBePlayedAt: number;
+    shouldBePausedAt: number;
+    appearsAt: number;
+    disappearsAt: number;
+  }[];
 }) {
   const timeline = useMemo(() => gsap.timeline(), []);
 
@@ -124,8 +133,7 @@ export function usePlayerTimeline({
     const { currentAudio, setCurrentAudio, volume } =
       usePlayerAudioStore.getState();
 
-    /* Check if the current audio already ended (i.e. is not the current audio
-    anymore) */
+    // If there's a current audio, check if it should still be the current audio
     if (currentAudio) {
       /* When going back in the timeline, the current time may be moved to a
       time where the audio didn't start yet, so it also needs to be paused and
@@ -134,6 +142,7 @@ export function usePlayerTimeline({
       const audioEnded =
         timelineCurrentTime >
         currentAudio.shouldBePlayedAt + currentAudio.duration;
+      // If the audio should still be playing, do nothing
       if (audioStarted && !audioEnded) return;
 
       // Clear the audio that ended
@@ -145,7 +154,7 @@ export function usePlayerTimeline({
     // Check if there's an audio that should be played
     const audioThatShouldBePlayed = audios.find((audio) => {
       const isPastTimeItShouldStart =
-        timelineCurrentTime > audio.shouldBePlayedAt;
+        timelineCurrentTime >= audio.shouldBePlayedAt;
       const isBeforeTimeItShouldEnd =
         timelineCurrentTime < audio.shouldBePlayedAt + audio.duration;
       return isPastTimeItShouldStart && isBeforeTimeItShouldEnd;
@@ -234,6 +243,80 @@ export function usePlayerTimeline({
     }
   }, [backgroundMusic]);
 
+  /**
+   * Sets the current video and plays it if the timeline is playing. Should be
+   * called every time the timeline updates.
+   */
+  const handleCurrentVideo = useCallback(() => {
+    const { timelineCurrentTime, timelineState } =
+      usePlayerTimelineStore.getState();
+    const { currentVideo, setCurrentVideo } = usePlayerVideoStore.getState();
+
+    /* Reset the current time of all videos that are not visible (only the ones
+    that are not visible because updating the current time of a video causes it
+    to flicker, so it's better to do it only when the video is not visible; this
+    condition also ends up including the currently playing video, which should
+    also not be reset) */
+    videos.forEach((video) => {
+      const isVisible =
+        timelineCurrentTime >= video.appearsAt &&
+        timelineCurrentTime < video.disappearsAt;
+      if (isVisible) return;
+
+      const videoElement = getVideoElementFromNodeId(
+        video.elementId,
+        layerRef.current!
+      );
+      if (videoElement.currentTime === 0) return;
+
+      videoElement.currentTime = 0;
+    });
+
+    // TODO: If we end up supporting multiple videos at once, handle them here
+    // If there's a current video, check if it should still be the current video
+    if (currentVideo) {
+      /* When going back in the timeline, the current time may be moved to a
+      time where the video didn't start yet, so it also needs to be paused and
+      cleared */
+      const videoStarted = timelineCurrentTime >= currentVideo.shouldBePlayedAt;
+      const videoEnded = timelineCurrentTime > currentVideo.shouldBePausedAt;
+      // If the video should still be playing, do nothing
+      if (videoStarted && !videoEnded) return;
+
+      // Clear the current video that ended
+      setCurrentVideo(undefined);
+      // Pause the video
+      currentVideo.element.pause();
+    }
+
+    // Check if there's a video that should be played
+    const videoThatShouldBePlayed = videos.find((video) => {
+      const isPastTimeItShouldStart =
+        timelineCurrentTime >= video.shouldBePlayedAt;
+      const isBeforeTimeItShouldEnd =
+        timelineCurrentTime < video.shouldBePausedAt;
+      return isPastTimeItShouldStart && isBeforeTimeItShouldEnd;
+    });
+
+    // If there's no video that should be played, do nothing
+    if (!videoThatShouldBePlayed) return;
+
+    const videoElement = getVideoElementFromNodeId(
+      videoThatShouldBePlayed.elementId,
+      layerRef.current!
+    );
+
+    setCurrentVideo({
+      element: videoElement,
+      shouldBePlayedAt: videoThatShouldBePlayed.shouldBePlayedAt,
+      shouldBePausedAt: videoThatShouldBePlayed.shouldBePausedAt,
+    });
+
+    // Only play the video if the timeline is playing
+    const isTimelinePlaying = timelineState === 'playing';
+    if (isTimelinePlaying) videoElement.play();
+  }, [layerRef, videos]);
+
   // Set timeline event listeners
   useEffect(() => {
     timeline.eventCallback('onUpdate', () => {
@@ -246,6 +329,8 @@ export function usePlayerTimeline({
       // Handle audio and background music
       handleCurrentAudio();
       handleBackgroundMusic();
+      // Handle video
+      handleCurrentVideo();
     });
     timeline.eventCallback('onComplete', () => {
       // Update timeline state
@@ -256,7 +341,13 @@ export function usePlayerTimeline({
       timeline.eventCallback('onUpdate', null);
       timeline.eventCallback('onComplete', null);
     };
-  }, [handleBackgroundMusic, handleCurrentAudio, layerRef, timeline]);
+  }, [
+    handleBackgroundMusic,
+    handleCurrentAudio,
+    handleCurrentVideo,
+    layerRef,
+    timeline,
+  ]);
 
   // Play/pause video and audio elements depending on timeline state
   useEffect(() => {
@@ -266,24 +357,18 @@ export function usePlayerTimeline({
     const unsubscribe = usePlayerTimelineStore.subscribe(
       ({ timelineState }) => timelineState,
       (timelineState) => {
-        const videoElements = getAllVideoElementsFromNode(layerRef.current!);
         const { currentAudio, backgroundMusicElement } =
           usePlayerAudioStore.getState();
+        const { currentVideo } = usePlayerVideoStore.getState();
 
         if (timelineState === 'playing') {
-          videoElements.forEach((element) => {
-            element.autoplay = true;
-            element.play();
-          });
           currentAudio?.element.play();
           backgroundMusicElement?.play();
+          currentVideo?.element.play();
         } else {
-          videoElements.forEach((element) => {
-            element.autoplay = false;
-            element.pause();
-          });
           currentAudio?.element.pause();
           backgroundMusicElement?.pause();
+          currentVideo?.element.pause();
         }
       }
     );

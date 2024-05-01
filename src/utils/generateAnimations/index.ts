@@ -213,6 +213,45 @@ export function addAnimationsToSlides(slides: SlideWithAudio[]) {
   return animatedSlides;
 }
 
+/**
+ * Gets the ID and start, end, appear and disappear times of all the videos from
+ * a slide.
+ */
+function getVideosWithTimingsFromSlide(
+  slide: SlideWithAudioAndStartTime<CanvasElementWithAnimations>
+) {
+  return slide.canvasElements
+    .filter((element) => element.attributes.type === 'video')
+    .map((element) => {
+      const shouldBePlayedAt =
+        element.animationAttributes.startTime ?? slide.startTime;
+      const shouldBePausedAt =
+        element.animationAttributes.endTime ?? slide.startTime + slide.duration;
+
+      const appearAnimation = element.animations?.find(
+        (animation) => animation.type === 'appear'
+      );
+      const appearsAt = appearAnimation
+        ? appearAnimation.startTime
+        : shouldBePlayedAt;
+
+      const disappearAnimation = element.animations?.find(
+        (animation) => animation.type === 'disappear'
+      );
+      const disappearsAt = disappearAnimation
+        ? disappearAnimation.startTime + disappearAnimation.duration
+        : shouldBePausedAt;
+
+      return {
+        elementId: element.attributes.id,
+        shouldBePlayedAt,
+        shouldBePausedAt,
+        appearsAt,
+        disappearsAt,
+      };
+    });
+}
+
 /** Combines animated slides to be used in the animation player. */
 export function combineSlides(
   animatedSlides: SlideWithAudioAndStartTime<CanvasElementWithAnimations>[]
@@ -225,7 +264,8 @@ export function combineSlides(
       start?: number;
       duration: number;
     }[];
-  } = { canvasElements: [], audios: [] };
+    videos: ReturnType<typeof getVideosWithTimingsFromSlide>;
+  } = { canvasElements: [], audios: [], videos: [] };
 
   for (const slide of animatedSlides) {
     combinedSlides.canvasElements.push(...slide.canvasElements);
@@ -237,6 +277,7 @@ export function combineSlides(
         duration: slide.duration,
       });
     }
+    combinedSlides.videos.push(...getVideosWithTimingsFromSlide(slide));
   }
   return combinedSlides;
 }

@@ -249,6 +249,7 @@ export default function AnimationPlayer() {
     layerRef,
     audios: combinedSlides?.audios || [],
     backgroundMusic: backgroundMusic || undefined,
+    videos: combinedSlides?.videos || [],
   });
 
   const { isSetupFinished } = useSetupPlayerTimeline({

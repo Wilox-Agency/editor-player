@@ -62,27 +62,43 @@ export function waitUntilKonvaNodeSizeIsCalculated(
   });
 }
 
-export function getAllVideoElementsFromNode(
-  node: Konva.Node
-): HTMLVideoElement[] {
-  if (node instanceof Konva.Group || node instanceof Konva.Layer) {
-    const children = node
-      .getChildren()
-      .filter((child): child is Konva.Image | Konva.Group => {
-        return child instanceof Konva.Image || child instanceof Konva.Group;
-      })
-      .map((node) => getAllVideoElementsFromNode(node))
-      .flat();
-    return children;
+function getNodeById(
+  id: string,
+  parent: Konva.Group | Konva.Layer
+): Konva.Node | undefined {
+  for (const child of parent.getChildren()) {
+    if (child.id() === id) return child;
+
+    if (child instanceof Konva.Group) {
+      const foundNode = getNodeById(id, child);
+      if (foundNode) return foundNode;
+    }
+  }
+}
+
+/**
+ * @throws If the node is **not an image node** or the canvas image source of
+ * the node is **not a video element**.
+ */
+export function getVideoElementFromNodeId(
+  id: string,
+  parent: Konva.Group | Konva.Layer
+) {
+  const node = getNodeById(id, parent);
+  if (!node) {
+    throw new Error('Node not found.');
+  }
+  if (!(node instanceof Konva.Image)) {
+    throw new Error('Node is not an image node.');
   }
 
-  if (node instanceof Konva.Image) {
-    const canvasImageSource = node.image();
-    const isVideoElement = canvasImageSource instanceof HTMLVideoElement;
-    if (!isVideoElement) return [];
-
-    return [canvasImageSource];
+  const canvasImageSource = node.image();
+  if (!canvasImageSource) {
+    throw new Error('Node does not contain a canvas image source.');
+  }
+  if (!(canvasImageSource instanceof HTMLVideoElement)) {
+    throw new Error('Canvas image source of node is not a video element.');
   }
 
-  return [];
+  return canvasImageSource;
 }

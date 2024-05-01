@@ -19,6 +19,7 @@ import {
   setExitAnimationTimings,
   setRectMorphAnimationTimings,
 } from './setAnimationTimings';
+import { deduplicateVideosReusedBetweenAdjacentSlides } from './deduplicateVideosReusedBetweenAdjacentSlides';
 import type {
   Animation,
   AnimationStates,
@@ -205,7 +206,8 @@ export function addAnimationsToSlides(slides: SlideWithAudio[]) {
     setTextContainers,
     setAnimationsWithoutTimings,
     setElementsEnterDelays,
-    setAnimationTimings
+    setAnimationTimings,
+    deduplicateVideosReusedBetweenAdjacentSlides
   );
 
   return animatedSlides;

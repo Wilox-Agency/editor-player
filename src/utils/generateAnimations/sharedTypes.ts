@@ -38,7 +38,10 @@ type AnimationAttributesByElementType = MergeDeep<
     };
   },
   // Attributes specific to each element type
-  { text: { containerId?: string } }
+  {
+    text: { containerId?: string };
+    video: { startTime?: number; endTime?: number };
+  }
 >;
 
 type AnimationAttributeKey = DistributiveKeyOf<

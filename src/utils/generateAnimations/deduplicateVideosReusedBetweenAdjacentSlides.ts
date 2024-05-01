@@ -78,31 +78,13 @@ export function deduplicateVideosReusedBetweenAdjacentSlides(
         undefined;
       // If the start time of the video was not saved yet, then save it
       if (!videoStartTimeWasAlreadySaved) {
-        const enterAnimationOfCurrentElement =
-          elementToCheck.accumulatorElement.animations?.find(
-            (animation) => animation.type === 'enter'
-          );
-        const startTime = enterAnimationOfCurrentElement
-          ? enterAnimationOfCurrentElement.startTime +
-            enterAnimationOfCurrentElement.duration
-          : slide.startTime;
-
         elementToCheck.accumulatorElement.animationAttributes.startTime =
-          startTime;
+          slide.startTime;
       }
 
       // Save/update the end time of the video
-      {
-        const exitAnimationOfElementFromNextSlide =
-          elementFromNextSlide.animations?.find(
-            (animation) => animation.type === 'exit'
-          );
-        const endTime = exitAnimationOfElementFromNextSlide
-          ? exitAnimationOfElementFromNextSlide.startTime
-          : nextSlide.startTime + nextSlide.duration;
-
-        elementToCheck.accumulatorElement.animationAttributes.endTime = endTime;
-      }
+      elementToCheck.accumulatorElement.animationAttributes.endTime =
+        nextSlide.startTime + nextSlide.duration;
 
       if (elementToCheck.accumulatorElement.animations) {
         /* Remove from the current element the animations that transition to the

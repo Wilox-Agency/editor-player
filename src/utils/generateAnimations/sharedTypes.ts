@@ -35,7 +35,6 @@ type AnimationAttributesByElementType = MergeDeep<
         sharedId: string;
         animationType: 'morph' | 'slideIn' | 'none';
       };
-      isDummyElementForSlideInAnimation?: boolean;
     };
   },
   // Attributes specific to each element type

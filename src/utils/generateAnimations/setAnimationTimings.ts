@@ -62,29 +62,27 @@ export function setExitAnimationTimings({
   element,
   slideHasExitAnimation,
   currentTime,
-  slideDuration,
 }: {
   element: CanvasElementWithAnimations;
   slideHasExitAnimation: boolean;
   currentTime: number;
-  slideDuration: number;
 }) {
+  const isElementSharedWithNextSlideWithSlideInAnimation =
+    element.animationAttributes.sharedWithNextSlide?.animationType ===
+    'slideIn';
+
   for (const animation of element.animations || []) {
     if (animation.type === 'disappear') {
       animation.duration = ALMOST_ZERO_DURATION;
 
-      // Dummy elements should disappear right after the enter animations
-      if (element.animationAttributes.isDummyElementForSlideInAnimation) {
-        animation.startTime =
-          /* The current time will is after the current slide duration, so it's
-          necessary to subtract it from the animation start time */
-          currentTime - slideDuration + ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
-        continue;
-      }
-
       animation.startTime = currentTime;
 
       if (slideHasExitAnimation) {
+        animation.startTime += ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
+      }
+      /* If the element is shared with the next slide and it has a slide-in
+      animation, then it should disappear after the slide-in animation */
+      if (isElementSharedWithNextSlideWithSlideInAnimation) {
         animation.startTime += ENTER_EXIT_ELEMENT_TRANSITION_DURATION;
       }
       continue;

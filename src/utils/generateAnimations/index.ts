@@ -7,7 +7,6 @@ import {
 } from './setReusedShapes';
 import { setElementsEnterDelays } from './setAnimationDelays';
 import { setTextContainers } from './setTextContainers';
-import { createDummyElementsForSharedElementSlideInAnimation } from './createDummyElementsForSharedElementSlideInAnimation';
 import {
   setEnterAnimationWithoutTimings,
   setExitAnimationWithoutTimings,
@@ -178,7 +177,6 @@ function setAnimationTimings(
         element: element as CanvasElementWithAnimations,
         slideHasExitAnimation,
         currentTime,
-        slideDuration: slide.duration,
       });
     }
     if (slideHasExitAnimation) {
@@ -205,7 +203,6 @@ export function addAnimationsToSlides(slides: SlideWithAudio[]) {
     setSharedIdsForReusedRectsThatShouldMorph,
     setSharedIdsForReusedElements,
     setTextContainers,
-    createDummyElementsForSharedElementSlideInAnimation,
     setAnimationsWithoutTimings,
     setElementsEnterDelays,
     setAnimationTimings

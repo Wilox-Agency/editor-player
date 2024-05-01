@@ -136,14 +136,12 @@ export function setEnterAnimationWithoutTimings({
     },
   ];
 
-  /* Only add enter animation if the element is not a dummy element and is not
-  shared with the previous slide or it is shared but should have the slide-in
-  animation */
+  /* Only add enter animation if the element is not shared with the previous
+  slide or it is shared but should have the slide-in animation */
   const shouldHaveEnterAnimation =
-    !element.animationAttributes.isDummyElementForSlideInAnimation &&
-    (element.animationAttributes.sharedWithPreviousSlide === undefined ||
-      element.animationAttributes.sharedWithPreviousSlide.animationType ===
-        'slideIn');
+    element.animationAttributes.sharedWithPreviousSlide === undefined ||
+    element.animationAttributes.sharedWithPreviousSlide.animationType ===
+      'slideIn';
   if (shouldHaveEnterAnimation) {
     animations.push({
       type: 'enter',
@@ -182,10 +180,8 @@ export function setExitAnimationWithoutTimings({
     },
   ];
 
-  /* Only add exit animation if the element is not a dummy element and is not
-  shared with the next slide */
+  // Only add exit animation if the element is not shared with the next slide
   const shouldHaveExitAnimation =
-    !element.animationAttributes.isDummyElementForSlideInAnimation &&
     element.animationAttributes.sharedWithNextSlide === undefined;
   if (shouldHaveExitAnimation) {
     animations.push({

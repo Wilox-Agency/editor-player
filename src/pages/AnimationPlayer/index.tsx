@@ -105,7 +105,7 @@ export default function AnimationPlayer() {
     }
   );
 
-  // TODO: Prevent generating slides if any of the fonts are not loaded
+  // TODO: Prevent generating slides if any of the fonts cannot be loaded
   // Generate slides if they were not fetched from the server
   const { data: generatedSlides } = useQuery({
     enabled: !!slideshowLesson && !isLoadingFonts && !isLoadFontsPending,

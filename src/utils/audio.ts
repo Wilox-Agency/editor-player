@@ -1,5 +1,7 @@
 import { toast } from 'sonner';
 
+import { showWarningToastWhenPromiseTakesTooLong } from '@/utils/toast';
+
 /**
  * Request an audio with the 'Range' header (which in turn makes the response
  * include the 'Content-Range' header) and turn the response blob into a URL
@@ -38,33 +40,42 @@ export async function preloadAudio(url: string) {
   */
   const blobUrl = await requestAudioWithRange(url);
 
-  return new Promise<HTMLAudioElement>((resolve, reject) => {
-    const audioElement = document.createElement('audio');
-    audioElement.preload = 'auto';
+  const preloadAudioPromise = new Promise<HTMLAudioElement>(
+    (resolve, reject) => {
+      const audioElement = document.createElement('audio');
+      audioElement.preload = 'auto';
 
-    const loadInterval = setInterval(() => {
-      if (audioElement.readyState === audioElement.HAVE_ENOUGH_DATA) {
-        resolve(audioElement);
+      const loadInterval = setInterval(() => {
+        if (audioElement.readyState === audioElement.HAVE_ENOUGH_DATA) {
+          resolve(audioElement);
+          cleanup();
+        }
+      });
+
+      function handleError() {
+        reject('Invalid audio URL');
         cleanup();
       }
-    });
 
-    function handleError() {
-      reject('Invalid audio URL');
-      cleanup();
+      function cleanup() {
+        clearInterval(loadInterval);
+        audioElement.removeEventListener('error', handleError);
+        audioElement.remove();
+      }
+
+      audioElement.addEventListener('error', handleError);
+      audioElement.src = blobUrl;
+      // Set the original URL as a data attribute so it can be found using it
+      audioElement.setAttribute('data-src', url);
     }
+  );
 
-    function cleanup() {
-      clearInterval(loadInterval);
-      audioElement.removeEventListener('error', handleError);
-      audioElement.remove();
-    }
+  showWarningToastWhenPromiseTakesTooLong(
+    `The audio from the URL "${url}" is taking too long to load. Consider reloading the page.`,
+    preloadAudioPromise
+  );
 
-    audioElement.addEventListener('error', handleError);
-    audioElement.src = blobUrl;
-    // Set the original URL as a data attribute so it can be found using it
-    audioElement.setAttribute('data-src', url);
-  });
+  return await preloadAudioPromise;
 }
 
 export async function preloadAudios(audios: { url: string }[]) {
@@ -107,35 +118,44 @@ export async function preloadAudios(audios: { url: string }[]) {
   }
 }
 
-export function getAudioDuration(url: string) {
-  return new Promise<number | undefined>((resolve, reject) => {
-    const audioElement = document.createElement('audio');
+export async function getAudioDuration(url: string) {
+  const audioDurationPromise = new Promise<number | undefined>(
+    (resolve, reject) => {
+      const audioElement = document.createElement('audio');
 
-    function handleLoad() {
-      cleanup();
+      function handleLoad() {
+        cleanup();
 
-      const duration = audioElement.duration;
-      if (isNaN(duration) || duration === Infinity) {
-        reject('Audio duration is unknown.');
-        return;
+        const duration = audioElement.duration;
+        if (isNaN(duration) || duration === Infinity) {
+          reject('Audio duration is unknown.');
+          return;
+        }
+
+        resolve(duration);
       }
 
-      resolve(duration);
-    }
+      function handleError() {
+        reject(`Invalid audio URL: "${url}"`);
+        cleanup();
+      }
 
-    function handleError() {
-      reject(`Invalid audio URL: "${url}"`);
-      cleanup();
-    }
+      function cleanup() {
+        audioElement.removeEventListener('loadedmetadata', handleLoad);
+        audioElement.removeEventListener('error', handleError);
+        audioElement.remove();
+      }
 
-    function cleanup() {
-      audioElement.removeEventListener('loadedmetadata', handleLoad);
-      audioElement.removeEventListener('error', handleError);
-      audioElement.remove();
+      audioElement.addEventListener('loadedmetadata', handleLoad);
+      audioElement.addEventListener('error', handleError);
+      audioElement.src = url;
     }
+  );
 
-    audioElement.addEventListener('loadedmetadata', handleLoad);
-    audioElement.addEventListener('error', handleError);
-    audioElement.src = url;
-  });
+  showWarningToastWhenPromiseTakesTooLong(
+    `The audio from the URL "${url}" is taking too long to load. Consider reloading the page.`,
+    audioDurationPromise
+  );
+
+  return await audioDurationPromise;
 }

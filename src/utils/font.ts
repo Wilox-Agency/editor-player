@@ -1,6 +1,8 @@
 import FontFaceObserver from 'fontfaceobserver';
 import { toast } from 'sonner';
 
+import { showWarningToastWhenPromiseTakesTooLong } from '@/utils/toast';
+
 export const FontFamily = {
   Arial: 'Arial',
   Oswald: 'Oswald',
@@ -30,26 +32,12 @@ async function waitUntilFontLoads(fontFamily: string | undefined) {
     maxWaitTime
   );
 
-  let warningToastId: string | number | undefined;
-  // Show a toast if the font doesn't load after 10 seconds
-  const toastTimeout = setTimeout(() => {
-    warningToastId = toast.warning(
-      `The font "${fontFamily}" is taking too long to load. Consider reloading the page.`,
-      // Keep the toast visible as long as it's not dismissed
-      { duration: Infinity }
-    );
-  }, 10_000 /* 10 seconds */);
+  showWarningToastWhenPromiseTakesTooLong(
+    `The font "${fontFamily}" is taking too long to load. Consider reloading the page.`,
+    fontLoadPromise
+  );
 
   await fontLoadPromise;
-
-  // Clear the timeout after the font is loaded
-  clearTimeout(toastTimeout);
-  // Dismiss the toast if it was already shown
-  if (warningToastId !== undefined) {
-    /* Even though `toast.dismiss` can receive undefined, it should not be
-    called with undefined as it would dismiss all toasts. */
-    toast.dismiss(warningToastId);
-  }
 }
 
 export async function waitUntilAllSupportedFontsLoad() {

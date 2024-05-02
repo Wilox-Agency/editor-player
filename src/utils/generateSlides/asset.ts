@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import type { Dimension, Size } from './sharedTypes';
 import { StageVirtualSize } from '@/utils/konva';
 import { getCanvasImageIntrinsicSize } from '@/utils/konva/asset';
+import { showWarningToastWhenPromiseTakesTooLong } from '@/utils/toast';
 import { randomFloatFromInterval, randomIntFromInterval } from '@/utils/random';
 import type { CanvasElementOfType, DistributiveOmit } from '@/utils/types';
 
@@ -10,32 +11,43 @@ export type AssetType = 'image' | 'video';
 
 export type AssetElement = Awaited<ReturnType<typeof generateAssetAttributes>>;
 
-function getAssetDimensions(type: AssetType, url: string) {
-  return new Promise<{ width: number; height: number }>((resolve, reject) => {
-    const element = document.createElement(type === 'image' ? 'img' : 'video');
-    const loadEventName = type === 'image' ? 'load' : 'loadedmetadata';
+async function getAssetDimensions(type: AssetType, url: string) {
+  const assetDimensionsPromise = new Promise<{ width: number; height: number }>(
+    (resolve, reject) => {
+      const element = document.createElement(
+        type === 'image' ? 'img' : 'video'
+      );
+      const loadEventName = type === 'image' ? 'load' : 'loadedmetadata';
 
-    function handleLoad() {
-      const dimensions = getCanvasImageIntrinsicSize(element);
-      resolve(dimensions);
-      cleanup();
+      function handleLoad() {
+        const dimensions = getCanvasImageIntrinsicSize(element);
+        resolve(dimensions);
+        cleanup();
+      }
+
+      function handleError() {
+        reject(`Invalid ${type} URL: "${url}"`);
+        cleanup();
+      }
+
+      function cleanup() {
+        element.removeEventListener(loadEventName, handleLoad);
+        element.removeEventListener('error', handleError);
+        element.remove();
+      }
+
+      element.addEventListener(loadEventName, handleLoad);
+      element.addEventListener('error', handleError);
+      element.src = url;
     }
+  );
 
-    function handleError() {
-      reject(`Invalid ${type} URL: "${url}"`);
-      cleanup();
-    }
+  showWarningToastWhenPromiseTakesTooLong(
+    `The ${type} from the URL "${url}" is taking too long to load. Consider reloading the page.`,
+    assetDimensionsPromise
+  );
 
-    function cleanup() {
-      element.removeEventListener(loadEventName, handleLoad);
-      element.removeEventListener('error', handleError);
-      element.remove();
-    }
-
-    element.addEventListener(loadEventName, handleLoad);
-    element.addEventListener('error', handleError);
-    element.src = url;
-  });
+  return await assetDimensionsPromise;
 }
 
 /** Represents the max percentage the main dimension of the element (width or

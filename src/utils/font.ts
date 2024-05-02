@@ -32,16 +32,18 @@ async function waitUntilFontLoads(fontFamily: string | undefined) {
 
   let warningToastId: string | number | undefined;
   // Show a toast if the font doesn't load after 10 seconds
-  const timeout = setTimeout(() => {
+  const toastTimeout = setTimeout(() => {
     warningToastId = toast.warning(
-      `The font "${fontFamily}" is taking too long to load. Consider reloading the page.`
+      `The font "${fontFamily}" is taking too long to load. Consider reloading the page.`,
+      // Keep the toast visible as long as it's not dismissed
+      { duration: Infinity }
     );
   }, 10_000 /* 10 seconds */);
 
   await fontLoadPromise;
 
   // Clear the timeout after the font is loaded
-  clearTimeout(timeout);
+  clearTimeout(toastTimeout);
   // Dismiss the toast if it was already shown
   if (warningToastId !== undefined) {
     /* Even though `toast.dismiss` can receive undefined, it should not be

@@ -95,13 +95,14 @@ export function usePlayerTimeline({
 
   /** The `onChange` event handler to be used with a timeline slider. */
   const handleChangeTime = useCallback(
-    (time: number) => {
+    (time: number, { shouldUpdateCurrentVideo = true } = {}) => {
       usePlayerTimelineStore.setState({ timelineState: 'paused' });
       timeline.pause();
       timeline.time(time);
 
       const { currentAudio, backgroundMusicElement } =
         usePlayerAudioStore.getState();
+      const { currentVideo } = usePlayerVideoStore.getState();
       const { timelineCurrentTime } = usePlayerTimelineStore.getState();
 
       // Set the audio and background music current times
@@ -111,16 +112,34 @@ export function usePlayerTimeline({
           (timelineCurrentTime - currentAudio.shouldBePlayedAt);
       }
       if (backgroundMusic && backgroundMusicElement) {
-        /* The background music cycles and is played during the entire slideshow,
-      so instead of subtracting the duration from the timeline current time, as
-      with the current audio, just get the remainder of the timeline current
-      time divided by the duration, which is equivalent to the current time of
-      the music in its current cycle */
+        /* The background music cycles and is played during the entire
+        slideshow, so instead of subtracting the duration from the timeline
+        current time, as with the current audio, just get the remainder of the
+        timeline current time divided by the duration, which is equivalent to
+        the current time of the music in its current cycle */
         backgroundMusicElement.currentTime =
           timelineCurrentTime % backgroundMusic.duration;
       }
+
+      // Set the current video current time (if it should be updated)
+      if (currentVideo && shouldUpdateCurrentVideo) {
+        const duration =
+          isNaN(currentVideo.element.duration) ||
+          currentVideo.element.duration === Infinity
+            ? undefined
+            : currentVideo.element.duration;
+        currentVideo.element.currentTime =
+          duration !== undefined
+            ? (timelineCurrentTime - currentVideo.shouldBePlayedAt) % duration
+            : timelineCurrentTime - currentVideo.shouldBePlayedAt;
+
+        redrawLayerAfterUpdatingVideoCurrentTime({
+          videoElement: currentVideo.element,
+          layer: layerRef.current,
+        });
+      }
     },
-    [backgroundMusic, timeline]
+    [backgroundMusic, layerRef, timeline]
   );
 
   /**
@@ -439,6 +458,8 @@ export function usePlayerTimeline({
           const element = event.target as HTMLMediaElement;
           /* Only pause the timeline if the timeline is playing AND the audio
           didn't pause just because it ended */
+          /* FIXME: Instead of checking if the audio element ended, use the same
+          logic as for clearing the current audio (used in `handleCurrentAudio`) */
           if (timelineState === 'playing' && !element.ended) {
             handlePlayOrPause();
           }
@@ -477,4 +498,45 @@ export function usePlayerTimeline({
     handlePlayOrPause,
     handleChangeTime,
   };
+}
+
+function redrawLayerAfterUpdatingVideoCurrentTime({
+  videoElement,
+  layer,
+}: {
+  videoElement: HTMLVideoElement;
+  layer: Konva.Layer | null;
+}) {
+  /* TODO: Maybe, instead of setting a max wait time to prevent a lot of loops
+  from existing at the same time, only let one recursive `requestAnimationFrame`
+  loop to exist at a time, so that the loop can be running for as long as it
+  needs to */
+  let didStopForLoading = false;
+  const startTime = new Date().getTime();
+  const maxWaitTime = 1000; // 1s
+
+  /* After updating the video current time, the video element may not have
+  enough data to be able to draw the current video frame, but its readyState
+  will be greater or equal to HAVE_CURRENT_DATA for a while before it actually
+  starts loading, so wait for it to start loading then wait for the current
+  frame data to be available before redrawing the layer */
+  function redrawLayerAfterVideoHasEnoughData() {
+    const currentTime = new Date().getTime();
+    const timeElapsed = currentTime - startTime;
+    if (timeElapsed >= maxWaitTime) return;
+
+    if (videoElement.readyState < videoElement.HAVE_CURRENT_DATA) {
+      didStopForLoading = true;
+      requestAnimationFrame(redrawLayerAfterVideoHasEnoughData);
+      return;
+    }
+
+    if (!didStopForLoading) {
+      requestAnimationFrame(redrawLayerAfterVideoHasEnoughData);
+      return;
+    }
+
+    layer?.draw();
+  }
+  redrawLayerAfterVideoHasEnoughData();
 }

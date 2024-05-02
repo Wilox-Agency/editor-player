@@ -33,7 +33,10 @@ export function PlayerBar({
 }: {
   disabled?: boolean;
   handlePlayOrPause: () => void;
-  handleChangeTime: (time: number) => void;
+  handleChangeTime: (
+    time: number,
+    options?: { shouldUpdateCurrentVideo?: boolean }
+  ) => void;
 }) {
   const { timelineCurrentTime, timelineDuration, timelineState } =
     usePlayerTimelineStore();
@@ -82,7 +85,12 @@ export function PlayerBar({
         length="full-flex"
         bottomMargin="none"
         isDisabled={disabled}
-        onChange={handleChangeTime}
+        onChange={(time) => {
+          /* TODO: Maybe, redraw the layer even while moving the player bar
+          slider, instead of only after finished moving it */
+          handleChangeTime(time, { shouldUpdateCurrentVideo: false });
+        }}
+        onChangeEnd={handleChangeTime}
       />
     </div>
   );

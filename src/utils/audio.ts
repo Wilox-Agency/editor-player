@@ -128,7 +128,7 @@ export async function getAudioDuration(url: string) {
 
         const duration = audioElement.duration;
         if (isNaN(duration) || duration === Infinity) {
-          reject('Audio duration is unknown.');
+          resolve(undefined);
           return;
         }
 

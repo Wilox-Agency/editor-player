@@ -1,8 +1,8 @@
 import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
 
 import { LocalStorageKeys } from '@/utils/localStorage';
 import { getInitialVolume } from '@/utils/volume';
+import { subscribeWithSelectorAndCleanup } from '@/utils/zustand';
 
 type State = {
   currentAudio:
@@ -28,7 +28,7 @@ type PlayerAudioStore = State & {
 const initialVolume = getInitialVolume();
 
 export const usePlayerAudioStore = create(
-  subscribeWithSelector<PlayerAudioStore>((set) => ({
+  subscribeWithSelectorAndCleanup<PlayerAudioStore>((set) => ({
     currentAudio: undefined,
     backgroundMusicElement: undefined,
     volume: initialVolume,

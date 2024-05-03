@@ -9,7 +9,6 @@ import { usePlayerAudioStore } from '@/hooks/usePlayerAudioStore';
 import { usePlayerVideoStore } from '@/hooks/usePlayerVideoStore';
 import { getVideoElementFromNodeId } from '@/utils/konva/misc';
 import { backgroundMusicVolumeMultiplier } from '@/utils/volume';
-import { cleanListener } from '@/utils/zustand';
 
 type PlayerTimelineStore = {
   timelineCurrentTime: number;
@@ -447,7 +446,7 @@ export function usePlayerTimeline({
         currentAudio,
         backgroundMusicElement,
       }),
-      cleanListener(({ currentAudio, backgroundMusicElement }) => {
+      ({ currentAudio, backgroundMusicElement }) => {
         function handlePlayAudio() {
           const { timelineState } = usePlayerTimelineStore.getState();
           if (timelineState !== 'playing') handlePlayOrPause();
@@ -479,7 +478,7 @@ export function usePlayerTimeline({
             handlePauseAudio
           );
         };
-      }),
+      },
       { equalityFn: shallow }
     );
     return () => unsubscribe();

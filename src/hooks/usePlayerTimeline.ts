@@ -452,14 +452,18 @@ export function usePlayerTimeline({
           if (timelineState !== 'playing') handlePlayOrPause();
         }
 
-        function handlePauseAudio(event: Event) {
-          const { timelineState } = usePlayerTimelineStore.getState();
-          const element = event.target as HTMLMediaElement;
+        function handlePauseAudio() {
+          if (!currentAudio) return;
+
+          const { timelineState, timelineCurrentTime } =
+            usePlayerTimelineStore.getState();
+
+          const audioEnded =
+            timelineCurrentTime >
+            currentAudio.shouldBePlayedAt + currentAudio.duration;
           /* Only pause the timeline if the timeline is playing AND the audio
           didn't pause just because it ended */
-          /* FIXME: Instead of checking if the audio element ended, use the same
-          logic as for clearing the current audio (used in `handleCurrentAudio`) */
-          if (timelineState === 'playing' && !element.ended) {
+          if (timelineState === 'playing' && audioEnded) {
             handlePlayOrPause();
           }
         }

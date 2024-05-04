@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+
+import { subscribeWithSelectorAndCleanup } from '@/utils/zustand';
 
 type State = {
   currentVideo:
@@ -16,7 +17,7 @@ type PlayerVideoStore = State & {
 };
 
 export const usePlayerVideoStore = create(
-  subscribeWithSelector<PlayerVideoStore>((set) => ({
+  subscribeWithSelectorAndCleanup<PlayerVideoStore>((set) => ({
     currentVideo: undefined,
     setCurrentVideo: (video) => {
       set({ currentVideo: video });

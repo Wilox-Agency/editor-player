@@ -38,8 +38,13 @@ export function PlayerBar({
     options?: { shouldUpdateCurrentVideo?: boolean }
   ) => void;
 }) {
-  const { timelineCurrentTime, timelineDuration, timelineState } =
-    usePlayerTimelineStore();
+  const timelineCurrentTime = usePlayerTimelineStore(
+    (state) => state.timelineCurrentTime
+  );
+  const timelineDuration = usePlayerTimelineStore(
+    (state) => state.timelineDuration
+  );
+  const timelineState = usePlayerTimelineStore((state) => state.timelineState);
 
   const playerBarRef = useRef<HTMLDivElement>(null);
   const { visibility, playerBarProps } = usePlayerBarVisibility({

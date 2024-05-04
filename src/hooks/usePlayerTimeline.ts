@@ -10,10 +10,14 @@ import { usePlayerVideoStore } from '@/hooks/usePlayerVideoStore';
 import { getVideoElementFromNodeId } from '@/utils/konva/misc';
 import { backgroundMusicVolumeMultiplier } from '@/utils/volume';
 
+type TimelineInternalState = 'playing' | 'paused';
+
 type PlayerTimelineStore = {
   timelineCurrentTime: number;
   timelineDuration: number;
   timelineState: 'notStarted' | 'paused' | 'playing' | 'ended' | 'forcePaused';
+  timelineInternalState: TimelineInternalState;
+  isCurrentVideoLoading: boolean;
   reset: () => void;
 };
 
@@ -22,11 +26,15 @@ export const usePlayerTimelineStore = create(
     timelineCurrentTime: 0,
     timelineDuration: 0,
     timelineState: 'notStarted',
+    timelineInternalState: 'paused',
+    isCurrentVideoLoading: false,
     reset: () => {
       set({
         timelineCurrentTime: 0,
         timelineDuration: 0,
         timelineState: 'notStarted',
+        timelineInternalState: 'paused',
+        isCurrentVideoLoading: false,
       });
     },
   }))
@@ -68,35 +76,63 @@ export function usePlayerTimeline({
     });
   }, [timeline]);
 
+  const internalPlayOrPause = useCallback(
+    (action: 'play' | 'pause') => {
+      const { timelineInternalState, isCurrentVideoLoading } =
+        usePlayerTimelineStore.getState();
+
+      let newState: TimelineInternalState;
+      if (action) {
+        newState = action === 'play' ? 'playing' : 'paused';
+      } else {
+        /* If no action is provided, set the new state to the opposite of the
+        current state */
+        newState = timelineInternalState === 'playing' ? 'paused' : 'playing';
+      }
+
+      // If trying to play the timeline when a video is loading, do nothing
+      if (newState === 'playing' && isCurrentVideoLoading) return;
+
+      usePlayerTimelineStore.setState({ timelineInternalState: newState });
+
+      if (newState === 'playing') timeline.resume();
+      else timeline.pause();
+    },
+    [timeline]
+  );
+
   /** Handler that plays or pauses the timeline depending on its state. */
   const handlePlayOrPause = useCallback(() => {
-    const timelineEnded = timeline.time() === timeline.duration();
+    const { timelineState } = usePlayerTimelineStore.getState();
 
     // If the timeline ended, reset and play it
-    if (timelineEnded) {
+    if (timelineState === 'ended') {
       usePlayerTimelineStore.setState({ timelineState: 'playing' });
       timeline.time(0);
-      timeline.play();
+      internalPlayOrPause('play');
       return;
     }
 
     // If the timeline is playing, pause it
-    if (timeline.isActive()) {
+    if (timelineState === 'playing') {
       usePlayerTimelineStore.setState({ timelineState: 'paused' });
-      timeline.pause();
+      internalPlayOrPause('pause');
       return;
     }
 
     // If the timeline is paused, resume it
     usePlayerTimelineStore.setState({ timelineState: 'playing' });
-    timeline.resume();
-  }, [timeline]);
+    internalPlayOrPause('play');
+  }, [internalPlayOrPause, timeline]);
 
   /** The `onChange` event handler to be used with a timeline slider. */
   const handleChangeTime = useCallback(
     (time: number, { shouldUpdateCurrentVideo = true } = {}) => {
-      usePlayerTimelineStore.setState({ timelineState: 'paused' });
-      timeline.pause();
+      const timelineEnded = time === timeline.duration();
+      usePlayerTimelineStore.setState({
+        timelineState: timelineEnded ? 'ended' : 'paused',
+      });
+      internalPlayOrPause('pause');
       timeline.time(time);
 
       const { currentAudio, backgroundMusicElement } =
@@ -138,7 +174,7 @@ export function usePlayerTimeline({
         });
       }
     },
-    [backgroundMusic, layerRef, timeline]
+    [backgroundMusic, internalPlayOrPause, layerRef, timeline]
   );
 
   /**
@@ -146,7 +182,7 @@ export function usePlayerTimeline({
    * called every time the timeline updates.
    */
   const handleCurrentAudio = useCallback(() => {
-    const { timelineCurrentTime, timelineState } =
+    const { timelineCurrentTime, timelineInternalState } =
       usePlayerTimelineStore.getState();
     const { currentAudio, setCurrentAudio, volume } =
       usePlayerAudioStore.getState();
@@ -210,7 +246,7 @@ export function usePlayerTimeline({
     audioElement.volume = volume;
 
     // Only play the audio if the timeline is playing
-    const isTimelinePlaying = timelineState === 'playing';
+    const isTimelinePlaying = timelineInternalState === 'playing';
     if (isTimelinePlaying) audioElement.play();
   }, [audios]);
 
@@ -223,9 +259,9 @@ export function usePlayerTimeline({
 
     const { backgroundMusicElement, setBackgroundMusic, volume } =
       usePlayerAudioStore.getState();
-    const { timelineCurrentTime, timelineState } =
+    const { timelineCurrentTime, timelineInternalState } =
       usePlayerTimelineStore.getState();
-    const isTimelinePlaying = timelineState === 'playing';
+    const isTimelinePlaying = timelineInternalState === 'playing';
 
     if (!backgroundMusicElement) {
       const audioElementFromDom = document.querySelector(
@@ -266,7 +302,7 @@ export function usePlayerTimeline({
    * called every time the timeline updates.
    */
   const handleCurrentVideo = useCallback(() => {
-    const { timelineCurrentTime, timelineState } =
+    const { timelineCurrentTime, timelineInternalState } =
       usePlayerTimelineStore.getState();
     const { currentVideo, setCurrentVideo } = usePlayerVideoStore.getState();
 
@@ -331,7 +367,7 @@ export function usePlayerTimeline({
     });
 
     // Only play the video if the timeline is playing
-    const isTimelinePlaying = timelineState === 'playing';
+    const isTimelinePlaying = timelineInternalState === 'playing';
     if (isTimelinePlaying) videoElement.play();
   }, [layerRef, videos]);
 
@@ -367,19 +403,20 @@ export function usePlayerTimeline({
     timeline,
   ]);
 
-  // Play/pause video and audio elements depending on timeline state
+  /* Play/pause video and audio elements depending on the timeline internal
+  state */
   useEffect(() => {
     /* Subscribe to state changes instead of using the state as a `useEffect`
     dependency to prevent extra re-renders, as this value is not being used to
     update the UI where this hook is used */
     const unsubscribe = usePlayerTimelineStore.subscribe(
-      ({ timelineState }) => timelineState,
-      (timelineState) => {
+      ({ timelineInternalState }) => timelineInternalState,
+      (timelineInternalState) => {
         const { currentAudio, backgroundMusicElement } =
           usePlayerAudioStore.getState();
         const { currentVideo } = usePlayerVideoStore.getState();
 
-        if (timelineState === 'playing') {
+        if (timelineInternalState === 'playing') {
           currentAudio?.element.play();
           backgroundMusicElement?.play();
           currentVideo?.element.play();
@@ -392,6 +429,68 @@ export function usePlayerTimeline({
     );
     return () => unsubscribe();
   }, [layerRef]);
+
+  // Set event listeners to update the `isCurrentVideoLoading` state
+  useEffect(() => {
+    const unsubscribe = usePlayerVideoStore.subscribe(
+      ({ currentVideo }) => currentVideo,
+      (currentVideo) => {
+        const isCurrentVideoLoading = currentVideo
+          ? !didVideoBufferEnough(currentVideo.element)
+          : false;
+        // Set the initial state of `isCurrentVideoLoading`
+        usePlayerTimelineStore.setState({ isCurrentVideoLoading });
+
+        const interval = setInterval(() => {
+          if (!currentVideo) return;
+
+          const videoElement = currentVideo.element;
+          const hasEnoughData = didVideoBufferEnough(videoElement);
+
+          usePlayerTimelineStore.setState({
+            isCurrentVideoLoading: !hasEnoughData,
+          });
+          /* The interval should be a little shorter than the amount of seconds
+          buffered that is considered enough to play, so that it can properly
+          pause the timeline when the video did not buffer enough. In this case,
+          the interval is half the time. */
+        }, (SECONDS_TO_BUFFER * 1000) / 2);
+
+        return () => clearInterval(interval);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+
+  /* Pause the timeline when a video starts loading and resume it when it can be
+  a video that was loading can now be played */
+  useEffect(() => {
+    const unsubscribe = usePlayerTimelineStore.subscribe(
+      ({ isCurrentVideoLoading }) => isCurrentVideoLoading,
+      (isCurrentVideoLoading) => {
+        /* This listener should not be executed because of `timelineState`
+        changes, so instead of including it in the selector, get its current
+        value when the listener is called */
+        const { timelineState } = usePlayerTimelineStore.getState();
+        // Do nothing if the timeline is not playing
+        if (timelineState !== 'playing') return;
+
+        if (isCurrentVideoLoading) {
+          /* FIXME: Even though the timeline is being paused, which in turn
+          pauses the video, sometimes the video still keeps playing */
+          // When a video starts loading, pause the timeline
+          internalPlayOrPause('pause');
+        } else {
+          /* When a video that was loading can now be played, resume the
+          timeline */
+          internalPlayOrPause('play');
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, [internalPlayOrPause, timeline]);
 
   /* Resume/pause the timeline based on the document's visibility state (i.e. if
   the browser tab is active or not) */
@@ -414,13 +513,15 @@ export function usePlayerTimeline({
         2. make so the timeline 'active' and 'paused' states have appropriate
            values, as the timeline is still considered to be active and unpaused
            when the tab is inactive. */
-        timeline.pause();
+        internalPlayOrPause('pause');
         usePlayerTimelineStore.setState({ timelineState: 'forcePaused' });
         return;
       }
 
+      /* Unpause when tab gets active (if it was force paused by the tab getting
+      inactive) */
       if (timelineState === 'forcePaused') {
-        timeline.resume();
+        internalPlayOrPause('play');
         usePlayerTimelineStore.setState({ timelineState: 'playing' });
       }
     }
@@ -430,7 +531,7 @@ export function usePlayerTimeline({
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [timeline]);
+  }, [internalPlayOrPause, timeline]);
 
   /* Play/pause the timeline when the audio or background music is played/paused
   using a shortcut, gesture or something similar (which can be identified by the
@@ -448,6 +549,7 @@ export function usePlayerTimeline({
       }),
       ({ currentAudio, backgroundMusicElement }) => {
         function handlePlayAudio() {
+          // FIXME: Pause the audio again if the timeline cannot be played
           const { timelineState } = usePlayerTimelineStore.getState();
           if (timelineState !== 'playing') handlePlayOrPause();
         }
@@ -542,4 +644,53 @@ function redrawLayerAfterUpdatingVideoCurrentTime({
     layer?.draw();
   }
   redrawLayerAfterVideoHasEnoughData();
+}
+
+function getBufferedTimeRanges(videoElement: HTMLVideoElement) {
+  const timeRangesBufferedObject = videoElement.buffered;
+  const timeRangesBuffered: [start: number, end: number][] = [];
+  //Go through the object and output an array
+  for (let count = 0; count < timeRangesBufferedObject.length; count++) {
+    timeRangesBuffered.push([
+      timeRangesBufferedObject.start(count),
+      timeRangesBufferedObject.end(count),
+    ]);
+  }
+  return timeRangesBuffered;
+}
+
+/**
+ * The amount of seconds that the video should have buffered to be considered
+ * enough to play. This is an arbitrary value, but it should not be too small or
+ * too big.
+ *
+ * If it's too small — the video will play with just a bit of buffer, which
+ * might cause some glitches and will cause the video to pause too often.
+ *
+ * If it's too big — the video might never play as it will never be able to
+ * buffer enough data.
+ */
+const SECONDS_TO_BUFFER = 1;
+
+function didVideoBufferEnough(videoElement: HTMLVideoElement) {
+  const timeRangesBuffered = getBufferedTimeRanges(videoElement);
+
+  const currentTime = videoElement.currentTime;
+
+  for (const timeRange of timeRangesBuffered) {
+    const [start, end] = timeRange;
+    const needsToBeBufferedUntil = Math.min(
+      currentTime + SECONDS_TO_BUFFER,
+      videoElement.duration
+    );
+    const didBufferEnough =
+      currentTime >= start && needsToBeBufferedUntil <= end;
+    if (didBufferEnough) {
+      /* Also check if the `readyState` of the video is `HAVE_ENOUGH_DATA`, as
+      if the video is played in a lower `readyState`, it may lag and get
+      desynced with the timeline */
+      return videoElement.readyState === videoElement.HAVE_ENOUGH_DATA;
+    }
+  }
+  return false;
 }

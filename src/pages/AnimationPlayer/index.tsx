@@ -32,6 +32,7 @@ import { validateUrl } from '@/utils/validation';
 import { MouseButton } from '@/utils/input';
 import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
 
+import { PlayerLoading } from '@/components/PlayerLoading';
 import { PlayerBar } from '@/components/PlayerBar';
 import { PlayerOrganizationLogo } from '@/components/PlayerOrganizationLogo';
 
@@ -386,6 +387,8 @@ export default function AnimationPlayer() {
           />
         </Stage>
       </div>
+
+      <PlayerLoading />
 
       {canvasTree.length > 0 && (
         <PlayerBar

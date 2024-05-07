@@ -2,7 +2,7 @@ import { type RefObject, useEffect, useMemo, useState } from 'react';
 import Konva from 'konva';
 
 export function useVideo(
-  src: string,
+  { src, muted }: { src: string; muted: boolean },
   {
     layerRef,
     videoRef,
@@ -15,9 +15,8 @@ export function useVideo(
 
   useEffect(() => {
     videoElement.src = src;
-    /* Mute the video because its audio is not wanted, which also allows
-    autoplay */
-    videoElement.muted = true;
+    videoElement.muted = muted;
+
     // Empty animation just to update the layer
     const animation = new Konva.Animation(() => {
       if (videoElement.paused) return false;
@@ -52,7 +51,7 @@ export function useVideo(
       videoElement.removeEventListener('loadedmetadata', handleLoad);
       videoElement.removeEventListener('error', handleError);
     };
-  }, [layerRef, src, videoElement, videoRef]);
+  }, [layerRef, muted, src, videoElement, videoRef]);
 
   return [videoElement, status] as const;
 }

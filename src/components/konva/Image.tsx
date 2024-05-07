@@ -111,6 +111,7 @@ export type VideoProps = Omit<PrimitiveImageProps, 'image'> & {
   autoPlay?: boolean;
   loop?: boolean;
   objectFit?: ObjectFit;
+  muted?: boolean;
 };
 
 export function Video({
@@ -118,12 +119,16 @@ export function Video({
   autoPlay,
   loop = false,
   objectFit,
+  muted = true,
   ...props
 }: VideoProps) {
   const { layerRef } = useKonvaRefsStore();
   const videoRef = useRef<Konva.Image>(null);
 
-  const [video, videoStatus] = useVideo(videoUrl, { layerRef, videoRef });
+  const [video, videoStatus] = useVideo(
+    { src: videoUrl, muted },
+    { layerRef, videoRef }
+  );
   useObjectFit({ imageNodeRef: videoRef, objectFit, loadStatus: videoStatus });
 
   useEffect(() => {

@@ -50,6 +50,47 @@ async function getAssetDimensions(type: AssetType, url: string) {
   return await assetDimensionsPromise;
 }
 
+/** @throws if the video cannot be loaded or the duration is not available. */
+export async function getVideoDuration(url: string) {
+  const videoDurationPromise = new Promise<number>((resolve, reject) => {
+    const element = document.createElement('video');
+
+    function handleLoad() {
+      cleanup();
+
+      const duration = element.duration;
+      if (isNaN(duration) || duration === Infinity) {
+        reject('Video duration is unknown.');
+        return;
+      }
+
+      resolve(duration);
+    }
+
+    function handleError() {
+      reject(`Invalid video URL: "${url}"`);
+      cleanup();
+    }
+
+    function cleanup() {
+      element.removeEventListener('loadedmetadata', handleLoad);
+      element.removeEventListener('error', handleError);
+      element.remove();
+    }
+
+    element.addEventListener('loadedmetadata', handleLoad);
+    element.addEventListener('error', handleError);
+    element.src = url;
+  });
+
+  showWarningToastWhenPromiseTakesTooLong(
+    `The video from the URL "${url}" is taking too long to load. Consider reloading the page.`,
+    videoDurationPromise
+  );
+
+  return await videoDurationPromise;
+}
+
 /** Represents the max percentage the main dimension of the element (width or
  * height) can have compared to the stage before snapping to 100% */
 const maxMainDimensionSizePercentageBeforeSnappingToFull = 0.8;
@@ -184,6 +225,51 @@ export async function generateAssetAttributes({
     ...(type === 'image'
       ? { type: 'image', imageUrl: url }
       : { type: 'video', videoUrl: url, loop: true }),
+  } satisfies DistributiveOmit<CanvasElementOfType<'image' | 'video'>, 'id'>;
+}
+
+/**
+ * Generates asset attributes for an asset that is the full size of the stage
+ * (but that fits the stage the same way as `object-fit: contain`, in case the
+ * aspect ratio is not the same as the stage)
+ */
+export async function generateFullSizeAssetAttributes({
+  type,
+  url,
+}: {
+  type: AssetType;
+  url: string;
+}) {
+  const intrinsicSize = await getAssetDimensions(type, url);
+  const intrinsicAspectRatio = intrinsicSize.width / intrinsicSize.height;
+
+  const stageAspectRatio = StageVirtualSize.width / StageVirtualSize.height;
+
+  const mainDimension: Dimension =
+    intrinsicAspectRatio <= stageAspectRatio ? 'height' : 'width';
+  const secondaryDimension: Dimension =
+    mainDimension === 'width' ? 'height' : 'width';
+
+  const size: Size = { width: 0, height: 0 };
+  size[mainDimension] = StageVirtualSize[mainDimension];
+  size[secondaryDimension] =
+    mainDimension === 'width'
+      ? size[mainDimension] / intrinsicAspectRatio
+      : size[mainDimension] * intrinsicAspectRatio;
+
+  const baseAttributes = {
+    id: crypto.randomUUID(),
+    width: size.width,
+    height: size.height,
+    x: 0,
+    y: 0,
+  } as const;
+
+  return {
+    ...baseAttributes,
+    ...(type === 'image'
+      ? { type: 'image', imageUrl: url }
+      : { type: 'video', videoUrl: url, muted: false }),
   } satisfies DistributiveOmit<CanvasElementOfType<'image' | 'video'>, 'id'>;
 }
 

@@ -1,7 +1,7 @@
 import type { AssetType } from './asset';
 import { type colorThemeNames } from './color';
 import { type srtSubtitlesSchema } from './parse';
-import type { JsUnion } from '@/utils/types';
+import type { JsUnion, SlideFlags } from '@/utils/types';
 
 export type Dimension = 'width' | 'height';
 export type Size = Record<Dimension, number>;
@@ -28,5 +28,6 @@ export type SlideshowContent = {
     audios?:
       | readonly [{ url: string }]
       | { url: string; start: number; end: number }[];
+    flags?: SlideFlags;
   }[];
 };

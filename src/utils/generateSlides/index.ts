@@ -1,6 +1,11 @@
 import { type } from 'arktype';
 
-import { type AssetType, generateAssetAttributes } from './asset';
+import {
+  type AssetType,
+  generateAssetAttributes,
+  generateFullSizeAssetAttributes,
+  getVideoDuration,
+} from './asset';
 import { generateRects } from './rect';
 import {
   baseAttributesByTextType,
@@ -16,7 +21,11 @@ import type { AudioWithStartEnd, SlideshowContent } from './sharedTypes';
 import { getElementThatContainsText } from '@/utils/konva/text';
 import { getAudioDuration } from '@/utils/audio';
 import { findLast } from '@/utils/array';
-import type { CanvasElementOfType, SlideWithAudio } from '@/utils/types';
+import type {
+  CanvasElementOfType,
+  SlideFlags,
+  SlideWithAudio,
+} from '@/utils/types';
 
 async function getSlideDuration(audio: AudioWithStartEnd | undefined) {
   let duration;
@@ -51,6 +60,9 @@ async function generateSlideWithSubSlides(
       defined even though the type definition doesn't say that */
       audio: slideContent.audios?.[0],
       lessonParagraphIndex,
+      /* The only flag that currently exists, `isVideoOnly`, is not used with
+      slides with sub-slides */
+      flags: undefined,
     },
     colorPalette
   );
@@ -74,6 +86,9 @@ async function generateSlideWithSubSlides(
       duration: await getSlideDuration(audio),
       audio,
       lessonParagraphIndex,
+      /* The only flag that currently exists, `isVideoOnly`, is not used with
+      slides with sub-slides */
+      flags: undefined,
     };
 
     const textElement = findLast(subSlide.canvasElements, (element) => {
@@ -140,15 +155,37 @@ export async function generateSlide(
     asset,
     audio,
     lessonParagraphIndex,
+    flags,
   }: {
     title: string;
     paragraphs?: string[];
     asset: { type: AssetType; url: string };
     audio?: AudioWithStartEnd;
     lessonParagraphIndex: number | undefined;
+    flags: SlideFlags | undefined;
   },
   colorPalette: string[]
 ) {
+  if (flags?.isVideoOnly && asset.type === 'video') {
+    /* If using the `isVideoOnly` flag, then:
+    - the slide should be composed of only a video
+    - the audio of the video should be used instead of the generated audio
+    - the slide should have the same duration as the video */
+    const assetElement = await generateFullSizeAssetAttributes({
+      type: asset.type,
+      url: asset.url,
+    });
+
+    const duration = await getVideoDuration(asset.url);
+
+    return {
+      canvasElements: [assetElement],
+      duration,
+      lessonParagraphIndex,
+      flags,
+    } satisfies SlideWithAudio;
+  }
+
   const assetElement = await generateAssetAttributes(asset);
 
   let rectsAndTexts: CanvasElementOfType<'rect' | 'text'>[];
@@ -201,6 +238,9 @@ export async function generateSlide(
     duration,
     audio,
     lessonParagraphIndex,
+    /* The only flag that currently exists, `isVideoOnly`, is already handled in
+    the start of the function */
+    flags: undefined,
   } satisfies SlideWithAudio;
 }
 
@@ -217,6 +257,8 @@ export async function generateSlides(presentationContent: SlideshowContent) {
         ? { url: presentationContent.audioUrl }
         : undefined,
       lessonParagraphIndex: undefined,
+      // The first slide doesn't have any flags
+      flags: undefined,
     },
     colorPalette
   );
@@ -245,6 +287,7 @@ export async function generateSlides(presentationContent: SlideshowContent) {
           asset: slideContent.asset,
           audio: slideContent.audios?.[0],
           lessonParagraphIndex,
+          flags: slideContent.flags,
         },
         colorPalette
       )

@@ -318,6 +318,17 @@ export type JsUnion<A, B> =
   | (A & UndefinedProperites<Omit<B, keyof A>>)
   | (B & UndefinedProperites<Omit<A, keyof B>>);
 
+export type SlideFlags = {
+  /**
+   * If the slide is a video only slide.
+   *
+   * This flag is used to tell that the slide is composed of only a video and no
+   * text, rects, or images, that the slide should have the same duration as the
+   * video, and that the audio of the video should be used.
+   */
+  isVideoOnly?: boolean;
+};
+
 export type Slide<TElement = CanvasElement> = {
   canvasElements: TElement[];
   duration: number;
@@ -332,6 +343,9 @@ export type Slide<TElement = CanvasElement> = {
    * - Sub-slides have the same index as their parent slide.
    */
   lessonParagraphIndex: number | undefined;
+  /* TODO: Maybe remove this property from here as currently the flags are only
+  used when generating the slides */
+  flags?: SlideFlags;
 };
 
 export type SlideWithAudio<TElement = CanvasElement> = Slide<TElement> & {

@@ -88,6 +88,9 @@ export const slideshowLessonSchema = type(
             with another format, but it should be ignored rather than causing a
             validation error */
             'srt?': 'unknown',
+            'flags?': {
+              'isVideoOnly?': 'boolean',
+            },
           },
           union(
             { videoData: { finalVideo: { url: 'string>1' } } },
@@ -372,6 +375,7 @@ function parseSlideshowLessonParagraphs(
           : { type: 'image', url: lessonParagraph.imageData.finalImage.url },
       paragraphs: slideParagraphs,
       audios,
+      flags: lessonParagraph.flags,
     });
   }
 

@@ -70,6 +70,8 @@ export async function preloadAudio(url: string) {
     }
   );
 
+  /* FIXME: This is not taking into account the time of the
+  `requestAudioWithRange` function */
   showWarningToastWhenPromiseTakesTooLong(
     `The audio from the URL "${url}" is taking too long to load. Consider reloading the page.`,
     preloadAudioPromise

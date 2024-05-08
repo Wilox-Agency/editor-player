@@ -3,7 +3,7 @@ import gsap from 'gsap';
 import type { Dimension, Size } from './sharedTypes';
 import { StageVirtualSize } from '@/utils/konva';
 import { getCanvasImageIntrinsicSize } from '@/utils/konva/asset';
-import { showWarningToastWhenPromiseTakesTooLong } from '@/utils/toast';
+import { showWarningToastWhenAssetLoadingTakesTooLong } from '@/utils/toast';
 import { randomFloatFromInterval, randomIntFromInterval } from '@/utils/random';
 import type { CanvasElementOfType, DistributiveOmit } from '@/utils/types';
 
@@ -42,10 +42,7 @@ async function getAssetDimensions(type: AssetType, url: string) {
     }
   );
 
-  showWarningToastWhenPromiseTakesTooLong(
-    `The ${type} from the URL "${url}" is taking too long to load. Consider reloading the page.`,
-    assetDimensionsPromise
-  );
+  showWarningToastWhenAssetLoadingTakesTooLong(type, assetDimensionsPromise);
 
   return await assetDimensionsPromise;
 }
@@ -83,10 +80,7 @@ export async function getVideoDuration(url: string) {
     element.src = url;
   });
 
-  showWarningToastWhenPromiseTakesTooLong(
-    `The video from the URL "${url}" is taking too long to load. Consider reloading the page.`,
-    videoDurationPromise
-  );
+  showWarningToastWhenAssetLoadingTakesTooLong('video', videoDurationPromise);
 
   return await videoDurationPromise;
 }

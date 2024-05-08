@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 
-import { showWarningToastWhenPromiseTakesTooLong } from '@/utils/toast';
+import { showWarningToastWhenAssetLoadingTakesTooLong } from '@/utils/toast';
 
 /**
  * Request an audio with the 'Range' header (which in turn makes the response
@@ -72,10 +72,7 @@ export async function preloadAudio(url: string) {
 
   /* FIXME: This is not taking into account the time of the
   `requestAudioWithRange` function */
-  showWarningToastWhenPromiseTakesTooLong(
-    `The audio from the URL "${url}" is taking too long to load. Consider reloading the page.`,
-    preloadAudioPromise
-  );
+  showWarningToastWhenAssetLoadingTakesTooLong('audio', preloadAudioPromise);
 
   return await preloadAudioPromise;
 }
@@ -154,10 +151,7 @@ export async function getAudioDuration(url: string) {
     }
   );
 
-  showWarningToastWhenPromiseTakesTooLong(
-    `The audio from the URL "${url}" is taking too long to load. Consider reloading the page.`,
-    audioDurationPromise
-  );
+  showWarningToastWhenAssetLoadingTakesTooLong('audio', audioDurationPromise);
 
   return await audioDurationPromise;
 }

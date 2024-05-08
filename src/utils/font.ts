@@ -1,7 +1,7 @@
 import FontFaceObserver from 'fontfaceobserver';
 import { toast } from 'sonner';
 
-import { showWarningToastWhenPromiseTakesTooLong } from '@/utils/toast';
+import { showWarningToastWhenAssetLoadingTakesTooLong } from '@/utils/toast';
 
 export const FontFamily = {
   Arial: 'Arial',
@@ -32,10 +32,7 @@ async function waitUntilFontLoads(fontFamily: string | undefined) {
     maxWaitTime
   );
 
-  showWarningToastWhenPromiseTakesTooLong(
-    `The font "${fontFamily}" is taking too long to load. Consider reloading the page.`,
-    fontLoadPromise
-  );
+  showWarningToastWhenAssetLoadingTakesTooLong('font', fontLoadPromise);
 
   await fontLoadPromise;
 }

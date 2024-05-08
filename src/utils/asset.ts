@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 
-import { showWarningToastWhenPromiseTakesTooLong } from '@/utils/toast';
+import { showWarningToastWhenAssetLoadingTakesTooLong } from '@/utils/toast';
 import type { CanvasElement, CanvasElementOfType } from '@/utils/types';
 
 export function prefetchAsset(type: 'image' | 'video', url: string) {
@@ -44,10 +44,7 @@ export function prefetchAssetsFromCanvasElements(
 async function preloadAsset(type: 'image' | 'video', url: string) {
   const blobPromise = fetch(url).then((res) => res.blob());
 
-  showWarningToastWhenPromiseTakesTooLong(
-    `The ${type} from the URL "${url}" is taking too long to load. Consider reloading the page.`,
-    blobPromise
-  );
+  showWarningToastWhenAssetLoadingTakesTooLong(type, blobPromise);
 
   const blob = await blobPromise;
   const blobUrl = URL.createObjectURL(blob);

@@ -26,7 +26,7 @@ import {
 import { fetchSlideshowLessonOrSlides } from '@/utils/queries';
 import { saveSlidesToSlideshowLesson } from '@/utils/mutations';
 import { waitUntilAllSupportedFontsLoad } from '@/utils/font';
-import { prefetchAssetsFromCanvasElements } from '@/utils/asset';
+import { preloadAssetsFromCanvasElements } from '@/utils/asset';
 import { getAudioDuration, preloadAudios } from '@/utils/audio';
 import { validateUrl } from '@/utils/validation';
 import { MouseButton } from '@/utils/input';
@@ -317,19 +317,20 @@ export default function AnimationPlayer() {
     handlePlayOrPause();
   }
 
-  // Load canvas tree and prefetch assets
+  // Preload assets then load canvas tree
   useEffect(() => {
     if (!combinedSlides || isLoadingFonts || isLoadFontsPending) return;
 
-    // Load canvas tree
-    const canvasElements = combinedSlides.canvasElements.map(
-      ({ attributes: canvasElement }) => canvasElement
-    );
-    loadCanvasTree(canvasElements);
+    (async () => {
+      const canvasElements = combinedSlides.canvasElements.map(
+        ({ attributes: canvasElement }) => ({ ...canvasElement })
+      );
 
-    // TODO: Start prefetching the assets before the generating the slides
-    // Prefetch assets
-    prefetchAssetsFromCanvasElements(canvasElements);
+      // Preload assets
+      await preloadAssetsFromCanvasElements(canvasElements);
+      // Load canvas tree
+      loadCanvasTree(canvasElements);
+    })();
   }, [combinedSlides, isLoadFontsPending, isLoadingFonts, loadCanvasTree]);
 
   // Clear canvas tree and reset timeline when the component is destroyed

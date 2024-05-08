@@ -85,12 +85,7 @@ export function PlayerBar({
         length="full-flex"
         bottomMargin="none"
         isDisabled={disabled}
-        onChange={(time) => {
-          /* TODO: Maybe, redraw the layer even while moving the player bar
-          slider, instead of only after finished moving it */
-          handleChangeTime(time, { shouldUpdateCurrentVideo: false });
-        }}
-        onChangeEnd={handleChangeTime}
+        onChange={handleChangeTime}
       />
     </div>
   );

@@ -27,6 +27,8 @@ import type {
   SlideWithAudio,
 } from '@/utils/types';
 
+const DEFAULT_SLIDE_DURATION = 2;
+
 async function getSlideDuration(audio: AudioWithStartEnd | undefined) {
   let duration;
   if (audio) {
@@ -37,8 +39,7 @@ async function getSlideDuration(audio: AudioWithStartEnd | undefined) {
     }
   }
 
-  // Use a default duration of 2
-  return duration || 2;
+  return duration || DEFAULT_SLIDE_DURATION;
 }
 
 async function generateSlideWithSubSlides(
@@ -60,8 +61,7 @@ async function generateSlideWithSubSlides(
       defined even though the type definition doesn't say that */
       audio: slideContent.audios?.[0],
       lessonParagraphIndex,
-      /* The only flag that currently exists, `isVideoOnly`, is not used with
-      slides with sub-slides */
+      // None of the flags are used with slides with sub-slides
       flags: undefined,
     },
     colorPalette
@@ -86,8 +86,7 @@ async function generateSlideWithSubSlides(
       duration: await getSlideDuration(audio),
       audio,
       lessonParagraphIndex,
-      /* The only flag that currently exists, `isVideoOnly`, is not used with
-      slides with sub-slides */
+      // None of the flags are used with slides with sub-slides
       flags: undefined,
     };
 
@@ -166,6 +165,39 @@ export async function generateSlide(
   },
   colorPalette: string[]
 ) {
+  if (flags?.isImageOnly?.enabled && asset.type === 'image') {
+    /* If using the `isImageOnly` flag, then:
+    - the slide should be composed of only an image;
+    - the generated audio may or not be used depending on the
+      `useGeneratedAudio` option;
+    - the duration of the slide depends on the `slideDuration` option. If the
+      option is not provided, then, if using a generated audio, the slide
+      duration defaults to the audio duration, else it uses the default slide
+      duration. */
+    const assetElement = await generateFullSizeAssetAttributes({
+      type: asset.type,
+      url: asset.url,
+    });
+
+    const defaultDuration =
+      (flags.isImageOnly.useGeneratedAudio && audio?.url
+        ? await getAudioDuration(audio.url)
+        : undefined) ?? DEFAULT_SLIDE_DURATION;
+    const duration = flags.isImageOnly.slideDuration
+      ? // Ensure that the duration is not less than the default duration
+        Math.max(defaultDuration, flags.isImageOnly.slideDuration)
+      : // Use the default duration if the slide duration option is not provided
+        defaultDuration;
+
+    return {
+      canvasElements: [assetElement],
+      duration,
+      audio: flags.isImageOnly.useGeneratedAudio ? audio : undefined,
+      lessonParagraphIndex,
+      flags,
+    } satisfies SlideWithAudio;
+  }
+
   if (flags?.isVideoOnly && asset.type === 'video') {
     /* If using the `isVideoOnly` flag, then:
     - the slide should be composed of only a video
@@ -238,8 +270,7 @@ export async function generateSlide(
     duration,
     audio,
     lessonParagraphIndex,
-    /* The only flag that currently exists, `isVideoOnly`, is already handled in
-    the start of the function */
+    // All the flags are already handled at the start of the function
     flags: undefined,
   } satisfies SlideWithAudio;
 }

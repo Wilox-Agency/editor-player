@@ -327,6 +327,27 @@ export type SlideFlags = {
    * video, and that the audio of the video should be used.
    */
   isVideoOnly?: boolean;
+  /**
+   * If the slide is an image only slide.
+   *
+   * This flag is used to tell that the slide is composed of only an image and
+   * no text, rects, or videos.
+   *
+   * Note that, unlike the video only slide, the image only slide **can have a
+   * generated audio**.
+   */
+  isImageOnly?: {
+    /** @default false */
+    enabled: boolean;
+    /** If the slide doesn't have a generated audio, it will always be
+     * `false`. Otherwise, it can be `true` or `false`, but defaults
+     * to `true`. */
+    useGeneratedAudio?: boolean;
+    /** If using the generated audio (i.e. `useGeneratedAudio` is
+     * `true`), defaults to the duration of the audio, otherwise,
+     * defaults to 2 seconds. */
+    slideDuration?: number;
+  };
 };
 
 export type Slide<TElement = CanvasElement> = {

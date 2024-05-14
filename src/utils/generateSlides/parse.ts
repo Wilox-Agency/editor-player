@@ -90,6 +90,11 @@ export const slideshowLessonSchema = type(
             'srt?': 'unknown',
             'flags?': {
               'isVideoOnly?': 'boolean',
+              'isImageOnly?': {
+                enabled: 'boolean',
+                'useGeneratedAudio?': 'boolean',
+                'slideDuration?': 'number',
+              },
             },
           },
           union(

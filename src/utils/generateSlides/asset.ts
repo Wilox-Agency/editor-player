@@ -224,8 +224,8 @@ export async function generateAssetAttributes({
 
 /**
  * Generates asset attributes for an asset that is the full size of the stage
- * (but that fits the stage the same way as `object-fit: contain`, in case the
- * aspect ratio is not the same as the stage)
+ * (but that fits the stage the same way as `object-fit: contain` and gets
+ * centered, in case the aspect ratio is not the same as the stage)
  */
 export async function generateFullSizeAssetAttributes({
   type,
@@ -255,8 +255,8 @@ export async function generateFullSizeAssetAttributes({
     id: crypto.randomUUID(),
     width: size.width,
     height: size.height,
-    x: 0,
-    y: 0,
+    x: (StageVirtualSize.width - size.width) / 2,
+    y: (StageVirtualSize.height - size.height) / 2,
   } as const;
 
   return {

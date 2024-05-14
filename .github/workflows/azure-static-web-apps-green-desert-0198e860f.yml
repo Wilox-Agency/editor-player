@@ -33,6 +33,8 @@ jobs:
           output_location: "dist" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
         env:
+          PRE_BUILD_COMMAND: npm install -g pnpm
+          CUSTOM_BUILD_COMMAND: pnpm install && pnpm run build
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
           VITE_AZURE_FUNCTIONS_KEY: ${{ secrets.VITE_AZURE_FUNCTIONS_KEY }}
           VITE_BACKGROUND_MUSIC_BASE_URL: ${{ secrets.VITE_BACKGROUND_MUSIC_BASE_URL }}

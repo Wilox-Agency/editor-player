@@ -6,7 +6,7 @@ import {
   generateFullSizeAssetAttributes,
   getVideoDuration,
 } from './asset';
-import { generateRects } from './rect';
+import { generateFullSizeRect, generateRects } from './rect';
 import {
   baseAttributesByTextType,
   fitTextIntoRect,
@@ -244,6 +244,26 @@ export async function generateSlide(
   } satisfies SlideWithAudio;
 }
 
+async function generateEndingSlide(colorPalette: string[]) {
+  const rect = generateFullSizeRect({ colorPalette });
+  const text = {
+    ...generateTextAttributes(
+      // TODO: Add internationalization
+      { type: 'title', value: 'Fin de la lección' },
+      rect
+    ),
+    fill: chooseTextColor(rect.fill),
+  };
+
+  return {
+    canvasElements: [rect, text],
+    duration: await getSlideDuration(undefined),
+    audio: undefined,
+    lessonParagraphIndex: undefined,
+    flags: undefined,
+  } satisfies SlideWithAudio;
+}
+
 export async function generateSlides(presentationContent: SlideshowContent) {
   const colorPalette =
     colorThemeOptions[presentationContent.colorThemeName || 'default'];
@@ -294,5 +314,7 @@ export async function generateSlides(presentationContent: SlideshowContent) {
     );
   }
 
-  return [firstSlide, ...otherSlides];
+  const endingSlide = await generateEndingSlide(colorPalette);
+
+  return [firstSlide, ...otherSlides, endingSlide];
 }

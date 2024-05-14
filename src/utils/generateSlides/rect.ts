@@ -1105,3 +1105,24 @@ export function generateRects({
     extraRect?: CanvasElementOfType<'rect'>;
   };
 }
+
+/**
+ * Generates a rect that is the full size of the stage.
+ *
+ * Used for generating an ending slide.
+ */
+export function generateFullSizeRect({
+  colorPalette,
+}: {
+  colorPalette: string[];
+}) {
+  return {
+    id: crypto.randomUUID(),
+    type: 'rect',
+    fill: gsap.utils.shuffle([...colorPalette])[0]!,
+    width: StageVirtualSize.width,
+    height: StageVirtualSize.height,
+    x: 0,
+    y: 0,
+  } satisfies CanvasElementOfType<'rect'>;
+}

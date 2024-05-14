@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18.14.2"
+  },
   "scripts": {
     "dev": "concurrently -n \"tcm,vite\" -c \"auto\" -k \"tcm 'src/{pages,components}' --watch\" \"vite\"",
     "build": "tcm src/components && tsc && vite build",

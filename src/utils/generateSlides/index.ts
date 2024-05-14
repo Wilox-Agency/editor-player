@@ -179,10 +179,9 @@ export async function generateSlide(
       url: asset.url,
     });
 
-    const defaultDuration =
-      (flags.isImageOnly.useGeneratedAudio && audio?.url
-        ? await getAudioDuration(audio.url)
-        : undefined) ?? DEFAULT_SLIDE_DURATION;
+    const defaultDuration = await getSlideDuration(
+      flags.isImageOnly.useGeneratedAudio ? audio : undefined
+    );
     const duration = flags.isImageOnly.slideDuration
       ? // Ensure that the duration is not less than the default duration
         Math.max(defaultDuration, flags.isImageOnly.slideDuration)

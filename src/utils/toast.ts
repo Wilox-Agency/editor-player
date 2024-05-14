@@ -79,18 +79,14 @@ export function showWarningToastWhenAssetLoadingTakesTooLong(
   assetType: keyof typeof promisesToShowToastFor,
   promise: Promise<unknown>
 ) {
-  const id = crypto.randomUUID();
-  console.log('showWarningToastWhenAssetLoadingTakesTooLong', id);
   promisesToShowToastFor[assetType].push(promise);
 
   // Show a toast if the promise doesn't settle after a certain amount of time
   const toastTimeout = setTimeout(() => {
-    console.log('toast timeout', id);
     showWarningToast();
   }, warningToastTimeout);
 
   promise.finally(() => {
-    console.log('promise finally', id);
     // Clear the timeout after the promise is settled
     clearTimeout(toastTimeout);
 

@@ -1,18 +1,18 @@
-import { arrayOf, intersection, morph, type, union } from 'arktype';
+import { arrayOf, intersection, morph, type, union } from "arktype";
 
-import { getSubSlideAudioStartEnd } from './audio';
-import type { SlideshowContent, SrtSubtitles } from './sharedTypes';
-import { getLoremPicsum } from '@/utils/random';
-import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
+import { getSubSlideAudioStartEnd } from "./audio";
+import type { SlideshowContent, SrtSubtitles } from "./sharedTypes";
+import { getLoremPicsum } from "@/utils/random";
+import type { SlideshowLessonWithExternalInfo } from "@/utils/types";
 
-export const firstItemSchema = type({ type: '"h1"', content: 'string' });
+export const firstItemSchema = type({ type: '"h1"', content: "string" });
 export const restSchema = type(
-  arrayOf({ type: '"h2" | "p"', content: 'string' })
+  arrayOf({ type: '"h2" | "p"', content: "string" })
 );
 
 type SlideshowBase = readonly [
-  (typeof firstItemSchema)['infer'],
-  ...(typeof restSchema)['infer']
+  (typeof firstItemSchema)["infer"],
+  ...(typeof restSchema)["infer"]
 ];
 
 export function parseSlideshowBase(
@@ -20,16 +20,16 @@ export function parseSlideshowBase(
 ): SlideshowContent {
   const slideshowContent: SlideshowContent = {
     title: slideshowBase[0].content,
-    asset: { type: 'image', url: getLoremPicsum() },
+    asset: { type: "image", url: getLoremPicsum() },
     slides: [],
   };
 
   const otherItems = slideshowBase.slice(1) as SlideshowBase[1][];
   for (const item of otherItems) {
-    if (item.type === 'h2') {
+    if (item.type === "h2") {
       slideshowContent.slides.push({
         title: item.content,
-        asset: { type: 'image', url: getLoremPicsum() },
+        asset: { type: "image", url: getLoremPicsum() },
         paragraphs: [],
       });
       continue;
@@ -42,7 +42,7 @@ export function parseSlideshowBase(
     if (!lastSlide) {
       slideshowContent.slides.push({
         title: slideshowBase[0].content,
-        asset: { type: 'image', url: getLoremPicsum() },
+        asset: { type: "image", url: getLoremPicsum() },
         paragraphs: [item.content],
       });
       continue;
@@ -61,11 +61,11 @@ export function parseSlideshowBase(
 export const srtSubtitlesSchema = type({
   transcriptionJobStatus: '"finished"',
   transcriptionResult: {
-    display: morph('string', (display) => display.trim()),
+    display: morph("string", (display) => display.trim()),
     displayWords: arrayOf({
-      displayText: 'string',
-      offsetInTicks: 'number',
-      durationInTicks: 'number',
+      displayText: "string",
+      offsetInTicks: "number",
+      durationInTicks: "number",
     }),
   },
 });
@@ -74,38 +74,38 @@ export const srtSubtitlesSchema = type({
  * only the ones that are used in the app */
 export const slideshowLessonSchema = type(
   {
-    elementCode: 'string',
+    elementCode: "string",
     elementLesson: {
       paragraphs: arrayOf(
         intersection(
           {
-            content: 'string',
-            audioUrl: 'string',
-            titleAI: 'string',
-            'translatedTitleAI?': 'string',
+            content: "string",
+            audioUrl: "string",
+            titleAI: "string",
+            "translatedTitleAI?": "string",
             /* Validating using 'unknown' instead of the SRT subtitles schema
             because the SRT may still be generating; in this case, it is defined
             with another format, but it should be ignored rather than causing a
             validation error */
-            'srt?': 'unknown',
-            'flags?': {
-              'isVideoOnly?': 'boolean',
-              'isImageOnly?': {
-                enabled: 'boolean',
-                'useGeneratedAudio?': 'boolean',
-                'slideDuration?': 'number',
+            "srt?": "unknown",
+            "flags?": {
+              "isVideoOnly?": "boolean",
+              "isImageOnly?": {
+                enabled: "boolean",
+                "useGeneratedAudio?": "boolean",
+                "slideDuration?": "number",
               },
             },
           },
           union(
-            { videoData: { finalVideo: { url: 'string>1' } } },
-            { imageData: { finalImage: { url: 'string>1' } } }
+            { videoData: { finalVideo: { url: "string>1" } } },
+            { imageData: { finalImage: { url: "string>1" } } }
           )
         )
       ),
     },
   },
-  { keys: 'distilled' }
+  { keys: "distilled" }
 );
 
 /** This schema extends the slideshow lesson schema, adding the course cover and
@@ -114,14 +114,15 @@ export const slideshowLessonSchema = type(
 export const slideshowLessonWithExternalInfoSchema = intersection(
   slideshowLessonSchema,
   {
-    courseCover: 'string',
-    sectionTitle: 'string',
+    courseCover: "string",
+    sectionTitle: "string",
     // TODO: Validate color theme name using the `colorThemeNames` constant
-    'colorThemeName?': '"default" | "oxford" | "twilight" | "pastel"',
-    'backgroundMusicUrl?': 'string | null',
-    'organizationLogoUrl?': 'string | null',
+    "colorThemeName?":
+      '"default" | "oxford" | "twilight" | "pastel" | "vintage" | "earthy" | "boldContrast" | "royalTwilight" | "seaBreeze"',
+    "backgroundMusicUrl?": "string | null",
+    "organizationLogoUrl?": "string | null | undefined",
   },
-  { keys: 'distilled' }
+  { keys: "distilled" }
 );
 
 const sentenceTerminalRegex = /\p{Sentence_Terminal}(?=$|\s)/mu;
@@ -142,7 +143,7 @@ function splitSentences(text: string) {
     text = text.slice(matchArray!.index + 1).trim();
   }
 
-  if (text !== '') {
+  if (text !== "") {
     splitText.push(text);
   }
 
@@ -306,9 +307,9 @@ function splitLessonParagraphInto2(paragraph: string) {
 }
 
 function parseSlideshowLessonParagraphs(
-  lessonParagraphs: (typeof slideshowLessonSchema)['infer']['elementLesson']['paragraphs']
+  lessonParagraphs: (typeof slideshowLessonSchema)["infer"]["elementLesson"]["paragraphs"]
 ) {
-  const slides: SlideshowContent['slides'] = [];
+  const slides: SlideshowContent["slides"] = [];
 
   // Create a slide for each lesson paragraph
   for (const lessonParagraph of lessonParagraphs) {
@@ -375,9 +376,9 @@ function parseSlideshowLessonParagraphs(
     slides.push({
       title: lessonParagraph.translatedTitleAI || lessonParagraph.titleAI,
       asset:
-        'videoData' in lessonParagraph
-          ? { type: 'video', url: lessonParagraph.videoData.finalVideo.url }
-          : { type: 'image', url: lessonParagraph.imageData.finalImage.url },
+        "videoData" in lessonParagraph
+          ? { type: "video", url: lessonParagraph.videoData.finalVideo.url }
+          : { type: "image", url: lessonParagraph.imageData.finalImage.url },
       paragraphs: slideParagraphs,
       audios,
       flags: lessonParagraph.flags,
@@ -392,7 +393,7 @@ export function parseSlideshowLesson(
 ): SlideshowContent {
   const slideshowContent: SlideshowContent = {
     title: slideshowLesson.sectionTitle,
-    asset: { type: 'image', url: slideshowLesson.courseCover },
+    asset: { type: "image", url: slideshowLesson.courseCover },
     /* Currently, there's no audio for the first slide, but it will be added
     soon */
     audioUrl: undefined,

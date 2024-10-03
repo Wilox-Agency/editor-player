@@ -56,13 +56,14 @@ export async function fetchSlideshowLessonOrSlides({
   }
 
   const data: SlideshowLessonResponse = await response.json(); // Now response is in scope
+  console.log("Raw data received:", data); // Log the raw data received
 
   if ("error" in data) {
     throw new Error(data.error);
   }
 
   if (isSlideshowLessonWithExternalInfo(data)) {
-    console.log("Data received:", data);
+    console.log("Data received as slideshow lesson with external info:", data);
 
     const isValidSlideshowLesson =
       slideshowLessonWithExternalInfoSchema.allows(data);
@@ -104,14 +105,15 @@ export async function fetchSlideshowLessonOrSlides({
           case "colorThemeName":
             if (
               typeof value === "string" &&
-              !["default", "oxford", "twilight", "pastel", "earthy"].includes(value)
+              !["default", "oxford", "twilight", "pastel", "earthy"].includes(
+                value
+              )
             ) {
               console.log(
                 `Validation failed for ${key}: invalid value "${value}"`
               );
             }
             break;
-
           case "backgroundMusicUrl":
             if (value !== null && typeof value !== "string") {
               console.log(
@@ -136,8 +138,16 @@ export async function fetchSlideshowLessonOrSlides({
       throw new Error("Invalid slideshow lesson.");
     }
   } else {
-    console.error("Unexpected data format received:", data);
-    throw new Error("Invalid data structure received.");
+    // Here, handle the case where the data doesn't match the expected structure
+    if ("slides" in data) {
+      console.log(
+        "Data received is a valid slideshow lesson but lacks external info:",
+        data
+      );
+    } else {
+      console.error("Unexpected data format received:", data);
+      throw new Error("Invalid data structure received.");
+    }
   }
 
   if (data.organizationLogoUrl === null) {

@@ -30,8 +30,14 @@ jobs:
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "/" # App source code path
           api_location: "" # Api source code path - optional
-          output_location: "build" # Built app content directory - optional
+          output_location: "dist" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
+        env:
+          PRE_BUILD_COMMAND: npm install -g pnpm
+          CUSTOM_BUILD_COMMAND: pnpm install && pnpm run build
+          VITE_API_URL: ${{ secrets.VITE_API_URL_QA }}
+          VITE_AZURE_FUNCTIONS_KEY: ${{ secrets.VITE_AZURE_FUNCTIONS_KEY_QA }}
+          VITE_BACKGROUND_MUSIC_BASE_URL: ${{ secrets.VITE_BACKGROUND_MUSIC_BASE_URL }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

@@ -1,15 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { type FormEvent, useId, useState } from 'react';
-import clsx from 'clsx';
+import { useState, useEffect } from 'react';
 
-import styles from './Home.module.css';
 
 import { slideshowLessonWithExternalInfoSchema } from '@/utils/generateSlides/parse';
 
 export default function Home() {
-  const jsonTextAreaId = useId();
-  const errorMessageId = useId();
-  const [slideshowJson, setSlideshowJson] = useState(slideshowJsonExample);
+
+  const [slideshowJson] = useState(slideshowJsonExample);
 
   const navigate = useNavigate();
 
@@ -23,417 +20,271 @@ export default function Home() {
     }
   })();
 
-  async function handleSubmitForm(event: FormEvent<HTMLFormElement>) {
-    // Prevent form default behavior
-    event.preventDefault();
-
+  useEffect(() => {
     if (!validationResult?.data) return;
-
     navigate('/player', { state: validationResult.data });
-  }
+  }, []);
+
 
   return (
-    <main className={styles.main}>
-      <form className={styles.form} onSubmit={handleSubmitForm}>
-        <h1 className={styles.title}>Enter slideshow as JSON</h1>
-
-        <label htmlFor={jsonTextAreaId} className="sr-only">
-          Slideshow JSON
-        </label>
-        <textarea
-          id={jsonTextAreaId}
-          className={clsx(styles.textArea, 'focus-ring')}
-          value={slideshowJson}
-          aria-invalid={!validationResult?.error !== undefined}
-          aria-labelledby={errorMessageId}
-          onChange={(event) => setSlideshowJson(event.target.value)}
-        />
-        {validationResult?.error !== undefined && (
-          <span
-            id={errorMessageId}
-            className={styles.errorMessage}
-            role="alert"
-          >
-            <pre>{validationResult.error}</pre>
-          </span>
-        )}
-
-        <button
-          className={styles.submitButton}
-          type="submit"
-          disabled={!validationResult?.data}
-        >
-          Generate slides
-        </button>
-      </form>
-    </main>
-  );
+    <main></main>
+  )
 }
 
 const slideshowJsonExample = JSON.stringify(
   {
     courseCover:
       'https://images.pexels.com/photos/4558461/pexels-photo-4558461.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-    sectionTitle: 'Descubriendo el corazón de los Países Nórdicos.',
+    sectionTitle: 'Bienvenidos al fascinante curso Los agujeros negros',
     type: 'Lección Engine',
     title: 'Presentation',
     elementCode: '67400928-3c9b-4730-8c60-a21a7f666b6c',
     elementLesson: {
       lessonTheme: '1',
-      paragraphs: [
+      "paragraphs": [
         {
-          content:
-            'Descubriendo el corazón de los Países Nórdicos: "Descubriendo el corazón de los Países Nórdicos" es una temática fascinante que nos lleva a explorar una región del mundo conocida por su impresionante belleza natural, una calidad de vida excepcional y una cultura rica y distinta.',
-          audioScript:
-            'Descubriendo el corazón de los Países Nórdicos: "Descubriendo el corazón de los Países Nórdicos" es una temática fascinante que nos lleva a explorar una región del mundo conocida por su impresionante belleza natural, una calidad de vida excepcional y una cultura rica y distinta.',
-          audioUrl:
-            'https://sophieassets.blob.core.windows.net/speeches/671cefb4-ee82-4efa-87af-160638a493d7.mp3',
-          titleAI: 'Exploring the Nordic Heartlands',
-          videoData: {
-            thumb: { url: '', width: 0, height: 0 },
-            finalVideo: { url: '', width: 0, height: 0 },
+          "content": "Bienvenidos al fascinante curso Los agujeros negros, un emocionante viaje que nos invita a adentrarnos en el misterio insondable del cosmos. Este curso busca introducir a los estudiantes en uno de los fenómenos más enigmáticos y sorprendentes del universo: los agujeros negros.",
+          "audioScript": "Bienvenidos al fascinante curso Los agujeros negros, un emocionante viaje que nos invita a adentrarnos en el misterio insondable del cosmos. Este curso busca introducir a los estudiantes en uno de los fenómenos más enigmáticos y sorprendentes del universo: los agujeros negros.",
+          "imageData": {
+            "finalImage": {
+              "url": "https://sophieassets.blob.core.windows.net/dalle/feec6718-96e8-4617-a0ba-b11cc2cfd771.jpeg",
+              "width": 1024,
+              "height": 1024
+            }
           },
-          imageData: {
-            image: {},
-            thumb: {},
-            finalImage: {
-              url: 'https://images.pexels.com/photos/12741259/pexels-photo-12741259.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-              width: '',
-              height: '',
+          "videoData": {
+            "thumb": {
+              "url": "",
+              "width": 0,
+              "height": 0
             },
-            imagesIds: [],
-            urlBing: '',
+            "finalVideo": {
+              "url": "",
+              "width": 0,
+              "height": 0
+            }
           },
-          keyPhrases: [
-            'Descubriendo el corazón de los Países Nórdicos',
-            'explorar una región del mundo',
-            'impresionante belleza natural',
-            'calidad de vida excepcional',
-            'cultura rica y distinta',
-          ],
-          alternativePronunciations: [],
+          "titleAI": "Exploring the Mysteries of Black Holes",
+          "translatedTitleAI": "Explorando los misterios de los agujeros negros",
+          "audioUrl": "https://sophieassets.blob.core.windows.net/speeches/331d5a39-85cc-4926-839c-16920d56275d.mp3",
+          "srt": []
         },
         {
-          content:
-            'Los Países Nórdicos, compuestos por Dinamarca, Finlandia, Islandia, Noruega y Suecia, ofrecen un mosaico de experiencias y tradiciones que reflejan su profundo respeto por la naturaleza, la igualdad y la innovación.',
-          audioScript:
-            'Los Países Nórdicos, compuestos por Dinamarca, Finlandia, Islandia, Noruega y Suecia, ofrecen un mosaico de experiencias y tradiciones que reflejan su profundo respeto por la naturaleza, la igualdad y la innovación.',
-          audioUrl:
-            'https://sophieassets.blob.core.windows.net/speeches/9dfc0762-a5ed-4761-8689-7509d3d4ef96.mp3',
-          titleAI: "Exploring Nordic Countries' Heart",
-          imageData: {
-            image: {},
-            thumb: {},
-            finalImage: {},
-            imagesIds: '',
-            urlBing: '',
+          "content": "A lo largo de este recorrido, exploraremos su naturaleza, orígenes, características y el impacto que ejercen en nuestro entendimiento del universo.",
+          "audioScript": "A lo largo de este recorrido, exploraremos su naturaleza, orígenes, características y el impacto que ejercen en nuestro entendimiento del universo.",
+          "imageData": {
+            "image": {},
+            "thumb": {},
+            "finalImage": {},
+            "imagesIds": "",
+            "urlBing": ""
           },
-          videoData: {
-            thumb: { url: '', width: 0, height: 0 },
-            finalVideo: {
-              url: 'https://player.vimeo.com/progressive_redirect/playback/530634522/rendition/1080p/file.mp4?loc=external&oauth2_token_id=1747418641&signature=2eb9faa6d68a82da3b78d904143d568a567e9b06a47b6ca88bb90fee9566a21f',
-              width: 0,
-              height: 0,
+          "videoData": {
+            "thumb": {
+              "url": "https://images.pexels.com/videos/28210569/pictures/preview-0.jpg",
+              "width": -1,
+              "height": -1
             },
+            "finalVideo": {
+              "url": "https://videos.pexels.com/video-files/28210569/12328323_1920_1080_30fps.mp4",
+              "width": -1,
+              "height": -1
+            }
           },
-          keyPhrases: [
-            'Los Países Nórdicos',
-            'compuestos por Dinamarca',
-            'Finlandia',
-            'Islandia',
-            'Noruega y Suecia',
-            'ofrecen un mosaico de experiencias y tradiciones',
-            'reflejan su profundo respeto por la naturaleza',
-            'la igualdad y la innovación',
-          ],
+          "titleAI": "Exploring Black Holes",
+          "translatedTitleAI": "Explorando Agujeros Negros",
+          "audioUrl": "https://sophieassets.blob.core.windows.net/speeches/5f2873f2-0ec4-418b-8990-75a8eb9f9a89.mp3",
+          "srt": []
         },
         {
-          content:
-            'En el corazón de la región nórdica, la naturaleza juega un papel fundamental en la vida cotidiana de sus habitantes. Desde los dramáticos fiordos noruegos hasta los bosques densos de Finlandia, pasando por las llanuras heladas de Islandia y las islas idílicas de Dinamarca y Suecia, el respeto por el medio ambiente es un valor compartido y una fuente de inspiración constante.',
-          audioScript:
-            'En el corazón de la región nórdica, la naturaleza juega un papel fundamental en la vida cotidiana de sus habitantes. Desde los dramáticos fiordos noruegos hasta los bosques densos de Finlandia, pasando por las llanuras heladas de Islandia y las islas idílicas de Dinamarca y Suecia, el respeto por el medio ambiente es un valor compartido y una fuente de inspiración constante.',
-          audioUrl:
-            'https://sophieassets.blob.core.windows.net/speeches/fd5107f6-0e3a-41dc-a4ca-b85ea9ebbe59.mp3',
-          titleAI: '"Nature\'s Heart in Nordic Lands"',
-          videoData: {
-            thumb: { url: '', width: 0, height: 0 },
-            finalVideo: { url: '', width: 0, height: 0 },
+          "content": "Comenzaremos nuestro viaje con una introducción a los agujeros negros, donde desentrañaremos por qué estas entidades han capturado la imaginación tanto de científicos como del público en general. En esta primera etapa, ofreceremos una visión general de qué son los agujeros negros y por qué representan uno de los elementos más intrigantes del estudio cosmológico.",
+          "audioScript": "Comenzaremos nuestro viaje con una introducción a los agujeros negros, donde desentrañaremos por qué estas entidades han capturado la imaginación tanto de científicos como del público en general. En esta primera etapa, ofreceremos una visión general de qué son los agujeros negros y por qué representan uno de los elementos más intrigantes del estudio cosmológico.",
+          "imageData": {
+            "finalImage": {
+              "url": "https://sophieassets.blob.core.windows.net/dalle/103f8d86-f377-4231-8682-463146d12544.jpeg",
+              "width": 1024,
+              "height": 1024
+            }
           },
-          imageData: {
-            image: {},
-            thumb: {},
-            finalImage: {
-              url: 'https://images.pexels.com/photos/17384852/pexels-photo-17384852.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-              width: '',
-              height: '',
+          "videoData": {
+            "thumb": {
+              "url": "",
+              "width": 0,
+              "height": 0
             },
-            imagesIds: [],
-            urlBing: '',
+            "finalVideo": {
+              "url": "",
+              "width": 0,
+              "height": 0
+            }
           },
-          keyPhrases: [
-            'En el corazón de la región nórdica',
-            'la naturaleza juega un papel fundamental',
-            'dramáticos fiordos noruegos',
-            'bosques densos de Finlandia',
-            'llanuras heladas de Islandia',
-            'islas idílicas de Dinamarca y Suecia',
-            'respeto por el medio ambiente es un valor compartido',
-          ],
+          "titleAI": "Introduction to Black Holes",
+          "translatedTitleAI": "Introducción a los agujeros negros",
+          "audioUrl": "https://sophieassets.blob.core.windows.net/speeches/5c74bb08-6c0b-443f-928e-d7563098225d.mp3",
+          "srt": []
         },
         {
-          content:
-            'Este vínculo intrínseco con la naturaleza no solo ha dado forma a la forma de vida nórdica, sino que también se refleja en sus políticas ambientales vanguardistas y su liderazgo global en sostenibilidad.',
-          audioScript:
-            'Este vínculo intrínseco con la naturaleza no solo ha dado forma a la forma de vida nórdica, sino que también se refleja en sus políticas ambientales vanguardistas y su liderazgo global en sostenibilidad.',
-          audioUrl:
-            'https://sophieassets.blob.core.windows.net/speeches/68e8c4d4-0ad6-4c45-9447-e57c6be479a1.mp3',
-          titleAI: 'Nordic Nature and Sustainability Leadership',
-          imageData: {
-            image: {},
-            thumb: {},
-            finalImage: {},
-            imagesIds: '',
-            urlBing: '',
+          "content": "Avanzando en nuestra exploración, nos sumergiremos en los orígenes y la evolución histórica de la teoría de los agujeros negros. Analizaremos cómo ha evolucionado el concepto a lo largo del tiempo, desde las ideas iniciales hasta convertirse en un pilar fundamental de la física moderna.",
+          "audioScript": "Avanzando en nuestra exploración, nos sumergiremos en los orígenes y la evolución histórica de la teoría de los agujeros negros. Analizaremos cómo ha evolucionado el concepto a lo largo del tiempo, desde las ideas iniciales hasta convertirse en un pilar fundamental de la física moderna.",
+          "imageData": {
+            "finalImage": {
+              "url": "https://sophieassets.blob.core.windows.net/dalle/f8d40a03-f688-4769-afef-27586cc053e9.jpeg",
+              "width": 1024,
+              "height": 1024
+            }
           },
-          videoData: {
-            thumb: { url: '', width: 0, height: 0 },
-            finalVideo: {
-              url: 'https://player.vimeo.com/progressive_redirect/playback/530655808/rendition/1080p/file.mp4?loc=external&oauth2_token_id=1747418641&signature=5b3f18072a107f3e1f9d7d2e927d8715b29449ef78c5464f14541653d39248c5',
-              width: 0,
-              height: 0,
+          "videoData": {
+            "thumb": {
+              "url": "",
+              "width": 0,
+              "height": 0
             },
+            "finalVideo": {
+              "url": "",
+              "width": 0,
+              "height": 0
+            }
           },
-          keyPhrases: [
-            'Este vínculo intrínseco con la naturaleza',
-            'forma de vida nórdica',
-            'políticas ambientales vanguardistas',
-            'liderazgo global en sostenibilidad',
-          ],
+          "titleAI": "Origins of Black Hole Theory",
+          "translatedTitleAI": "Orígenes de la teoría de agujeros negros",
+          "audioUrl": "https://sophieassets.blob.core.windows.net/speeches/d9705b98-b863-4779-aa10-624ddab4979c.mp3",
+          "srt": []
         },
         {
-          content:
-            'La calidad de vida en los Países Nórdicos es otra faceta que cautiva a quienes profundizan en su conocimiento. Estas naciones destacan regularmente en los índices globales de felicidad, educación, igualdad de género y bienestar social.',
-          audioScript:
-            'La calidad de vida en los Países Nórdicos es otra faceta que cautiva a quienes profundizan en su conocimiento. Estas naciones destacan regularmente en los índices globales de felicidad, educación, igualdad de género y bienestar social.',
-          audioUrl:
-            'https://sophieassets.blob.core.windows.net/speeches/cd7bd8ee-f89e-40c2-9cb8-71c716d1c629.mp3',
-          titleAI: 'Nordic Quality of Life Highlights',
-          videoData: {
-            thumb: { url: '', width: 0, height: 0 },
-            finalVideo: { url: '', width: 0, height: 0 },
+          "content": "A continuación, expondremos la física detrás del horizonte de eventos, llevando a los estudiantes a comprender los conceptos fundamentales que explican cómo funcionan los agujeros negros y por qué son un punto de interés dentro de la astrofísica.",
+          "audioScript": "A continuación, expondremos la física detrás del horizonte de eventos, llevando a los estudiantes a comprender los conceptos fundamentales que explican cómo funcionan los agujeros negros y por qué son un punto de interés dentro de la astrofísica.",
+          "imageData": {
+            "finalImage": {
+              "url": "https://sophieassets.blob.core.windows.net/dalle/0285ddef-d307-4de1-8a98-eb6f04438707.jpeg",
+              "width": 1024,
+              "height": 1024
+            }
           },
-          imageData: {
-            image: {},
-            thumb: {},
-            finalImage: {
-              url: 'https://images.pexels.com/photos/17384862/pexels-photo-17384862.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-              width: '',
-              height: '',
+          "videoData": {
+            "thumb": {
+              "url": "",
+              "width": 0,
+              "height": 0
             },
-            imagesIds: [],
-            urlBing: '',
+            "finalVideo": {
+              "url": "",
+              "width": 0,
+              "height": 0
+            }
           },
-          keyPhrases: [
-            'La calidad de vida en los Países Nórdicos',
-            'destacan regularmente en los índices globales',
-            'felicidad',
-            'educación',
-            'igualdad de género y bienestar social',
-          ],
+          "titleAI": "Understanding Black Hole Physics",
+          "translatedTitleAI": "Comprendiendo la física de los agujeros negros",
+          "audioUrl": "https://sophieassets.blob.core.windows.net/speeches/4ad50615-81f3-47bc-9119-8b4c4426203f.mp3",
+          "srt": []
         },
         {
-          content:
-            'Este logro es el resultado de un modelo de bienestar social sólido, sistemas educativos inclusivos y un compromiso con la igualdad de derechos y oportunidades para todos sus ciudadanos. La transparencia, la confianza en las instituciones públicas y un alto grado de participación cívica son pilares que sostienen la cohesión social y la satisfacción general en estos países.',
-          audioScript:
-            'Este logro es el resultado de un modelo de bienestar social sólido, sistemas educativos inclusivos y un compromiso con la igualdad de derechos y oportunidades para todos sus ciudadanos. La transparencia, la confianza en las instituciones públicas y un alto grado de participación cívica son pilares que sostienen la cohesión social y la satisfacción general en estos países.',
-          audioUrl:
-            'https://sophieassets.blob.core.windows.net/speeches/9e71da5a-6cdd-4fb8-baca-4a8771fdeddc.mp3',
-          titleAI: 'Nordic Social Welfare Success',
-          imageData: {
-            image: {},
-            thumb: {},
-            finalImage: {},
-            imagesIds: '',
-            urlBing: '',
+          "content": "La siguiente sección del curso se centrará en la estructura y clasificación de los agujeros negros. Desde los agujeros negros de Schwarzschild hasta los de Kerr, examinaremos las diversas categorías y características que definen a estas singulares formaciones cósmicas.",
+          "audioScript": "La siguiente sección del curso se centrará en la estructura y clasificación de los agujeros negros. Desde los agujeros negros de Schwarzschild hasta los de Kerr, examinaremos las diversas categorías y características que definen a estas singulares formaciones cósmicas.",
+          "imageData": {
+            "finalImage": {
+              "url": "https://sophieassets.blob.core.windows.net/dalle/a4d341d0-894f-4631-8d40-6966793a460f.jpeg",
+              "width": 1024,
+              "height": 1792
+            }
           },
-          videoData: {
-            thumb: { url: '', width: 0, height: 0 },
-            finalVideo: {
-              url: 'https://player.vimeo.com/progressive_redirect/playback/530656871/rendition/1080p/file.mp4?loc=external&oauth2_token_id=1747418641&signature=150b24b2b8343156df76a2c48c941eacddf963cdf87ba61ed48a07a75f477d27',
-              width: 0,
-              height: 0,
+          "videoData": {
+            "thumb": {
+              "url": "",
+              "width": 0,
+              "height": 0
             },
+            "finalVideo": {
+              "url": "",
+              "width": 0,
+              "height": 0
+            }
           },
-          keyPhrases: [
-            'modelo de bienestar social sólido',
-            'sistemas educativos inclusivos',
-            'compromiso con la igualdad de derechos y oportunidades',
-            'transparencia',
-            'confianza en las instituciones públicas',
-            'alto grado de participación cívica',
-            'cohesión social y la satisfacción general',
-          ],
+          "titleAI": "Classification of Black Holes",
+          "translatedTitleAI": "Clasificación de los agujeros negros",
+          "audioUrl": "https://sophieassets.blob.core.windows.net/speeches/4060e3f2-ad22-432d-892f-3801aaece6af.mp3",
+          "srt": []
         },
         {
-          content:
-            'La cultura nórdica, con su profunda veneración por las tradiciones y al mismo tiempo una apertura a la innovación y a nuevas ideas, ofrece un espectro rico y variado. Desde la literatura robusta, la cual incluye sagas épicas y obras contemporáneas que han ganado reconocimiento internacional, hasta movimientos artísticos y de diseño que han influenciado significativamente las tendencias globales.',
-          audioScript:
-            'La cultura nórdica, con su profunda veneración por las tradiciones y al mismo tiempo una apertura a la innovación y a nuevas ideas, ofrece un espectro rico y variado. Desde la literatura robusta, la cual incluye sagas épicas y obras contemporáneas que han ganado reconocimiento internacional, hasta movimientos artísticos y de diseño que han influenciado significativamente las tendencias globales.',
-          audioUrl:
-            'https://sophieassets.blob.core.windows.net/speeches/57ef3d41-f672-43f2-810b-a9a3f412c294.mp3',
-          titleAI: 'Nordic Culture: Tradition and Innovation',
-          videoData: {
-            thumb: { url: '', width: 0, height: 0 },
-            finalVideo: { url: '', width: 0, height: 0 },
+          "content": "En la parte de métodos de detección y evidencia observacional, exploraremos cómo los científicos han sido capaces de identificar y estudiar agujeros negros a través de innovadoras tecnologías y técnicas. Este tema nos permitirá entender la complejidad de investigar un fenómeno que, por definición, es invisible.",
+          "audioScript": "En la parte de métodos de detección y evidencia observacional, exploraremos cómo los científicos han sido capaces de identificar y estudiar agujeros negros a través de innovadoras tecnologías y técnicas. Este tema nos permitirá entender la complejidad de investigar un fenómeno que, por definición, es invisible.",
+          "imageData": {
+            "finalImage": {
+              "url": "https://sophieassets.blob.core.windows.net/dalle/0299e508-d5e2-4337-8b6d-40dddaa451a3.jpeg",
+              "width": 1024,
+              "height": 1024
+            }
           },
-          imageData: {
-            image: {},
-            thumb: {},
-            finalImage: {
-              url: 'https://images.pexels.com/photos/20156997/pexels-photo-20156997.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-              width: '',
-              height: '',
+          "videoData": {
+            "thumb": {
+              "url": "",
+              "width": 0,
+              "height": 0
             },
-            imagesIds: [],
-            urlBing: '',
+            "finalVideo": {
+              "url": "",
+              "width": 0,
+              "height": 0
+            }
           },
-          keyPhrases: [
-            'La cultura nórdica',
-            'profunda veneración por las tradiciones',
-            'apertura a la innovación y a nuevas ideas',
-            'espectro rico y variado',
-            'literatura robusta',
-            'sagas épicas y obras contemporáneas',
-            'reconocimiento internacional',
-            'movimientos artísticos y de diseño',
-            'influenciado significativamente las tendencias globales',
-          ],
+          "titleAI": "Detecting Black Holes Methodologies",
+          "translatedTitleAI": "Métodos de Detección de Agujeros Negros",
+          "audioUrl": "https://sophieassets.blob.core.windows.net/speeches/bed42743-be6b-46a5-a490-80179a8b11b8.mp3",
+          "srt": []
         },
         {
-          content:
-            'La música, la gastronomía y las festividades también reflejan la diversidad y la creatividad de estos pueblos, mostrando un equilibrio admirable entre el resguardo de su patrimonio y la exploración de nuevos horizontes.',
-          audioScript:
-            'La música, la gastronomía y las festividades también reflejan la diversidad y la creatividad de estos pueblos, mostrando un equilibrio admirable entre el resguardo de su patrimonio y la exploración de nuevos horizontes.',
-          audioUrl:
-            'https://sophieassets.blob.core.windows.net/speeches/96c1af4d-158d-4f63-9ce9-532d64bfcf8e.mp3',
-          titleAI: 'Nordic Culture: Tradition and Innovation',
-          imageData: {
-            image: {},
-            thumb: {},
-            finalImage: {},
-            imagesIds: '',
-            urlBing: '',
+          "content": "Finalmente, nos enfocaremos en el impacto de los agujeros negros en la estructura y evolución del universo. Aquí consideraremos su papel en la formación de galaxias, su influencia gravitacional y la manera en que continúan desafiando nuestras expectativas y teorías sobre la cosmología.",
+          "audioScript": "Finalmente, nos enfocaremos en el impacto de los agujeros negros en la estructura y evolución del universo. Aquí consideraremos su papel en la formación de galaxias, su influencia gravitacional y la manera en que continúan desafiando nuestras expectativas y teorías sobre la cosmología.",
+          "imageData": {
+            "finalImage": {
+              "url": "https://sophieassets.blob.core.windows.net/dalle/1aecded4-231d-40fb-9a52-fe0a8b044eba.jpeg",
+              "width": 1024,
+              "height": 1792
+            }
           },
-          videoData: {
-            thumb: { url: '', width: 0, height: 0 },
-            finalVideo: {
-              url: 'https://player.vimeo.com/progressive_redirect/playback/530644627/rendition/1080p/file.mp4?loc=external&oauth2_token_id=1747418641&signature=bbed0b9c157c59c2d4311c45539f95b4294e971b3d9f695c13d28e53d3bbad43',
-              width: 0,
-              height: 0,
+          "videoData": {
+            "thumb": {
+              "url": "",
+              "width": 0,
+              "height": 0
             },
+            "finalVideo": {
+              "url": "",
+              "width": 0,
+              "height": 0
+            }
           },
-          keyPhrases: [
-            'La música',
-            'la gastronomía y las festividades',
-            'reflejan la diversidad y la creatividad',
-            'equilibrio admirable',
-            'resguardo de su patrimonio',
-            'exploración de nuevos horizontes',
-          ],
+          "titleAI": "Black Holes and Universe Evolution",
+          "translatedTitleAI": "Agujeros Negros y Evolución del Universo",
+          "audioUrl": "https://sophieassets.blob.core.windows.net/speeches/d02379c3-c73a-4400-8aaf-8160026c96c5.mp3",
+          "srt": []
         },
         {
-          content:
-            'Finalmente, es imposible hablar del corazón de los Países Nórdicos sin mencionar su compromiso con la paz y la colaboración internacional. Estos países son conocidos por su diplomacia activa, su solidaridad internacional y su participación en esfuerzos de paz y desarrollo sostenible alrededor del mundo.',
-          audioScript:
-            'Finalmente, es imposible hablar del corazón de los Países Nórdicos sin mencionar su compromiso con la paz y la colaboración internacional. Estos países son conocidos por su diplomacia activa, su solidaridad internacional y su participación en esfuerzos de paz y desarrollo sostenible alrededor del mundo.',
-          audioUrl:
-            'https://sophieassets.blob.core.windows.net/speeches/46d2198c-3398-4e1f-a5b8-34662896e57e.mp3',
-          titleAI: 'Nordic Commitment to Global Peace',
-          videoData: {
-            thumb: { url: '', width: 0, height: 0 },
-            finalVideo: { url: '', width: 0, height: 0 },
+          "content": "Concluiremos nuestro curso examinando cómo el estudio de los agujeros negros está moldeando el futuro de la cosmología, sugiriendo nuevas direcciones de investigación y expandiendo nuestra comprensión del universo en su totalidad. Acompáñenos en este viaje cósmico y adentrémonos juntos en el fascinante mundo de los agujeros negros.",
+          "audioScript": "Concluiremos nuestro curso examinando cómo el estudio de los agujeros negros está moldeando el futuro de la cosmología, sugiriendo nuevas direcciones de investigación y expandiendo nuestra comprensión del universo en su totalidad. Acompáñenos en este viaje cósmico y adentrémonos juntos en el fascinante mundo de los agujeros negros.",
+          "imageData": {
+            "finalImage": {
+              "url": "https://sophieassets.blob.core.windows.net/dalle/e330e959-9fd7-4747-b183-494a3a5571fa.jpeg",
+              "width": 1792,
+              "height": 1024
+            }
           },
-          imageData: {
-            image: {},
-            thumb: {},
-            finalImage: {
-              url: 'https://images.pexels.com/photos/17384863/pexels-photo-17384863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-              width: '',
-              height: '',
+          "videoData": {
+            "thumb": {
+              "url": "",
+              "width": 0,
+              "height": 0
             },
-            imagesIds: [],
-            urlBing: '',
+            "finalVideo": {
+              "url": "",
+              "width": 0,
+              "height": 0
+            }
           },
-          keyPhrases: [
-            'compromiso con la paz y la colaboración internacional',
-            'diplomacia activa',
-            'solidaridad internacional',
-            'participación en esfuerzos de paz y desarrollo sostenible',
-          ],
-        },
-        {
-          content:
-            'Este enfoque hacia la paz y la cooperación no solo fortalece su posición en la comunidad internacional, sino que también refleja los valores intrínsecos de su sociedad.',
-          audioScript:
-            'Este enfoque hacia la paz y la cooperación no solo fortalece su posición en la comunidad internacional, sino que también refleja los valores intrínsecos de su sociedad.',
-          audioUrl:
-            'https://sophieassets.blob.core.windows.net/speeches/fea4fd40-6f5d-4321-afdf-463f2741d8b5.mp3',
-          titleAI: '"Peace and Cooperation Values"',
-          imageData: {
-            image: {},
-            thumb: {},
-            finalImage: {},
-            imagesIds: '',
-            urlBing: '',
-          },
-          videoData: {
-            thumb: { url: '', width: 0, height: 0 },
-            finalVideo: {
-              url: 'https://player.vimeo.com/progressive_redirect/playback/530640865/rendition/1080p/file.mp4?loc=external&oauth2_token_id=1747418641&signature=6525c219821c644004535ace321ce996eb741a849ba03f7fb84eeaf0501a6ecf',
-              width: 0,
-              height: 0,
-            },
-          },
-          keyPhrases: [
-            'Este enfoque hacia la paz y la cooperación',
-            'fortalece su posición en la comunidad internacional',
-            'refleja los valores intrínsecos de su sociedad',
-          ],
-        },
-        {
-          content:
-            'En conclusión, descubrir el corazón de los Países Nórdicos es adentrarse en un mundo donde la naturaleza, la calidad de vida, la riqueza cultural y el compromiso con la paz y la sostenibilidad son ejes fundamentales que tejen la esencia de esta región. Esta exploración nos revela cómo la armonía entre el ser humano y su entorno puede crear sociedades prósperas, resilientes e inspiradoras.',
-          audioScript:
-            'En conclusión, descubrir el corazón de los Países Nórdicos es adentrarse en un mundo donde la naturaleza, la calidad de vida, la riqueza cultural y el compromiso con la paz y la sostenibilidad son ejes fundamentales que tejen la esencia de esta región. Esta exploración nos revela cómo la armonía entre el ser humano y su entorno puede crear sociedades prósperas, resilientes e inspiradoras.',
-          audioUrl:
-            'https://sophieassets.blob.core.windows.net/speeches/c51bbd67-1bb8-46d9-9c70-8fb70abe71d5.mp3',
-          titleAI: 'Exploring Nordic Heartlands',
-          videoData: {
-            thumb: { url: '', width: 0, height: 0 },
-            finalVideo: { url: '', width: 0, height: 0 },
-          },
-          imageData: {
-            image: {},
-            thumb: {},
-            finalImage: {
-              url: 'https://images.pexels.com/photos/2853632/pexels-photo-2853632.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-              width: '',
-              height: '',
-            },
-            imagesIds: [],
-            urlBing: '',
-          },
-          keyPhrases: [
-            'descubrir el corazón de los Países Nórdicos',
-            'la naturaleza',
-            'la calidad de vida',
-            'la riqueza cultural y el compromiso con la paz y la sostenibilidad',
-            'tejen la esencia de esta región',
-            'armonía entre el ser humano y su entorno',
-            'sociedades prósperas',
-            'resilientes e inspiradoras',
-          ],
-        },
+          "titleAI": "The Future of Cosmology",
+          "translatedTitleAI": "El futuro de la cosmología",
+          "audioUrl": "https://sophieassets.blob.core.windows.net/speeches/d3c59d3d-37c7-45a2-adc9-0911f936ef48.mp3",
+          "srt": []
+        }
       ],
     },
   },

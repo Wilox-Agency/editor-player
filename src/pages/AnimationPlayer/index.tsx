@@ -1,10 +1,9 @@
-import { type PointerEvent, useEffect, useMemo } from 'react';
+import { type PointerEvent, useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Group, Layer, Stage } from 'react-konva';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { type } from 'arktype';
-
 import styles from './AnimationPlayer.module.css';
 
 import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
@@ -34,10 +33,48 @@ import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
 
 import { PlayerBar } from '@/components/PlayerBar';
 import { PlayerOrganizationLogo } from '@/components/PlayerOrganizationLogo';
+import { slideshowLessonWithExternalInfoSchema } from '@/utils/generateSlides/parse';
 
 export default function AnimationPlayer() {
-  const { state: slideshowLessonFromHomePage, search: searchParams } =
+  const {  search: searchParams } =
     useLocation();
+  let slideshowLessonFromHomePage = {}
+  const [slideshowJson, setSlideshowJson] = useState(null);
+  useEffect(() => {
+    // Cargar el JSON externo una vez montado el componente
+    const loadSlideshowJson = async () => {
+      try {
+        const response = await fetch('/slideshow.json');
+        if (!response.ok) throw new Error('Error al cargar el JSON');
+        const data = await response.json();
+        setSlideshowJson(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadSlideshowJson();
+  }, []);
+
+  const validationResult = slideshowJson
+    ? (() => {
+        try {
+          const { data, problems } = slideshowLessonWithExternalInfoSchema(slideshowJson);
+          return { data, error: problems?.toString() };
+        } catch (error) {
+          return { error: 'Could not validate JSON' };
+        }
+      })()
+    : { error: 'JSON not loaded' };
+
+
+      if (validationResult?.data) {
+        slideshowLessonFromHomePage = validationResult.data
+      };
+
+
+  console.info(slideshowLessonFromHomePage)
+  console.info(searchParams)
 
   /* Get the slideshow lesson or slides from the server if the slideshow lesson
   was not already provided by the user through the home page form */

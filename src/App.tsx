@@ -1,6 +1,6 @@
 // import { type ComponentType } from 'react';
 // import { RouterProvider, createBrowserRouter } from 'react-router-dom';
-// import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // import { Toaster } from 'sonner';
 
 // async function lazyImportDefault<T extends ComponentType>(
@@ -17,16 +17,7 @@
 //   }
 // ]);
 
-// const queryClient = new QueryClient({
-//   defaultOptions: {
-//     queries: {
-//       refetchOnReconnect: false,
-//       refetchOnWindowFocus: false,
-//       refetchOnMount: false,
-//       retry: false,
-//     },
-//   },
-// });
+
 
 // export function App() {
 //   return (
@@ -89,6 +80,17 @@ import { PlayerBar } from '@/components/PlayerBar';
 import { PlayerOrganizationLogo } from '@/components/PlayerOrganizationLogo';
 import { slideshowLessonWithExternalInfoSchema } from '@/utils/generateSlides/parse';
 
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnReconnect: false,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      retry: false,
+    },
+  },
+});
 
 // App.tsx
 import React from 'react';
@@ -202,7 +204,7 @@ export const App: React.FC = () => { // Cambiado a exportación nombrada
     }
   );
 
-   // TODO: Prevent generating slides if any of the fonts cannot be loaded
+  // TODO: Prevent generating slides if any of the fonts cannot be loaded
   // Generate slides if they were not fetched from the server
   const { data: generatedSlides } = useQuery({
     enabled: !!slideshowLesson && !isLoadingFonts && !isLoadFontsPending,
@@ -439,67 +441,70 @@ export const App: React.FC = () => { // Cambiado a exportación nombrada
   }, []);
 
   return (
-    <main>
-      <div onPointerDown={handleClickStageWrapperWithPointer}>
-        <Stage
-          id={stageWrapperId}
-          className="konva-stage-wrapper"
-          style={{
-            '--canvas-background-color': '#f0e6e6',
-          }}
-          width={StageVirtualSize.width}
-          height={StageVirtualSize.height}
-          ref={stageRef}
-        >
-          <Layer listening={false} ref={layerRef}>
-            {canvasTree.map((element) => {
-              const { type, ...props } = element;
-              const Component = CanvasComponentByType[type];
+    <QueryClientProvider client={queryClient}>
+      <main>
+        <div onPointerDown={handleClickStageWrapperWithPointer}>
+          <Stage
+            id={stageWrapperId}
+            className="konva-stage-wrapper"
+            style={{
+              '--canvas-background-color': '#f0e6e6',
+            }}
+            width={StageVirtualSize.width}
+            height={StageVirtualSize.height}
+            ref={stageRef}
+          >
+            <Layer listening={false} ref={layerRef}>
+              {canvasTree.map((element) => {
+                const { type, ...props } = element;
+                const Component = CanvasComponentByType[type];
 
-              const { x, y, ...otherProps } = props;
+                const { x, y, ...otherProps } = props;
 
-              const elementRect = getCanvasElementRect(element);
+                const elementRect = getCanvasElementRect(element);
 
-              return (
-                <Group
-                  key={props.id}
-                  x={x}
-                  y={y}
-                  clipX={0}
-                  clipY={0}
-                  clipWidth={elementRect.width}
-                  clipHeight={elementRect.height}
-                  /* Hide the nodes by default so they are not visible before
-                  the timeline is set up */
-                  visible={false}
-                >
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                  <Component {...(otherProps as any)} />
-                </Group>
-              );
-            })}
-          </Layer>
-          <PlayerOrganizationLogo
-            logoUrl={slideshowLesson?.organizationLogoUrl}
-          />
-        </Stage>
-      </div>
-
-      {canvasTree.length > 0 && (
-        <PlayerBar
-          disabled={!canPlaySlideshow}
-          handlePlayOrPause={handlePlayOrPause}
-          handleChangeTime={handleChangeTime}
-        />
-      )}
-
-      {error && (
-        <div className={styles.error} role="alert">
-          <h1 className={styles.errorTitle}>Error!</h1>
-          <p className={styles.errorMessage}>{error.message}</p>
+                return (
+                  <Group
+                    key={props.id}
+                    x={x}
+                    y={y}
+                    clipX={0}
+                    clipY={0}
+                    clipWidth={elementRect.width}
+                    clipHeight={elementRect.height}
+                    /* Hide the nodes by default so they are not visible before
+                    the timeline is set up */
+                    visible={false}
+                  >
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    <Component {...(otherProps as any)} />
+                  </Group>
+                );
+              })}
+            </Layer>
+            <PlayerOrganizationLogo
+              logoUrl={slideshowLesson?.organizationLogoUrl}
+            />
+          </Stage>
         </div>
-      )}
-    </main>
+
+        {canvasTree.length > 0 && (
+          <PlayerBar
+            disabled={!canPlaySlideshow}
+            handlePlayOrPause={handlePlayOrPause}
+            handleChangeTime={handleChangeTime}
+          />
+        )}
+
+        {error && (
+          <div className={styles.error} role="alert">
+            <h1 className={styles.errorTitle}>Error!</h1>
+            <p className={styles.errorMessage}>{error.message}</p>
+          </div>
+        )}
+      </main>
+    </QueryClientProvider>
+
   );
 };
 

@@ -1,5 +1,4 @@
-import { type PointerEvent, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { type PointerEvent, useEffect, useState, useMemo } from 'react';
 import { Group, Layer, Stage } from 'react-konva';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -35,14 +34,58 @@ import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
 import { PlayerBar } from '@/components/PlayerBar';
 import { PlayerOrganizationLogo } from '@/components/PlayerOrganizationLogo';
 
-export default function AnimationPlayer() {
-  const { state: slideshowLessonFromHomePage, search: searchParams } =
-    useLocation();
+import { slideshowLessonWithExternalInfoSchema } from '@/utils/generateSlides/parse';
 
+
+export default function AnimationPlayer() {
+
+  const [slideshowJson, setSlideshowJson] = useState(null);
+  // const { state: slideshowLessonFromHomePage, search: searchParams } =
+  //   useLocation();
+
+  const [slideshowLessonFromHomePage, setSlideshowLessonFromHomePage] = useState<SlideshowLessonWithExternalInfo | undefined>(undefined);
+
+  let searchParams = ""
+  useEffect(() => {
+    // Cargar el JSON externo una vez montado el componente
+    const loadSlideshowJson = async () => {
+      try {
+        const response = await fetch('./slideshow.json');
+        if (!response.ok) throw new Error('Error al cargar el JSON');
+        const data = await response.json();
+        setSlideshowJson(data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadSlideshowJson();
+  }, []);
+
+
+  const validationResult = slideshowJson
+    ? (() => {
+      try {
+        const { data, problems } = slideshowLessonWithExternalInfoSchema(slideshowJson);
+        return { data, error: problems?.toString() };
+      } catch (error) {
+        return { error: 'Could not validate JSON' };
+      }
+    })()
+    : { error: 'JSON not loaded' };
+
+    useEffect(() => {
+      if (validationResult?.data && slideshowLessonFromHomePage === undefined) {
+        setSlideshowLessonFromHomePage(validationResult.data);
+      }
+    }, [validationResult, slideshowLessonFromHomePage]);
+    
+
+  console.info(slideshowLessonFromHomePage)
   /* Get the slideshow lesson or slides from the server if the slideshow lesson
   was not already provided by the user through the home page form */
   const { data: slideshowLessonOrSlidesFromServer, error } = useQuery({
-    enabled: !slideshowLessonFromHomePage,
+    enabled: false,
     queryKey: ['slideshowLessonOrSlidesFromServer', searchParams],
     queryFn: async () => {
       const searchParamsObject = new URLSearchParams(searchParams);
@@ -53,29 +96,10 @@ export default function AnimationPlayer() {
           '`courseId` or `lessonId` query parameters are missing.'
         );
       }
-
-      const promise = fetchSlideshowLessonOrSlides({ courseId, lessonId });
-      /* Using a timeout is required to render a toast on initial page load. See
-      https://sonner.emilkowal.ski/toast#render-toast-on-page-load */
-      setTimeout(() => {
-        toast.promise(promise, {
-          loading: 'Fetching slideshow lesson...',
-          success: (slideshowLessonOrSlides) => {
-            if ('slides' in slideshowLessonOrSlides) {
-              return 'Found up to date slides!';
-            }
-            return 'Slideshow lesson found!';
-          },
-          error: (error) => {
-            if (error instanceof Error) return error.message;
-            return 'Slideshow lesson not found.';
-          },
-        });
-      });
-      return await promise;
+      return await fetchSlideshowLessonOrSlides({ courseId, lessonId });
     },
   });
-
+  
   /* Get the slideshow lesson that will be used to generate the slides if the
   slides were not already fetched from the server */
   const slideshowLesson = useMemo(() => {

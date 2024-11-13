@@ -1,0 +1,7 @@
+Después de compilar, eliminar favicon y colocar las rutas del js y css principal en relativas
+Agregar estos temas: 
+"earthy",
+  "royalTwilight",
+  "boldContrast",
+  "seaBreeze",
+Sustituir http:/localhost:4200 por /.

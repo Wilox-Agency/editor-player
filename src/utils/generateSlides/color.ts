@@ -13,6 +13,7 @@ export const colorThemeNames = [
   "royalTwilight",
   "boldContrast",
   "seaBreeze",
+  "grupoDatco",
 ] as const;
 
 // Color names by https://coolors.co/
@@ -78,6 +79,13 @@ export const colorThemeOptions = {
     "#4682B4", // Steel Blue
     "#87CEEB", // Sky Blue
     "#E0FFFF", // Light Cyan
+  ],
+  grupoDatco: [
+    "#0e316e", // GD_main
+    "#111b33", // GD_dark
+    "#f0582b", // GD_highlight
+    "#1f4483", // GD_sub
+    "#ffb201", // GD_extra
   ],
 } as const satisfies Record<(typeof colorThemeNames)[number], string[]>;
 

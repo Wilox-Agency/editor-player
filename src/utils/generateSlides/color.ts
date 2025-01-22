@@ -88,7 +88,13 @@ export const colorThemeOptions = {
     "#1f4483", // GD_sub
     "#ffb201", // GD_extra
   ],
-  amuch: ["#1C0F0A", "#243063", "#0080BA"],
+  amuch: [
+    "#1C0F0A", // Black
+    "#243063", // Dark blue
+    "#0080BA", // Blue
+    "#E5E5E5", // Platinum (light gray)
+    "#FFFFFF", // White
+  ],
 } as const satisfies Record<(typeof colorThemeNames)[number], string[]>;
 
 const TextColors = {

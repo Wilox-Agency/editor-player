@@ -14,6 +14,7 @@ export const colorThemeNames = [
   "boldContrast",
   "seaBreeze",
   "grupoDatco",
+  "amuch",
 ] as const;
 
 // Color names by https://coolors.co/
@@ -87,6 +88,7 @@ export const colorThemeOptions = {
     "#1f4483", // GD_sub
     "#ffb201", // GD_extra
   ],
+  amuch: ["#1C0F0A", "#243063", "#0080BA"],
 } as const satisfies Record<(typeof colorThemeNames)[number], string[]>;
 
 const TextColors = {

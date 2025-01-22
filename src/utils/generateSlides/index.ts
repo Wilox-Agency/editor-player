@@ -345,6 +345,5 @@ export async function generateSlides(presentationContent: SlideshowContent) {
   }
 
   const endingSlide = await generateEndingSlide(colorPalette);
-
   return [firstSlide, ...otherSlides, endingSlide];
 }

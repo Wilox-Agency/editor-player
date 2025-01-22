@@ -83,18 +83,18 @@ export async function preloadAudios(audios: { url: string }[]) {
   );
 
   toast.promise(preloadAudiosPromise, {
-    loading: 'Preloading audios...',
-    success: (results) => {
-      const numberOfSuccesses = results.filter(
-        (result) => result.status === 'fulfilled'
-      ).length;
-      const totalOfResults = results.length;
+    // loading: 'Preloading audios...',
+    // success: (results) => {
+    //   const numberOfSuccesses = results.filter(
+    //     (result) => result.status === 'fulfilled'
+    //   ).length;
+    //   const totalOfResults = results.length;
 
-      if (numberOfSuccesses === totalOfResults) {
-        return 'All audios preloaded successfully!';
-      }
-      return `${numberOfSuccesses} audios preloaded out of ${totalOfResults}.`;
-    },
+    //   if (numberOfSuccesses === totalOfResults) {
+    //     return 'All audios preloaded successfully!';
+    //   }
+    //   return `${numberOfSuccesses} audios preloaded out of ${totalOfResults}.`;
+    // },
     error: 'Could not preload audios.',
   });
 

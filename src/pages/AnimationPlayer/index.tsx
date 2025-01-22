@@ -39,6 +39,9 @@ import { slideshowLessonWithExternalInfoSchema } from '@/utils/generateSlides/pa
 
 export default function AnimationPlayer() {
 
+  const [showSpinner, setShowSpinner] = useState(true);
+
+
   const [slideshowJson, setSlideshowJson] = useState(null);
   // const { state: slideshowLessonFromHomePage, search: searchParams } =
   //   useLocation();
@@ -47,6 +50,7 @@ export default function AnimationPlayer() {
 
   let searchParams = ""
   useEffect(() => {
+    setShowSpinner(true);
     // Cargar el JSON externo una vez montado el componente
     const loadSlideshowJson = async () => {
       try {
@@ -74,14 +78,14 @@ export default function AnimationPlayer() {
     })()
     : { error: 'JSON not loaded' };
 
-    useEffect(() => {
-      if (validationResult?.data && slideshowLessonFromHomePage === undefined) {
-        setSlideshowLessonFromHomePage(validationResult.data);
-      }
-    }, [validationResult, slideshowLessonFromHomePage]);
-    
+  useEffect(() => {
+    if (validationResult?.data && slideshowLessonFromHomePage === undefined) {
+      setSlideshowLessonFromHomePage(validationResult.data);
+    }
+  }, [validationResult, slideshowLessonFromHomePage]);
 
-  console.info(slideshowLessonFromHomePage)
+
+  // console.info(slideshowLessonFromHomePage)
   /* Get the slideshow lesson or slides from the server if the slideshow lesson
   was not already provided by the user through the home page form */
   const { data: slideshowLessonOrSlidesFromServer, error } = useQuery({
@@ -99,7 +103,7 @@ export default function AnimationPlayer() {
       return await fetchSlideshowLessonOrSlides({ courseId, lessonId });
     },
   });
-  
+
   /* Get the slideshow lesson that will be used to generate the slides if the
   slides were not already fetched from the server */
   const slideshowLesson = useMemo(() => {
@@ -139,10 +143,11 @@ export default function AnimationPlayer() {
       const slidesPromise = generateSlides(
         parseSlideshowLesson(slideshowLesson!)
       );
-
+      // TODO - Substitute by progress bar
       toast.promise(slidesPromise, {
-        loading: 'Generating slides...',
-        success: 'Slides generated successfully!',
+
+        // loading: 'Generating slides...',
+        // success: 'Slides generated successfully!',
         error: (error) => {
           if (import.meta.env.DEV) {
             console.log(error);
@@ -151,6 +156,7 @@ export default function AnimationPlayer() {
         },
       });
       return await slidesPromise;
+
     },
   });
 
@@ -176,9 +182,10 @@ export default function AnimationPlayer() {
       slides: generatedSlides,
     });
 
+    // TODO - Substitute by progress bar
     toast.promise(saveSlidesPromise, {
-      loading: 'Saving slides...',
-      success: 'Slides saved successfully!',
+      // loading: 'Saving slides...',
+      // success: 'Slides saved successfully!',
       error: (error) => {
         if (error instanceof Error) return error.message;
         return 'Could not save slides.';
@@ -354,6 +361,8 @@ export default function AnimationPlayer() {
       await preloadAssetsFromCanvasElements(canvasElements);
       // Load canvas tree
       loadCanvasTree(canvasElements);
+      console.info('Ocultar spinner')
+      setShowSpinner(false);
     })();
   }, [combinedSlides, isLoadFontsPending, isLoadingFonts, loadCanvasTree]);
 
@@ -367,6 +376,7 @@ export default function AnimationPlayer() {
 
   return (
     <main>
+      {showSpinner && <div className="spinner">Cargando...</div>}
       <div onPointerDown={handleClickStageWrapperWithPointer}>
         <Stage
           id={stageWrapperId}

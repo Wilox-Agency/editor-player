@@ -1,5 +1,5 @@
 import FontFaceObserver from 'fontfaceobserver';
-import { toast } from 'sonner';
+// import { toast } from 'sonner';
 
 import { showWarningToastWhenAssetLoadingTakesTooLong } from '@/utils/toast';
 
@@ -43,26 +43,27 @@ export async function waitUntilAllSupportedFontsLoad() {
   });
   const fontsLoadPromise = Promise.allSettled(fontLoadPromises);
 
-  const toastId = toast.loading('Loading fonts...');
-  fontsLoadPromise
-    .then((results) => {
-      const numberOfSuccesses = results.filter(
-        (result) => result.status === 'fulfilled'
-      ).length;
-      const totalOfResults = results.length;
+  // TODO - Substitute by progress bar
+  // const toastId = toast.loading('Loading fonts...');
+  // fontsLoadPromise
+  //   .then((results) => {
+  //     const numberOfSuccesses = results.filter(
+  //       (result) => result.status === 'fulfilled'
+  //     ).length;
+  //     const totalOfResults = results.length;
 
-      if (numberOfSuccesses === totalOfResults) {
-        toast.success('All fonts loaded successfully!', { id: toastId });
-        return;
-      }
-      toast.warning(
-        `${numberOfSuccesses} fonts loaded out of ${totalOfResults}.`,
-        { id: toastId }
-      );
-    })
-    .catch(() => {
-      toast.error('Could not load fonts.', { id: toastId });
-    });
+  //     if (numberOfSuccesses === totalOfResults) {
+  //       toast.success('All fonts loaded successfully!', { id: toastId });
+  //       return;
+  //     }
+  //     toast.warning(
+  //       `${numberOfSuccesses} fonts loaded out of ${totalOfResults}.`,
+  //       { id: toastId }
+  //     );
+  //   })
+  //   .catch(() => {
+  //     toast.error('Could not load fonts.', { id: toastId });
+  //   });
 
   return await fontsLoadPromise;
 }

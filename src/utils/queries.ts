@@ -105,7 +105,7 @@ export async function fetchSlideshowLessonOrSlides({
           case "colorThemeName":
             if (
               typeof value === "string" &&
-              !["default", "oxford", "twilight", "pastel", "earthy"].includes(
+              !["default", "oxford", "twilight", "pastel", "earthy", "royalTwilight", "boldContrast", "seaBreeze"].includes(
                 value
               )
             ) {

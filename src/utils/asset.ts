@@ -71,19 +71,20 @@ export async function preloadAssetsFromCanvasElements(
   });
   const preloadAssetsPromise = Promise.allSettled(preloadAssetPromises);
 
+  // TODO - Substitute by progress bar
   toast.promise(preloadAssetsPromise, {
-    loading: 'Preloading videos and images...',
-    success: (results) => {
-      const numberOfSuccesses = results.filter(
-        (result) => result.status === 'fulfilled'
-      ).length;
-      const totalOfResults = results.length;
+    // loading: 'Preloading videos and images...',
+    // success: (results) => {
+    //   const numberOfSuccesses = results.filter(
+    //     (result) => result.status === 'fulfilled'
+    //   ).length;
+    //   const totalOfResults = results.length;
 
-      if (numberOfSuccesses === totalOfResults) {
-        return 'All videos and images preloaded successfully!';
-      }
-      return `${numberOfSuccesses} videos and images preloaded out of ${totalOfResults}.`;
-    },
+    //   if (numberOfSuccesses === totalOfResults) {
+    //     return 'All videos and images preloaded successfully!';
+    //   }
+    //   return `${numberOfSuccesses} videos and images preloaded out of ${totalOfResults}.`;
+    // },
     error: 'Could not videos and images.',
   });
 

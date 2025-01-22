@@ -105,3 +105,20 @@ style the close button directly (using the style attribute) */
   white-space: nowrap;
   border-width: 0;
 }
+
+.spinner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  color: #555;
+  background-color: rgba(255, 255, 255, 0.8); /* Fondo semi-transparente */
+  padding: 20px 40px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000; /* Asegura que el spinner esté por encima de otros elementos */
+}

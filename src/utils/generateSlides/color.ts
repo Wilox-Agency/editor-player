@@ -15,6 +15,7 @@ export const colorThemeNames = [
   "seaBreeze",
   "grupoDatco",
   "amuch",
+  "mutualDeSeguridad",
 ] as const;
 
 // Color names by https://coolors.co/
@@ -93,6 +94,13 @@ export const colorThemeOptions = {
     "#243063", // Dark blue
     "#0080BA", // Blue
     "#E5E5E5", // Platinum (light gray)
+    "#FFFFFF", // White
+  ],
+  mutualDeSeguridad: [
+    "#1C0F0A", // Black
+    "#8fbe01", // Green
+    "#434343", // Dark gray
+    "#ecedf1", // Light gray
     "#FFFFFF", // White
   ],
 } as const satisfies Record<(typeof colorThemeNames)[number], string[]>;

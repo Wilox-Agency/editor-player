@@ -352,16 +352,15 @@ export default function AnimationPlayer() {
           alt="Logo Mi Academia"
           style={{
             position: "absolute",
-            top: "3rem",
-            left: "7rem",
+            top: "1rem",
+            left: "1rem",
             width: "auto",
             height: "70px",
-            transform: "translate(-50%, -50%)",
             zIndex: 9999,
           }}
         />
       ) : null}
-
+      
       <div onPointerDown={handleClickStageWrapperWithPointer}>
         <Stage
           id={stageWrapperId}

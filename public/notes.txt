@@ -4,4 +4,4 @@ Agregar estos temas:
   "royalTwilight",
   "boldContrast",
   "seaBreeze",
-Sustituir http:/localhost:4200 por ./
+Sustituir http://localhost:4200 por ./

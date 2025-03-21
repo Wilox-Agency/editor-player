@@ -35,9 +35,13 @@ import { PlayerBar } from '@/components/PlayerBar';
 import { PlayerOrganizationLogo } from '@/components/PlayerOrganizationLogo';
 
 import { slideshowLessonWithExternalInfoSchema } from '@/utils/generateSlides/parse';
+import useScorm from '@blocdigital/usescorm';
 
 
 export default function AnimationPlayer() {
+
+  // initiate the scorm session
+  const scorm = useScorm({ version: '1.2' });
 
   const [showSpinner, setShowSpinner] = useState(true);
 
@@ -368,9 +372,17 @@ export default function AnimationPlayer() {
 
   // Clear canvas tree and reset timeline when the component is destroyed
   useEffect(() => {
+
+    console.info("Found:", scorm.API.isFound)
+    console.info("Scorm Status:", scorm.data.completionStatus)
+    console.info("scorm.set():", scorm.set("cmi.core.lesson_status", 'completed'))
+    console.info("Scorm Status:", scorm.data.completionStatus)
+    
+
     return () => {
       useCanvasTreeStore.getState().loadCanvasTree([]);
       usePlayerTimelineStore.getState().reset();
+
     };
   }, []);
 

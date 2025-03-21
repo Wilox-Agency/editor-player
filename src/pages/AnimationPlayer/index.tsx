@@ -1,39 +1,39 @@
-import { type PointerEvent, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Group, Layer, Stage } from 'react-konva';
-import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { type } from 'arktype';
+import { type PointerEvent, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
+import { Group, Layer, Stage } from "react-konva";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { type } from "arktype";
 
-import styles from './AnimationPlayer.module.css';
+import styles from "./AnimationPlayer.module.css";
 
-import { useCanvasTreeStore } from '@/hooks/useCanvasTreeStore';
-import { useKonvaRefsStore } from '@/hooks/useKonvaRefsStore';
-import { useResponsiveStage } from '@/hooks/useResponsiveStage';
+import { useCanvasTreeStore } from "@/hooks/useCanvasTreeStore";
+import { useKonvaRefsStore } from "@/hooks/useKonvaRefsStore";
+import { useResponsiveStage } from "@/hooks/useResponsiveStage";
 import {
   usePlayerTimeline,
   usePlayerTimelineStore,
-} from '@/hooks/usePlayerTimeline';
-import { useSetupPlayerTimeline } from '@/hooks/useSetupPlayerTimeline';
-import { CanvasComponentByType, StageVirtualSize } from '@/utils/konva';
-import { getCanvasElementRect } from '@/utils/konva/rect';
-import { generateSlides } from '@/utils/generateSlides';
-import { parseSlideshowLesson } from '@/utils/generateSlides/parse';
+} from "@/hooks/usePlayerTimeline";
+import { useSetupPlayerTimeline } from "@/hooks/useSetupPlayerTimeline";
+import { CanvasComponentByType, StageVirtualSize } from "@/utils/konva";
+import { getCanvasElementRect } from "@/utils/konva/rect";
+import { generateSlides } from "@/utils/generateSlides";
+import { parseSlideshowLesson } from "@/utils/generateSlides/parse";
 import {
   addAnimationsToSlides,
   combineSlides,
-} from '@/utils/generateAnimations';
-import { fetchSlideshowLessonOrSlides } from '@/utils/queries';
-import { saveSlidesToSlideshowLesson } from '@/utils/mutations';
-import { waitUntilAllSupportedFontsLoad } from '@/utils/font';
-import { preloadAssetsFromCanvasElements } from '@/utils/asset';
-import { getAudioDuration, preloadAudios } from '@/utils/audio';
-import { validateUrl } from '@/utils/validation';
-import { MouseButton } from '@/utils/input';
-import type { SlideshowLessonWithExternalInfo } from '@/utils/types';
+} from "@/utils/generateAnimations";
+import { fetchSlideshowLessonOrSlides } from "@/utils/queries";
+import { saveSlidesToSlideshowLesson } from "@/utils/mutations";
+import { waitUntilAllSupportedFontsLoad } from "@/utils/font";
+import { preloadAssetsFromCanvasElements } from "@/utils/asset";
+import { getAudioDuration, preloadAudios } from "@/utils/audio";
+import { validateUrl } from "@/utils/validation";
+import { MouseButton } from "@/utils/input";
+import type { SlideshowLessonWithExternalInfo } from "@/utils/types";
 
-import { PlayerBar } from '@/components/PlayerBar';
-import { PlayerOrganizationLogo } from '@/components/PlayerOrganizationLogo';
+import { PlayerBar } from "@/components/PlayerBar";
+import { PlayerOrganizationLogo } from "@/components/PlayerOrganizationLogo";
 
 export default function AnimationPlayer() {
   const { state: slideshowLessonFromHomePage, search: searchParams } =
@@ -43,14 +43,14 @@ export default function AnimationPlayer() {
   was not already provided by the user through the home page form */
   const { data: slideshowLessonOrSlidesFromServer, error } = useQuery({
     enabled: !slideshowLessonFromHomePage,
-    queryKey: ['slideshowLessonOrSlidesFromServer', searchParams],
+    queryKey: ["slideshowLessonOrSlidesFromServer", searchParams],
     queryFn: async () => {
       const searchParamsObject = new URLSearchParams(searchParams);
-      const courseId = searchParamsObject.get('courseId');
-      const lessonId = searchParamsObject.get('lessonId');
+      const courseId = searchParamsObject.get("courseId");
+      const lessonId = searchParamsObject.get("lessonId");
       if (!courseId || !lessonId) {
         throw new Error(
-          '`courseId` or `lessonId` query parameters are missing.'
+          "`courseId` or `lessonId` query parameters are missing."
         );
       }
 
@@ -59,16 +59,16 @@ export default function AnimationPlayer() {
       https://sonner.emilkowal.ski/toast#render-toast-on-page-load */
       setTimeout(() => {
         toast.promise(promise, {
-          loading: 'Fetching slideshow lesson...',
+          loading: "Fetching slideshow lesson...",
           success: (slideshowLessonOrSlides) => {
-            if ('slides' in slideshowLessonOrSlides) {
-              return 'Found up to date slides!';
+            if ("slides" in slideshowLessonOrSlides) {
+              return "Found up to date slides!";
             }
-            return 'Slideshow lesson found!';
+            return "Slideshow lesson found!";
           },
           error: (error) => {
             if (error instanceof Error) return error.message;
-            return 'Slideshow lesson not found.';
+            return "Slideshow lesson not found.";
           },
         });
       });
@@ -86,7 +86,7 @@ export default function AnimationPlayer() {
     }
     if (
       slideshowLessonOrSlidesFromServer &&
-      'elementLesson' in slideshowLessonOrSlidesFromServer
+      "elementLesson" in slideshowLessonOrSlidesFromServer
     ) {
       return slideshowLessonOrSlidesFromServer;
     }
@@ -97,7 +97,7 @@ export default function AnimationPlayer() {
   incorrectly */
   const { isLoading: isLoadingFonts, isPending: isLoadFontsPending } = useQuery(
     {
-      queryKey: ['loadFonts'],
+      queryKey: ["loadFonts"],
       queryFn: async () => {
         await waitUntilAllSupportedFontsLoad();
         return null;
@@ -109,7 +109,7 @@ export default function AnimationPlayer() {
   // Generate slides if they were not fetched from the server
   const { data: generatedSlides } = useQuery({
     enabled: !!slideshowLesson && !isLoadingFonts && !isLoadFontsPending,
-    queryKey: ['generateSlides', slideshowLesson],
+    queryKey: ["generateSlides", slideshowLesson],
     queryFn: async () => {
       // Generate slides from the lesson
       const slidesPromise = generateSlides(
@@ -117,13 +117,13 @@ export default function AnimationPlayer() {
       );
 
       toast.promise(slidesPromise, {
-        loading: 'Generating slides...',
-        success: 'Slides generated successfully!',
+        loading: "Generating slides...",
+        success: "Slides generated successfully!",
         error: (error) => {
           if (import.meta.env.DEV) {
             console.log(error);
           }
-          return 'Could not generate slides, please check if there are any broken images in the slideshow lesson.';
+          return "Could not generate slides, please check if there are any broken images in the slideshow lesson.";
         },
       });
       return await slidesPromise;
@@ -138,12 +138,12 @@ export default function AnimationPlayer() {
     const slidesWereGeneratedFromFetchedSlideshowLesson =
       generatedSlides &&
       slideshowLessonOrSlidesFromServer &&
-      'elementLesson' in slideshowLessonOrSlidesFromServer;
+      "elementLesson" in slideshowLessonOrSlidesFromServer;
     if (!slidesWereGeneratedFromFetchedSlideshowLesson) return;
 
     const searchParamsObject = new URLSearchParams(searchParams);
-    const courseId = searchParamsObject.get('courseId');
-    const lessonId = searchParamsObject.get('lessonId');
+    const courseId = searchParamsObject.get("courseId");
+    const lessonId = searchParamsObject.get("lessonId");
     if (!courseId || !lessonId) return;
 
     const saveSlidesPromise = saveSlidesToSlideshowLesson({
@@ -153,11 +153,11 @@ export default function AnimationPlayer() {
     });
 
     toast.promise(saveSlidesPromise, {
-      loading: 'Saving slides...',
-      success: 'Slides saved successfully!',
+      loading: "Saving slides...",
+      success: "Slides saved successfully!",
       error: (error) => {
         if (error instanceof Error) return error.message;
-        return 'Could not save slides.';
+        return "Could not save slides.";
       },
     });
   }, [generatedSlides, searchParams, slideshowLessonOrSlidesFromServer]);
@@ -168,7 +168,7 @@ export default function AnimationPlayer() {
     by the server when the slides are up to date) */
     const slidesWereFetchedFromServer =
       slideshowLessonOrSlidesFromServer &&
-      'slides' in slideshowLessonOrSlidesFromServer;
+      "slides" in slideshowLessonOrSlidesFromServer;
     if (slidesWereFetchedFromServer) {
       return slideshowLessonOrSlidesFromServer.slides;
     }
@@ -181,7 +181,7 @@ export default function AnimationPlayer() {
     useQuery({
       enabled: !!slideshowLesson || !!slideshowLessonOrSlidesFromServer,
       queryKey: [
-        'backgroundMusic',
+        "backgroundMusic",
         slideshowLesson?.backgroundMusicUrl,
         slideshowLessonOrSlidesFromServer?.backgroundMusicUrl,
       ],
@@ -220,11 +220,11 @@ export default function AnimationPlayer() {
   // Get the index of the slide to preview (if provided)
   const slideIndexToPreview = useMemo(() => {
     const searchParamsObject = new URLSearchParams(searchParams);
-    const unparsedSlideIndex = searchParamsObject.get('previewIndex');
+    const unparsedSlideIndex = searchParamsObject.get("previewIndex");
     if (!unparsedSlideIndex) return undefined;
 
     const { data: slideIndexToPreview } =
-      type('parsedInteger')(unparsedSlideIndex);
+      type("parsedInteger")(unparsedSlideIndex);
 
     if (slideIndexToPreview === undefined) {
       toast.error(`Invalid preview index: "${unparsedSlideIndex}"`);
@@ -270,7 +270,7 @@ export default function AnimationPlayer() {
           !!slideshowLessonOrSlidesFromServer) &&
         !isLoadingBackgroundMusic,
       queryKey: [
-        'preloadAudios',
+        "preloadAudios",
         backgroundMusic,
         isLoadingBackgroundMusic,
         slideshowLessonFromHomePage,
@@ -286,7 +286,7 @@ export default function AnimationPlayer() {
             }));
           }
 
-          if ('elementLesson' in slideshowLessonOrSlidesFromServer!) {
+          if ("elementLesson" in slideshowLessonOrSlidesFromServer!) {
             return slideshowLessonOrSlidesFromServer.elementLesson.paragraphs.map(
               ({ audioUrl }) => ({ url: audioUrl })
             );
@@ -312,7 +312,7 @@ export default function AnimationPlayer() {
   // Play/pause when clicking on the stage wrapper with a pointer
   function handleClickStageWrapperWithPointer(event: PointerEvent) {
     const isLeftMouseClick =
-      event.pointerType === 'mouse' && event.button === MouseButton.left;
+      event.pointerType === "mouse" && event.button === MouseButton.left;
     if (!isLeftMouseClick || !canPlaySlideshow) return;
     handlePlayOrPause();
   }
@@ -341,14 +341,33 @@ export default function AnimationPlayer() {
     };
   }, []);
 
+  const searchParamsObject = new URLSearchParams(searchParams);
+  const courseId = searchParamsObject.get("courseId");
+
   return (
     <main>
+      {courseId === "97430f30-0338-4a75-bab3-c09ec9925d54" ? (
+        <img
+          src="/logo_mi_academia.png"
+          alt="Logo Mi Academia"
+          style={{
+            position: "absolute",
+            top: "3rem",
+            left: "7rem",
+            width: "auto",
+            height: "70px",
+            transform: "translate(-50%, -50%)",
+            zIndex: 9999,
+          }}
+        />
+      ) : null}
+
       <div onPointerDown={handleClickStageWrapperWithPointer}>
         <Stage
           id={stageWrapperId}
           className="konva-stage-wrapper"
           style={{
-            '--canvas-background-color': '#f0e6e6',
+            "--canvas-background-color": "#f0e6e6",
           }}
           width={StageVirtualSize.width}
           height={StageVirtualSize.height}

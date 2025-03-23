@@ -348,14 +348,16 @@ export default function AnimationPlayer() {
     <main>
       {courseId === "97430f30-0338-4a75-bab3-c09ec9925d54" ? (
         <img
-          src="/logo_mi_academia.png"
+          src="/logo_mi_academia_white.png"
           alt="Logo Mi Academia"
           style={{
             position: "absolute",
-            top: "1rem",
-            left: "1rem",
+            top: ".5rem",
+            left: ".5rem",
             width: "auto",
-            height: "70px",
+            height: "50px",
+            borderRadius: ".5rem",
+            border: "solid 2px #00000028",
             zIndex: 9999,
           }}
         />

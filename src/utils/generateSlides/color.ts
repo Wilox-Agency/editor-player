@@ -16,6 +16,7 @@ export const colorThemeNames = [
   "grupoDatco",
   "amuch",
   "mutualDeSeguridad",
+  "corporateBlue",
 ] as const;
 
 // Color names by https://coolors.co/
@@ -102,6 +103,13 @@ export const colorThemeOptions = {
     "#434343", // Dark gray
     "#ecedf1", // Light gray
     "#FFFFFF", // White
+  ],
+  corporateBlue: [
+    "#2E4053", // Dark blue
+    "#3EBFC7", // Teal
+    "#2E76F5", // Electric blue
+    "#ecedf1", // Light gray
+    "#F2F4F4", // White
   ],
 } as const satisfies Record<(typeof colorThemeNames)[number], string[]>;
 

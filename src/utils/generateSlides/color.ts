@@ -17,6 +17,7 @@ export const colorThemeNames = [
   "amuch",
   "mutualDeSeguridad",
   "corporateBlue",
+  "AESA",
 ] as const;
 
 // Color names by https://coolors.co/
@@ -110,6 +111,13 @@ export const colorThemeOptions = {
     "#2E76F5", // Electric blue
     "#ecedf1", // Light gray
     "#F2F4F4", // White
+  ],
+  AESA: [
+    "#1e447f", // Dark blue
+    "#8a9fbc", // Light blue
+    "#e6a540", // Orange
+    "#59595b", // Dark gray
+    "#aaacae", // Light gray
   ],
 } as const satisfies Record<(typeof colorThemeNames)[number], string[]>;
 
